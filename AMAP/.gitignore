@@ -1,0 +1,75 @@
+# Ficheiros de configuração do sistema
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Ficheiros de compilação
+bin/
+obj/
+*.cache
+*.ilk
+*.log
+*.pdb
+*.obj
+*.exe
+*.dll
+*.tlb
+*.tlh
+*.tmp
+*.vspscc
+*.vssscc
+
+# Pacotes e dependências
+packages/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Logs e informações temporárias
+*.log
+*.tlog
+*.out
+*.VSCodeCounter.tmp/
+
+# Configuração gerada automaticamente
+appsettings.json
+appsettings.*.development.json
+*.db
+*.config
+
+# Dados de publicação
+publish/
+wwwroot/
+
+# Ficheiros gerados por IDEs e ferramentas
+.DS_Store
+Thumbs.db
+*.vs/
+_ReSharper.*
+*.suo
+*.user
+*.resharper.user
+.vscode/
+
+# Ficheiros de teste
+TestResults/
+*.trx
+*.coverage
+
+# Ficheiros gerados pelo sistema
+*.pyc
+*.pyo
+*.class
+*.jar
+*.swp
+
+node_modules/
+
+*/Migrations/
+
+
