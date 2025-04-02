@@ -37,8 +37,6 @@ artifacts/
 *.VSCodeCounter.tmp/
 
 # Configuração gerada automaticamente
-appsettings.json
-appsettings.*.development.json
 *.db
 *.config
 
