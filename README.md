@@ -1716,6 +1716,137 @@ As ameaças foram classificadas em alta, média e baixa prioridade, com justific
 
 São propostas 5-7 mitigações concretas para as ameaças mais críticas, com foco na viabilidade de implementação e impacto na segurança geral do sistema.
 
+#### 1. Proteção de Autenticação e Gestão de Sessões
+
+**Ameaças Mitigadas:** Spoofing, Elevation of Privilege (Processos 1.1, 1.2, 4.1, 4.2, 4.3)
+
+**Mitigações Específicas:**
+1. **Implementar autenticação multi-fator (MFA)** para contas com privilégios de Gestor e Produtor.
+   - Integrar autenticação por aplicação móvel (como Microsoft Authenticator ou Google Authenticator)
+   - Exigir MFA para todas as operações críticas como criação de períodos, alterações de perfil e operações financeiras
+   - Configurar tentativas de MFA limitadas a 3 antes de bloqueio temporário da conta (10 minutos)
+
+2. **Implementar gestão segura de sessões**:
+   - Reduzir o tempo de expiração do token JWT para 15 minutos em produção
+   - Implementar refresh tokens com rotação (cada token só pode ser usado uma vez)
+   - Manter registo de todos os tokens ativos com capacidade de revogação imediata
+   - Implementar validação do User-Agent e IP para detecção de potenciais sessões roubadas
+
+#### 2. Proteção contra Manipulação de Dados
+
+**Ameaças Mitigadas:** Tampering, Repudiation (Processos 1.3, 1.4, 1.5, 1.6, 3.1, 3.2, 3.3)
+
+**Mitigações Específicas:**
+1. **Implementar validação de dados em múltiplas camadas**:
+   - Validação no cliente para feedback imediato ao utilizador
+   - Validação rigorosa nos controladores utilizando atributos de validação e ModelState
+   - Validação adicional na camada de negócio antes de operações na base de dados
+   - Implementar middleware de sanitização de dados contra XSS e injeção
+
+2. **Reforçar controlo de acesso baseado em funções (RBAC)**:
+   - Implementar verificações de autorização tanto ao nível do controller quanto em cada método
+   - Verificar não apenas a role mas também a propriedade dos recursos (ex: um Produtor só pode modificar as suas próprias ofertas)
+   - Implementar filtros globais que verificam acesso antes de cada operação de leitura/escrita na base de dados
+   - Utilizar políticas de autorização (Authorization Policies) em vez de simples atributos [Authorize]
+
+3. **Implementar auditoria completa**:
+   - Criar tabela dedicada para logs de alterações (AuditLog)
+   - Registar todas as operações críticas com detalhes como: utilizador, data/hora, operação, valores antigos/novos
+   - Implementar assinaturas digitais em transações financeiras para prevenir repúdio
+   - Tornar os logs inalteráveis (apenas inserção, sem update/delete)
+
+#### 3. Proteção de Comunicação e Transporte de Dados
+
+**Ameaças Mitigadas:** Information Disclosure, Tampering (Fluxos 2.1, 2.2, 2.3, 5.2, 5.4)
+
+**Mitigações Específicas:**
+1. **Reforçar a segurança das comunicações**:
+   - Implementar HTTPS obrigatório com HSTS (HTTP Strict Transport Security)
+   - Configurar o TLS 1.3 como protocolo mínimo
+   - Implementar certificate pinning para prevenir ataques Man-in-the-Middle
+   - Adicionar cabeçalhos de segurança (Content-Security-Policy, X-Content-Type-Options, etc.)
+
+2. **Proteger dados sensíveis em trânsito e em repouso**:
+   - Encriptar dados sensíveis na base de dados (informações de pagamento, dados pessoais) usando AES-256
+   - Aplicar máscaras a dados sensíveis nos logs e interfaces (ex: últimos 4 dígitos de cartões)
+   - Implementar rotação automática de chaves de encriptação a cada 90 dias
+   - Configurar backup encriptado da base de dados
+
+3. **Proteger a comunicação com serviços externos**:
+   - Implementar conexão SMTP sobre TLS para o serviço de email
+   - Utilizar autenticação OAuth 2.0 para serviços externos quando disponível
+   - Validar certificados de serviços externos
+   - Implementar limite de taxa (rate limiting) para requisições a serviços externos
+
+#### 4. Prevenção contra Acesso Não Autorizado a Dados
+
+**Ameaças Mitigadas:** Information Disclosure, Elevation of Privilege (Processos 1.7, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6)
+
+**Mitigações Específicas:**
+1. **Implementar controlo granular de acesso a dados**:
+   - Aplicar filtros automáticos no Entity Framework Core baseados no perfil do utilizador
+   - Implementar máscaras dinâmicas para dados sensíveis baseado no perfil
+   - Utilizar Views na base de dados para limitar acesso a campos específicos
+   - Implementar permissões por base de dados (Data Permission) em adição às permissões da aplicação
+
+2. **Prevenir ataques de injeção SQL**:
+   - Utilizar exclusivamente Entity Framework Core com consultas parametrizadas
+   - Implementar validação específica para campos utilizados em consultas dinâmicas
+   - Configurar ORM para escapar automaticamente caracteres especiais
+   - Implementar uma lista de bloqueio para padrões SQL maliciosos em inputs
+
+3. **Implementar proteção contra ataques ao acesso de dados**:
+   - Limitar número de resultados por consulta (paginação obrigatória)
+   - Implementar limite de taxa (rate limiting) para requisições à API por utilizador
+   - Monitorizar e alertar sobre padrões suspeitos de acesso a dados
+   - Implementar atraso exponencial após falhas repetidas de autenticação
+
+#### 5. Securização de Gestão de Identidade e Perfis
+
+**Ameaças Mitigadas:** Spoofing, Elevation of Privilege (Processos 1.1, 4.1, 4.2, 4.3, 5.3)
+
+**Mitigações Específicas:**
+1. **Reforçar o processo de registo e gestão de contas**:
+   - Implementar verificação de email obrigatória durante registo
+   - Criar processo de aprovação manual para novas contas de Produtor por um Gestor
+   - Implementar revogação automática de tokens após alteração de senha ou perfil
+   - Adicionar notificações de segurança por email para ações críticas (login de novo dispositivo, alteração de perfil)
+
+2. **Implementar controlo rigoroso de elevação de privilégios**:
+   - Exigir aprovação dupla para qualquer mudança de perfil (dois Gestores)
+   - Separar claramente as interfaces administrativas das interfaces de utilizador comum
+   - Criar logs específicos para todas as operações de mudança de privilégios
+   - Implementar revisão periódica (90 dias) de contas com privilégios elevados
+
+3. **Assegurar gestão de credenciais de sistema**:
+   - Armazenar credenciais de serviços externos (SMTP, etc.) em Azure Key Vault ou AWS Secrets Manager
+   - Implementar rotação automática de credenciais de serviço a cada 30 dias
+   - Utilizar identidades geridas (managed identities) para autenticação entre serviços
+   - Remover credenciais hardcoded do código e configurações
+
+#### 6. Proteção de Operações Financeiras e Pagamentos
+
+**Ameaças Mitigadas:** Tampering, Repudiation (Processos 1.5, 1.6, 1.7, 3.3)
+
+**Mitigações Específicas:**
+1. **Implementar camada de segurança dedicada para transações financeiras**:
+   - Criar fluxo de aprovação em duas etapas para pagamentos acima de determinado valor
+   - Implementar assinatura digital de transações utilizando certificados digitais
+   - Manter histórico completo e inalterável de todas as transações financeiras
+   - Implementar reconciliação automática diária para detectar discrepâncias
+
+2. **Prevenir modificações não autorizadas em pagamentos**:
+   - Implementar verificação de integridade (checksum) em registos de pagamento
+   - Utilizar IDs de transação únicos e não sequenciais para evitar enumeração
+   - Bloquear alterações em transações após finalização (apenas estornos autorizados)
+   - Implementar trilha de auditoria específica para operações financeiras
+
+3. **Securizar métodos de pagamento**:
+   - Implementar integração segura com gateways de pagamento em vez de processamento direto
+   - Nunca armazenar dados completos de cartão de crédito (utilizar tokenização)
+   - Implementar confirmação out-of-band para pagamentos (SMS, email)
+   - Adicionar verificação de fraude baseada em padrões de comportamento e histórico
+
 ---
 
 ## Requisitos de Segurança
