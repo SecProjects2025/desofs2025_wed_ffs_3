@@ -1694,158 +1694,542 @@ Esta análise fornece a base para o desenvolvimento de estratégias de mitigaç�
 
 A avaliação de risco foi realizada utilizando a metodologia DREAD (ou outra metodologia simples), atribuindo pontuações aos seguintes critérios: Dano, Reprodutibilidade, Exploração, Atingibilidade e Descoberta.
 
-### Matriz de Risco
+# Avaliação de Risco Utilizando DREAD para o Sistema AMAP
 
-> *Inserir matriz de risco com pontuações atribuídas às ameaças.*
+## 1. Introdução à Metodologia
+Para avaliar o risco das ameaças identificadas no sistema AMAP, aplicaremos a metodologia DREAD conforme sugerido pelo professor. Esta abordagem permite uma avaliação quantitativa dos riscos através de cinco fatores de risco:
 
-As ameaças foram classificadas em alta, média e baixa prioridade, com justificativa para as que representam maior risco.
+- **Damage potential (Potencial de dano):** Quão significativo seria o dano se a ameaça fosse explorada?
+- **Reproducibility (Reprodutibilidade):** Quão fácil é reproduzir o ataque?
+- **Exploitability (Facilidade de exploração):** Quão fácil é executar o ataque?
+- **Affected users (Usuários afetados):** Que percentagem de usuários seria afetada?
+- **Discoverability (Facilidade de descoberta):** Quão fácil é descobrir esta vulnerabilidade?
+
+## 2. Critérios de Avaliação DREAD
+Para cada fator, utilizaremos uma escala de 1-10, onde 1 representa o menor risco e 10 o maior:
+
+### Damage Potential (D)
+- **1-3:** Dano mínimo, sem impacto significativo
+- **4-6:** Dano moderado, impacto temporário nas operações
+- **7-8:** Dano significativo, impacto nas finanças ou reputação
+- **9-10:** Dano crítico, comprometimento do sistema ou risco legal
+
+### Reproducibility (R)
+- **1-3:** Muito difícil de reproduzir, requer condições específicas raras
+- **4-6:** Reproduzível com esforço considerável
+- **7-8:** Reproduzível com algum esforço e conhecimento específico
+- **9-10:** Facilmente reproduzível em qualquer momento
+
+### Exploitability (E)
+- **1-3:** Requer conhecimento avançado e múltiplos pré-requisitos
+- **4-6:** Requer conhecimento técnico moderado e acesso específico
+- **7-8:** Requer habilidades básicas e poucas barreiras
+- **9-10:** Muito fácil de explorar, não requer conhecimento técnico especial
+
+### Affected Users (A)
+- **1-3:** Afeta pouquíssimos usuários individuais
+- **4-6:** Afeta um grupo específico de usuários
+- **7-8:** Afeta a maioria dos usuários
+- **9-10:** Afeta todos os usuários do sistema
+
+### Discoverability (D)
+- **1-3:** Extremamente difícil de descobrir
+- **4-6:** Descobrível apenas com análise direcionada
+- **7-8:** Facilmente descobrível com ferramentas comuns
+- **9-10:** Óbvia de detectar, visível por qualquer pessoa
+
+## 3. Avaliação de Risco das Principais Ameaças
+
+### Processo de Autenticação (1.1)
+**Spoofing (S):** Falsificação de identidade para acesso não autorizado
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 10 | Comprometimento de uma conta de Gestor permite controle administrativo total do sistema |
+| Reproducibility | 8 | Ataques de phishing e credential stuffing são amplamente reproduzíveis |
+| Exploitability | 7 | Técnicas como phishing são relativamente fáceis de implementar |
+| Affected Users | 9 | Afeta todos os usuários do sistema, principalmente quando comprometidas contas de Gestores |
+| Discoverability | 8 | Vulnerabilidades de autenticação são comumente pesquisadas e detectadas |
+| **Pontuação DREAD** | **8.4** | **CRÍTICO** |
+
+**Elevation of Privilege (E):** Escalação de privilégios
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 9 | Permite acesso a funcionalidades administrativas restritas |
+| Reproducibility | 6 | Requer conhecimento específico do sistema de tokens JWT |
+| Exploitability | 5 | Necessita compreensão do mecanismo de autorização e autenticação |
+| Affected Users | 8 | Impacta potencialmente todos os usuários se explorado |
+| Discoverability | 5 | Requer análise específica do sistema de autorização |
+| **Pontuação DREAD** | **6.6** | **ALTO** |
+
+### Processo de Gestão de Períodos de Subscrição (1.2)
+**Tampering (T):** Modificação não autorizada de períodos de subscrição
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 9 | Compromete todo o planeamento de distribuição e entrega de produtos |
+| Reproducibility | 7 | Reproduzível ao explorar vulnerabilidades no controlo de acesso |
+| Exploitability | 6 | Requer conhecimento técnico e acesso específico ao sistema |
+| Affected Users | 8 | Afeta todos os Produtores e CoProdutores que dependem das datas dos períodos |
+| Discoverability | 6 | Requer análise específica dos mecanismos de gestão de períodos |
+| **Pontuação DREAD** | **7.2** | **ALTO** |
+
+**Elevation of Privilege (E):** Acesso indevido às funcionalidades de gestão de períodos
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 8 | Permite manipulação de períodos fundamentais para o funcionamento do sistema |
+| Reproducibility | 6 | Requer exploração de vulnerabilidades específicas no RBAC |
+| Exploitability | 5 | Necessita conhecimento sobre o mecanismo de controlo de acesso |
+| Affected Users | 8 | Impacta potencialmente todos os utilizadores do sistema |
+| Discoverability | 5 | Requer análise específica do sistema de autorização |
+| **Pontuação DREAD** | **6.4** | **ALTO** |
+
+### Gestão de Produtos e Quantidades (1.3)
+**Tampering (T):** Alteração não autorizada de informações de produtos
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 8 | Compromete a confiança na plataforma e pode resultar em perdas financeiras |
+| Reproducibility | 9 | Facilmente reproduzível quando explorada uma vulnerabilidade de validação |
+| Exploitability | 7 | Viável para Produtores ou atacantes com acesso ao sistema |
+| Affected Users | 7 | Afeta CoProdutores e Produtores relacionados aos produtos comprometidos |
+| Discoverability | 8 | Vulnerabilidades de validação de dados são frequentemente identificáveis |
+| **Pontuação DREAD** | **7.8** | **ALTO** |
+
+**Information Disclosure (I):** Divulgação não autorizada de informações
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 6 | Exposição de dados de produtos pode dar vantagens competitivas indevidas |
+| Reproducibility | 7 | Reproduzível em sistemas com controle de acesso inadequado |
+| Exploitability | 6 | Requer algum conhecimento específico do sistema |
+| Affected Users | 5 | Afeta principalmente Produtores cujas informações são expostas |
+| Discoverability | 6 | Necessita análise específica dos mecanismos de controle de acesso |
+| **Pontuação DREAD** | **6.0** | **ALTO** |
+
+### Processo de Pagamento (1.6)
+**Tampering (T):** Alteração não autorizada de informações de pagamento
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 10 | Impacto financeiro direto e comprometimento da integridade transacional |
+| Reproducibility | 7 | Reproduzível em sistemas com validação inadequada |
+| Exploitability | 6 | Requer conhecimento técnico para interceptar/modificar comunicações |
+| Affected Users | 8 | Afeta Produtores e CoProdutores envolvidos nas transações |
+| Discoverability | 6 | Requer análise focada nas transações de pagamento |
+| **Pontuação DREAD** | **7.4** | **ALTO** |
+
+**Repudiation (R):** Negação de ter realizado um pagamento
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 9 | Perdas financeiras diretas e problemas de confiança na plataforma |
+| Reproducibility | 8 | Bastante viável na ausência de mecanismos robustos de não-repúdio |
+| Exploitability | 7 | Relativamente simples de executar se o sistema não possui logs adequados |
+| Affected Users | 7 | Afeta principalmente Produtores que não recebem pagamentos |
+| Discoverability | 8 | Facilmente descobrível em testes básicos de pagamento |
+| **Pontuação DREAD** | **7.8** | **ALTO** |
+
+### Database Boundary (5.1)
+**Information Disclosure (I):** Exposição de dados sensíveis
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 10 | Exposição de todos os dados do sistema, incluindo informações financeiras e pessoais |
+| Reproducibility | 7 | Reproduzível quando identificadas vulnerabilidades de injeção SQL |
+| Exploitability | 6 | Requer conhecimento técnico de SQL e da estrutura do banco |
+| Affected Users | 10 | Potencialmente afeta todos os usuários do sistema |
+| Discoverability | 8 | Vulnerabilidades de injeção SQL são comumente detectáveis com ferramentas automatizadas |
+| **Pontuação DREAD** | **8.2** | **CRÍTICO** |
+
+**Tampering (T):** Manipulação não autorizada de dados
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 10 | Compromete a integridade de todo o sistema |
+| Reproducibility | 6 | Requer identificação de vulnerabilidades específicas |
+| Exploitability | 5 | Necessita conhecimento técnico avançado e acesso específico |
+| Affected Users | 9 | Pode afetar todos os usuários dependendo dos dados comprometidos |
+| Discoverability | 5 | Requer análise direcionada das consultas e transações |
+| **Pontuação DREAD** | **7.0** | **ALTO** |
+
+### Gestor (4.1)
+**Spoofing (S):** Falsificação da identidade de um Gestor
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 10 | Acesso completo às funcionalidades administrativas críticas |
+| Reproducibility | 7 | Reproduzível através de ataques de phishing bem estruturados |
+| Exploitability | 5 | Requer direcionar especificamente Gestores, que são usuários mais cautelosos |
+| Affected Users | 9 | Impacta potencialmente todos os usuários do sistema |
+| Discoverability | 6 | Necessita reconhecimento de alvos específicos e engenharia social |
+| **Pontuação DREAD** | **7.4** | **ALTO** |
+
+### Sistema de Email (4.4)
+**Information Disclosure (I):** Interceptação de notificações
+
+| Fator DREAD | Pontuação | Justificativa |
+|-------------|-----------|---------------|
+| Damage | 7 | Exposição de informações potencialmente sensíveis sobre períodos e operações |
+| Reproducibility | 6 | Requer acesso à infraestrutura de rede ou email |
+| Exploitability | 5 | Necessita conhecimentos técnicos específicos e posição privilegiada |
+| Affected Users | 8 | Pode afetar grande parte dos usuários que recebem comunicações |
+| Discoverability | 5 | Requer monitoramento específico do tráfego SMTP |
+| **Pontuação DREAD** | **6.2** | **ALTO** |
+
+## 4. Matriz de Risco Consolidada
+Organizando as ameaças avaliadas em ordem decrescente de risco:
+
+| Ameaça | Pontuação DREAD | Nível de Risco |
+|--------|----------------|---------------|
+| Autenticação - Spoofing | 8.4 | CRÍTICO |
+| Database Boundary - Information Disclosure | 8.2 | CRÍTICO |
+| Fluxo Credenciais Login - Information Disclosure | 8.2 | CRÍTICO |
+| Gestão de Produtos - Tampering | 7.8 | ALTO |
+| Processo de Pagamento - Repudiation | 7.8 | ALTO |
+| Gestor - Spoofing | 7.4 | ALTO |
+| Processo de Pagamento - Tampering | 7.4 | ALTO |
+| Criação de Ofertas - Spoofing | 7.4 | ALTO |
+| Criação de Ofertas - Tampering | 7.4 | ALTO |
+| Fluxo Credenciais Login - Tampering | 7.4 | ALTO |
+| Gestão de Períodos - Tampering | 7.2 | ALTO |
+| Processo de Subscrição - Repudiation | 7.2 | ALTO |
+| Database Boundary - Tampering | 7.0 | ALTO |
+| Processo de Subscrição - Tampering | 7.0 | ALTO |
+| Fluxo Subscrição para Pagamento - Tampering | 7.0 | ALTO |
+| Autenticação - Elevation of Privilege | 6.6 | ALTO |
+| Controlo de Pagamentos - Information Disclosure | 6.6 | ALTO |
+| Fluxo Dados Período - Tampering | 6.6 | ALTO |
+| Gestão de Períodos - Elevation of Privilege | 6.4 | ALTO |
+| Controlo de Pagamentos - Elevation of Privilege | 6.4 | ALTO |
+| Processo de Notificação - Information Disclosure | 6.4 | ALTO |
+| Sistema de Email - Information Disclosure | 6.2 | ALTO |
+| Processo de Notificação - Tampering | 6.2 | ALTO |
+| Gestão de Produtos - Information Disclosure | 6.0 | ALTO |
+| Fluxo Dados Período - Information Disclosure | 6.0 | ALTO |
+| Fluxo Subscrição para Pagamento - Information Disclosure | 6.0 | ALTO |
+
+## 5. Análise dos Resultados e Justificativa da Priorização
+A avaliação de risco DREAD mostra que as ameaças mais críticas para o sistema AMAP estão relacionadas com:
+
+1. **Autenticação e controlo de acesso:** Falsificação de identidade (spoofing) representa um risco crítico pois compromete todo o modelo de segurança do sistema. O comprometimento de contas de Gestor oferece controlo administrativo completo. A interceção de credenciais durante a transmissão também foi classificada como crítica.
+
+2. **Segurança do banco de dados:** Vulnerabilidades que permitem acesso não autorizado a dados sensíveis representam um risco crítico pois podem comprometer todas as informações do sistema, incluindo dados pessoais e financeiros.
+
+3. **Integridade de transações e operações:** A manipulação de dados (tampering) em várias componentes do sistema, incluindo produtos, períodos, ofertas e subscrições, representa um risco alto para a integridade das operações. O repúdio de pagamentos e subscrições impacta diretamente a confiabilidade financeira do sistema.
+
+4. **Fluxos de comunicação interna e externa:** Interceptação ou modificação de dados durante a transmissão entre componentes do sistema representa um risco significativo, especialmente para credenciais de login e informações financeiras.
+
+A diferenciação na priorização destas ameaças deve-se principalmente a:
+
+- **Potencial de dano (Damage):** Ameaças que impactam a integridade financeira ou comprometem todo o sistema receberam pontuações mais altas.
+- **Utilizadores afetados (Affected Users):** Ameaças que afetam todos ou a maioria dos utilizadores foram priorizadas sobre aquelas que impactam apenas grupos específicos.
+- **Reprodutibilidade e Exploitabilidade:** Ameaças facilmente reproduzíveis e exploráveis representam maior risco imediato.
+
+As ameaças foram classificadas em três níveis de prioridade:
+
+1. **Crítico (DREAD ≥ 8.0):** Requerem mitigação imediata e monitorização contínua.
+   - Autenticação - Spoofing (8.4)
+   - Database Boundary - Information Disclosure (8.2)
+   - Fluxo Credenciais Login - Information Disclosure (8.2)
+
+2. **Alto (6.0 ≤ DREAD < 8.0):** Necessitam de mitigação prioritária e verificações regulares.
+   - Inclui ameaças à integridade dos dados, repúdio de transações e manipulação de fluxos.
+
+3. **Médio (4.0 ≤ DREAD < 6.0):** Requerem monitorização e mitigação conforme recursos disponíveis.
+   - Nenhuma ameaça avaliada foi classificada neste nível, demonstrando a criticidade geral do sistema.
 
 ---
 
 ## Mitigações Propostas
 
-### Estratégias de Mitigação por Categoria
+### Abordagem de Mitigação
 
-- **Autenticação e Controle de Acesso**  
-- **Segurança de Dados**  
-- **Comunicação Segura**  
-- **Registro e Monitorização**  
-- **Proteção contra DoS**
+As mitigações propostas estão organizadas por processo e risco específico, focando exclusivamente no backend do sistema AMAP, considerando sua arquitetura em camadas ASP.NET Core, Entity Framework Core e SQL Server.
 
-### Mitigações para Ameaças de Alta Prioridade
+### Mitigações por Processo e Risco Específico
 
-São propostas 5-7 mitigações concretas para as ameaças mais críticas, com foco na viabilidade de implementação e impacto na segurança geral do sistema.
+#### Processo 1.1: Autenticação
 
-#### 1. Proteção de Autenticação e Gestão de Sessões
+**Risco: Spoofing (8.4 - CRÍTICO)**
+1. **Fortalecimento de credenciais:**
+   - Implementar políticas de password robustas no `AccountController`: mínimo 12 caracteres, combinação obrigatória de maiúsculas, minúsculas, números e caracteres especiais
+   - Modificar o `UserManager<AppUser>` para utilizar PBKDF2 com 10.000+ iterações para hashing de passwords
+   - Verificar passwords contra base de dados de passwords comprometidas (integrar API HaveIBeenPwned)
 
-**Ameaças Mitigadas:** Spoofing, Elevation of Privilege (Processos 1.1, 1.2, 4.1, 4.2, 4.3)
+2. **Proteção contra ataques de força bruta:**
+   - Implementar rate limiting no endpoint `/api/Account/login` com bloqueio progressivo
+   - Configurar o ASP.NET Identity para bloquear contas após 5 tentativas falhadas por 15 minutos
+   - Implementar CAPTCHA em tentativas suspeitas de login, utilizando reCAPTCHA v3
 
-**Mitigações Específicas:**
-1. **Implementar autenticação multi-fator (MFA)** para contas com privilégios de Gestor e Produtor.
-   - Integrar autenticação por aplicação móvel (como Microsoft Authenticator ou Google Authenticator)
-   - Exigir MFA para todas as operações críticas como criação de períodos, alterações de perfil e operações financeiras
-   - Configurar tentativas de MFA limitadas a 3 antes de bloqueio temporário da conta (10 minutos)
+3. **Prevenção de roubo de sessão:**
+   - Implementar fingerprinting de dispositivo nas claims do JWT
+   - Manter histórico de dispositivos autenticados por usuário
+   - Enviar notificações automáticas para o email do utilizador quando um novo dispositivo é detectado
 
-2. **Implementar gestão segura de sessões**:
-   - Reduzir o tempo de expiração do token JWT para 15 minutos em produção
-   - Implementar refresh tokens com rotação (cada token só pode ser usado uma vez)
-   - Manter registo de todos os tokens ativos com capacidade de revogação imediata
-   - Implementar validação do User-Agent e IP para detecção de potenciais sessões roubadas
+**Risco: Elevation of Privilege (6.6 - ALTO)**
+1. **Segurança de tokens JWT:**
+   - Reduzir o tempo de expiração do token para 15 minutos no serviço `JwtService`
+   - Assinar tokens com algoritmo RS256 utilizando chaves assimétricas
+   - Validar todas as claims do token em cada requisição com filtros de autorização personalizados
 
-#### 2. Proteção contra Manipulação de Dados
+2. **Gestão de sessões segura:**
+   - Implementar refresh tokens com rotação única armazenados numa tabela específica
+   - Manter registo central de tokens na base de dados com capacidade de revogação imediata
+   - Destruir todos os tokens ativos quando um utilizador altera a sua password
 
-**Ameaças Mitigadas:** Tampering, Repudiation (Processos 1.3, 1.4, 1.5, 1.6, 3.1, 3.2, 3.3)
+3. **Controlo de privilégios:**
+   - Verificar permissões baseadas no UserType em cada endpoint usando middleware especializado
+   - Validar as claims de UserType contra a informação armazenada na base de dados em cada requisição 
+   - Implementar logs detalhados de alterações de UserType com aprovação explícita de Gestores
 
-**Mitigações Específicas:**
-1. **Implementar validação de dados em múltiplas camadas**:
-   - Validação no cliente para feedback imediato ao utilizador
-   - Validação rigorosa nos controladores utilizando atributos de validação e ModelState
-   - Validação adicional na camada de negócio antes de operações na base de dados
-   - Implementar middleware de sanitização de dados contra XSS e injeção
+#### Processo 1.2: Gestão de Períodos de Subscrição
 
-2. **Reforçar controlo de acesso baseado em funções (RBAC)**:
-   - Implementar verificações de autorização tanto ao nível do controller quanto em cada método
-   - Verificar não apenas a role mas também a propriedade dos recursos (ex: um Produtor só pode modificar as suas próprias ofertas)
-   - Implementar filtros globais que verificam acesso antes de cada operação de leitura/escrita na base de dados
-   - Utilizar políticas de autorização (Authorization Policies) em vez de simples atributos [Authorize]
+**Risco: Tampering (7.2 - ALTO)**
+1. **Validação reforçada de dados:**
+   - Implementar validações rigorosas em `SubscriptionPeriodController` para datas e períodos
+   - Adicionar verificações de integridade de dados e regras de negócio no serviço correspondente
+   - Criar regras de validação para garantir que datas de início, fim e entrega seguem a lógica de negócio
 
-3. **Implementar auditoria completa**:
-   - Criar tabela dedicada para logs de alterações (AuditLog)
-   - Registar todas as operações críticas com detalhes como: utilizador, data/hora, operação, valores antigos/novos
-   - Implementar assinaturas digitais em transações financeiras para prevenir repúdio
-   - Tornar os logs inalteráveis (apenas inserção, sem update/delete)
+2. **Proteção contra manipulação de períodos:**
+   - Implementar bloqueio automático de períodos após a publicação no `SubscriptionPeriodController`
+   - Criar uma tabela de auditoria específica para registar todas as operações em períodos
+   - Gerar hashes criptográficos dos períodos para detectar alterações não autorizadas
 
-#### 3. Proteção de Comunicação e Transporte de Dados
+3. **Notificações de modificações:**
+   - Enviar notificações automáticas via `EmailSender` para todos os Produtores quando houver alterações
+   - Implementar mecanismo de confirmação para alterações críticas em períodos já publicados
+   - Registar quem fez cada alteração com timestamp e dados completos (antes/depois)
 
-**Ameaças Mitigadas:** Information Disclosure, Tampering (Fluxos 2.1, 2.2, 2.3, 5.2, 5.4)
+**Risco: Elevation of Privilege (6.4 - ALTO)**
+1. **Reforço do controlo de acesso:**
+   - Implementar múltiplas camadas de autorização no `SubscriptionPeriodController`
+   - Utilizar políticas de autorização personalizadas específicas para gestão de períodos
+   - Verificar explicitamente o UserType.Manager em cada método do controlador
 
-**Mitigações Específicas:**
-1. **Reforçar a segurança das comunicações**:
-   - Implementar HTTPS obrigatório com HSTS (HTTP Strict Transport Security)
-   - Configurar o TLS 1.3 como protocolo mínimo
-   - Implementar certificate pinning para prevenir ataques Man-in-the-Middle
-   - Adicionar cabeçalhos de segurança (Content-Security-Policy, X-Content-Type-Options, etc.)
+2. **Segregação de funcionalidades:**
+   - Separar endpoints administrativos em área protegida com autorização adicional
+   - Implementar verificações secundárias para operações críticas (política de quatro olhos)
+   - Criar logs específicos para tentativas de acesso não autorizado à gestão de períodos
 
-2. **Proteger dados sensíveis em trânsito e em repouso**:
-   - Encriptar dados sensíveis na base de dados (informações de pagamento, dados pessoais) usando AES-256
-   - Aplicar máscaras a dados sensíveis nos logs e interfaces (ex: últimos 4 dígitos de cartões)
-   - Implementar rotação automática de chaves de encriptação a cada 90 dias
-   - Configurar backup encriptado da base de dados
+#### Processo 1.3: Gestão de Produtos e Quantidades
 
-3. **Proteger a comunicação com serviços externos**:
-   - Implementar conexão SMTP sobre TLS para o serviço de email
-   - Utilizar autenticação OAuth 2.0 para serviços externos quando disponível
-   - Validar certificados de serviços externos
-   - Implementar limite de taxa (rate limiting) para requisições a serviços externos
+**Risco: Tampering (7.8 - ALTO)**
+1. **Proteção da integridade dos produtos:**
+   - Implementar validação rigorosa no `ProductController` com regras de negócio específicas
+   - Criar checksums ou hashes de produtos para detectar modificações não autorizadas
+   - Desenvolver sistema de versões para produtos, mantendo histórico de alterações
 
-#### 4. Prevenção contra Acesso Não Autorizado a Dados
+2. **Validação de uploads:**
+   - Implementar validação rigorosa para uploads de imagens de produtos
+   - Verificar e sanitizar metadados de imagens antes do armazenamento
+   - Restringir tipos de ficheiros permitidos com validação de MIME type e conteúdo
 
-**Ameaças Mitigadas:** Information Disclosure, Elevation of Privilege (Processos 1.7, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6)
+3. **Proteção contra manipulação de dados:**
+   - Implementar bloqueio de alterações em produtos após subscrição
+   - Notificar automaticamente CoProdutores quando houver alterações em produtos subscritos
+   - Validar modificações de preços contra regras de negócio estabelecidas
 
-**Mitigações Específicas:**
-1. **Implementar controlo granular de acesso a dados**:
-   - Aplicar filtros automáticos no Entity Framework Core baseados no perfil do utilizador
-   - Implementar máscaras dinâmicas para dados sensíveis baseado no perfil
-   - Utilizar Views na base de dados para limitar acesso a campos específicos
-   - Implementar permissões por base de dados (Data Permission) em adição às permissões da aplicação
+**Risco: Information Disclosure (6.0 - ALTO)**
+1. **Controlo de acesso aos dados:**
+   - Implementar filtros automáticos no Entity Framework Core baseados no perfil do utilizador
+   - Criar serviço dedicado para controlar o acesso a informações de produtos
+   - Desenvolver mascaramento de informações sensíveis baseado no perfil do utilizador
 
-2. **Prevenir ataques de injeção SQL**:
-   - Utilizar exclusivamente Entity Framework Core com consultas parametrizadas
-   - Implementar validação específica para campos utilizados em consultas dinâmicas
-   - Configurar ORM para escapar automaticamente caracteres especiais
-   - Implementar uma lista de bloqueio para padrões SQL maliciosos em inputs
+2. **Proteção de dados confidenciais:**
+   - Implementar controlo de visibilidade de produtos baseado no estado (rascunho/publicado)
+   - Limitar o acesso a dados completos de produtos apenas aos proprietários
+   - Registar todos os acessos a informações de produtos em log de auditoria
 
-3. **Implementar proteção contra ataques ao acesso de dados**:
-   - Limitar número de resultados por consulta (paginação obrigatória)
-   - Implementar limite de taxa (rate limiting) para requisições à API por utilizador
-   - Monitorizar e alertar sobre padrões suspeitos de acesso a dados
-   - Implementar atraso exponencial após falhas repetidas de autenticação
+#### Processo 1.4: Criação de Ofertas
 
-#### 5. Securização de Gestão de Identidade e Perfis
+**Risco: Spoofing (7.4 - ALTO)**
+1. **Verificação de identidade do Produtor:**
+   - Implementar validação cruzada no `ProductOfferController` para garantir que o Produtor é dono do produto
+   - Criar mecanismo de assinatura digital de ofertas pelo Produtor
+   - Implementar verificações em múltiplas camadas para confirmar a identidade do Produtor
 
-**Ameaças Mitigadas:** Spoofing, Elevation of Privilege (Processos 1.1, 4.1, 4.2, 4.3, 5.3)
+2. **Proteção contra falsificação:**
+   - Adicionar tokens anti-falsificação em todas as operações de criação de ofertas
+   - Implementar sistema de verificação para confirmar a propriedade dos produtos nas ofertas
+   - Enviar notificações ao Produtor quando novas ofertas forem criadas em seu nome
 
-**Mitigações Específicas:**
-1. **Reforçar o processo de registo e gestão de contas**:
-   - Implementar verificação de email obrigatória durante registo
-   - Criar processo de aprovação manual para novas contas de Produtor por um Gestor
-   - Implementar revogação automática de tokens após alteração de senha ou perfil
-   - Adicionar notificações de segurança por email para ações críticas (login de novo dispositivo, alteração de perfil)
+**Risco: Tampering (7.4 - ALTO)**
+1. **Integridade das ofertas:**
+   - Implementar controlo de versão para ofertas no `ProductOfferController`
+   - Registar hashes criptográficos das ofertas para detectar alterações não autorizadas
+   - Bloquear alterações em ofertas após o início de subscrições, exceto em campos específicos
 
-2. **Implementar controlo rigoroso de elevação de privilégios**:
-   - Exigir aprovação dupla para qualquer mudança de perfil (dois Gestores)
-   - Separar claramente as interfaces administrativas das interfaces de utilizador comum
-   - Criar logs específicos para todas as operações de mudança de privilégios
-   - Implementar revisão periódica (90 dias) de contas com privilégios elevados
+2. **Validação reforçada:**
+   - Adicionar validações rigorosas de preço, quantidade e datas no controlador e na camada de serviço
+   - Implementar regras de negócio específicas para alterações de ofertas após publicação
+   - Criar sistema de notificação automática para alterações em ofertas já subscritas
 
-3. **Assegurar gestão de credenciais de sistema**:
-   - Armazenar credenciais de serviços externos (SMTP, etc.) em Azure Key Vault ou AWS Secrets Manager
-   - Implementar rotação automática de credenciais de serviço a cada 30 dias
-   - Utilizar identidades geridas (managed identities) para autenticação entre serviços
-   - Remover credenciais hardcoded do código e configurações
+3. **Auditoria de alterações:**
+   - Implementar log detalhado de todas as modificações em ofertas
+   - Registar o autor, data/hora e valores antes/depois de cada alteração
+   - Criar relatórios de alterações para análise pelos Gestores
 
-#### 6. Proteção de Operações Financeiras e Pagamentos
+#### Processo 1.5: Subscrição
 
-**Ameaças Mitigadas:** Tampering, Repudiation (Processos 1.5, 1.6, 1.7, 3.3)
+**Risco: Tampering (7.0 - ALTO)**
+1. **Proteção de dados de subscrição:**
+   - Implementar validação rigorosa no `SubscriptionController` para todos os campos
+   - Criar tokens únicos para identificar cada subscrição e prevenir manipulação
+   - Implementar verificações de integridade entre subscrição e oferta relacionada
 
-**Mitigações Específicas:**
-1. **Implementar camada de segurança dedicada para transações financeiras**:
-   - Criar fluxo de aprovação em duas etapas para pagamentos acima de determinado valor
-   - Implementar assinatura digital de transações utilizando certificados digitais
-   - Manter histórico completo e inalterável de todas as transações financeiras
-   - Implementar reconciliação automática diária para detectar discrepâncias
+2. **Prevenção de alterações não autorizadas:**
+   - Bloquear alterações em campos críticos após confirmação da subscrição
+   - Implementar workflow de aprovação para modificações posteriores
+   - Validar a consistência dos dados em cada etapa do processo de subscrição
 
-2. **Prevenir modificações não autorizadas em pagamentos**:
-   - Implementar verificação de integridade (checksum) em registos de pagamento
-   - Utilizar IDs de transação únicos e não sequenciais para evitar enumeração
-   - Bloquear alterações em transações após finalização (apenas estornos autorizados)
-   - Implementar trilha de auditoria específica para operações financeiras
+**Risco: Repudiation (7.2 - ALTO)**
+1. **Mecanismos de não-repúdio:**
+   - Implementar assinaturas digitais para subscrições utilizando chaves privadas
+   - Criar timestamps confiáveis (RFC 3161) para todas as operações de subscrição
+   - Manter logs imutáveis de todas as ações do CoProdutor no processo de subscrição
 
-3. **Securizar métodos de pagamento**:
-   - Implementar integração segura com gateways de pagamento em vez de processamento direto
-   - Nunca armazenar dados completos de cartão de crédito (utilizar tokenização)
-   - Implementar confirmação out-of-band para pagamentos (SMS, email)
-   - Adicionar verificação de fraude baseada em padrões de comportamento e histórico
+2. **Auditoria completa:**
+   - Registar todas as etapas do processo de subscrição em log dedicado
+   - Armazenar evidências de consentimento do CoProdutor (IP, User-Agent, timestamp)
+   - Criar funcionalidade de exportação de provas de subscrição para resolução de disputas
+
+#### Processo 1.6: Pagamento
+
+**Risco: Tampering (7.4 - ALTO)**
+1. **Integridade dos dados de pagamento:**
+   - Implementar checksums para verificar a integridade dos dados no `PaymentController`
+   - Criar tokens de transação únicos e não sequenciais para cada pagamento
+   - Validar a consistência entre os dados de subscrição e pagamento em cada etapa
+
+2. **Proteção contra manipulação:**
+   - Bloquear alterações em pagamentos após confirmação
+   - Implementar processo formal para estornos ou cancelamentos
+   - Criar fluxo seguro para modificações excepcionais com múltiplas aprovações
+
+**Risco: Repudiation (7.8 - ALTO)**
+1. **Evidências de pagamento:**
+   - Implementar trilhas de auditoria detalhadas para todas as operações financeiras
+   - Gerar recibos digitais assinados para cada transação concluída
+   - Armazenar provas de pagamento com assinaturas digitais e carimbos de tempo
+
+2. **Não-repúdio de transações:**
+   - Implementar confirmações explícitas multi-etapa para pagamentos
+   - Criar confirmações secundárias via canais alternativos (email, SMS)
+   - Manter logs criptograficamente assinados de todas as ações do utilizador
+
+3. **Rastreabilidade completa:**
+   - Registar o fluxo completo desde a subscrição até o pagamento
+   - Implementar IDs de correlação entre subscrições e pagamentos
+   - Manter histórico imutável de todas as transações financeiras
+
+#### Processo 1.7: Controlo de Pagamentos
+
+**Risco: Information Disclosure (6.6 - ALTO)**
+1. **Proteção de dados financeiros:**
+   - Implementar mascaramento de dados sensíveis no `PaymentsInfoController`
+   - Criar views específicas por perfil para limitar a exposição de informações financeiras
+   - Implementar encriptação para dados financeiros sensíveis em trânsito e armazenamento
+
+2. **Controlo de acesso granular:**
+   - Desenvolver políticas de autorização específicas para acesso a dados financeiros
+   - Implementar filtros automáticos baseados no perfil e responsabilidades do utilizador
+   - Manter logs detalhados de todos os acessos a informações de pagamento
+
+**Risco: Elevation of Privilege (6.4 - ALTO)**
+1. **Segregação de responsabilidades:**
+   - Implementar verificação estrita de roles no `PaymentsInfoController`
+   - Criar níveis de acesso diferenciados para funções específicas de gestão financeira
+   - Implementar autorização baseada em políticas para operações de maior sensibilidade
+
+2. **Validação reforçada de autorização:**
+   - Verificar permissões em múltiplas camadas da aplicação
+   - Implementar verificações secundárias para operações financeiras críticas
+   - Criar sistema de alertas para tentativas de acesso não autorizado
+
+#### Processo 1.8: Notificação
+
+**Risco: Tampering (6.2 - ALTO)**
+1. **Integridade das notificações:**
+   - Implementar assinaturas digitais para o conteúdo de emails enviados pelo `EmailSender`
+   - Criar templates pré-aprovados e imutáveis para comunicações críticas
+   - Implementar validação do conteúdo das mensagens antes do envio
+
+2. **Proteção do canal de comunicação:**
+   - Configurar o serviço `EmailSender` para utilizar TLS 1.2+ para comunicação SMTP
+   - Implementar DKIM, SPF e DMARC para autenticação de emails
+   - Validar certificados do servidor SMTP antes de enviar informações sensíveis
+
+**Risco: Information Disclosure (6.4 - ALTO)**
+1. **Proteção de dados em notificações:**
+   - Minimizar a inclusão de dados sensíveis em emails, preferindo links seguros
+   - Criar políticas de conteúdo para diferentes tipos de notificações
+   - Implementar mascaramento automático de informações sensíveis em comunicações
+
+2. **Gestão segura de credenciais:**
+   - Armazenar credenciais SMTP em Azure Key Vault em vez de configurações
+   - Implementar rotação periódica de senhas de serviços de email
+   - Monitorizar logs do serviço de email para detetar atividades suspeitas
+
+#### Processo 5.1: Database Boundary
+
+**Risco: Information Disclosure (8.2 - CRÍTICO)**
+1. **Proteção de dados sensíveis:**
+   - Implementar encriptação transparente de dados (TDE) na base de dados SQL Server
+   - Criar encriptação por campo para dados sensíveis como informações de pagamento
+   - Desenvolver mascaramento dinâmico de dados para informações financeiras e pessoais
+
+2. **Prevenção de vazamentos:**
+   - Utilizar exclusivamente Entity Framework Core parametrizado para todas as consultas
+   - Auditar queries SQL diretas e proibir uso de `FromSqlRaw` sem parametrização
+   - Implementar filtragem automática de dados confidenciais em todos os repositórios
+
+3. **Controlo de acesso à base de dados:**
+   - Implementar princípio de privilégio mínimo para a conta de acesso à base de dados
+   - Criar utilizador dedicado de aplicação com permissões restritas no SQL Server
+   - Segmentar acesso a dados através de views e procedimentos armazenados específicos
+
+**Risco: Tampering (7.0 - ALTO)**
+1. **Integridade da base de dados:**
+   - Implementar verificações de integridade referencial para todas as entidades relacionadas
+   - Configurar triggers SQL para auditar modificações em tabelas críticas
+   - Utilizar transações atómicas via Unit of Work para operações que afetam múltiplas tabelas
+
+2. **Prevenção de injeção SQL:**
+   - Auditar e modificar todas as queries dinâmicas para utilizar parâmetros
+   - Implementar sanitização de entradas para todos os parâmetros usados em consultas
+   - Utilizar ORMs com parametrização automática (Entity Framework Core)
+
+3. **Proteção contra modificações não autorizadas:**
+   - Configurar backups diferenciais frequentes e testes de restauro
+   - Implementar monitoramento de alterações em tabelas críticas
+   - Criar alertas para padrões anormais de modificações na base de dados
+
+#### Processos 2.1-2.3: Fluxos de Dados Críticos
+
+**Risco: Information Disclosure (8.2 - CRÍTICO para Fluxo 2.1, 6.0 - ALTO para outros)**
+1. **Comunicações seguras:**
+   - Configurar HTTPS obrigatório com HSTS no ASP.NET Core
+   - Implementar TLS 1.2+ como requisito mínimo para todas as comunicações
+   - Adicionar cabeçalhos de segurança como CSP, X-Content-Type-Options, X-Frame-Options
+
+2. **Proteção de dados em trânsito:**
+   - Implementar encriptação adicional para dados financeiros sensíveis
+   - Criar canais seguros para transmissão de tokens e credenciais
+   - Utilizar certificados de cliente para comunicações críticas
+
+**Risco: Tampering (7.4 - ALTO para Fluxo 2.1, 7.0 - ALTO para outros)**
+1. **Integridade dos dados transmitidos:**
+   - Implementar assinaturas digitais para verificar a integridade dos dados
+   - Utilizar checksums para dados críticos como credenciais e informações financeiras
+   - Validar a integridade dos dados em cada camada da aplicação
+
+2. **Proteção contra interceptação e modificação:**
+   - Implementar certificate pinning para prevenir ataques MITM
+   - Utilizar tokens anti-falsificação para todas as operações relevantes
+   - Validar a origem e integridade das requisições em cada controlador
 
 ---
 
