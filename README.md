@@ -2425,297 +2425,228 @@ A implementação de contramedidas deve focar-se prioritariamente em:
 
 ---
 
-## Mitigações Propostas
+## Mitigações Propostas para Ameaças Prioritárias
 
-### Abordagem de Mitigação
+### Introdução
 
-As mitigações propostas estão organizadas por processo e risco específico, focando exclusivamente no backend do sistema AMAP, considerando sua arquitetura em camadas ASP.NET Core, Entity Framework Core e SQL Server.
+Com base na avaliação de risco realizada, apresentamos um conjunto de mitigações específicas, claras e exequíveis para as ameaças identificadas no sistema AMAP, seguindo rigorosamente a ordem de prioridade estabelecida pela pontuação DREAD. As mitigações propostas são adaptadas ao contexto específico da aplicação AMAP, considerando sua arquitetura atual e limitações técnicas.
 
-### Mitigações por Processo e Risco Específico
+## Mitigações para as Ameaças de Maior Prioridade
 
-#### Processo 1.1: Autenticação
+## 1. Repúdio - Negação de ter realizado subscrição ou pagamento (4.3 R) - 8.4 CRÍTICO
 
-**Risco: Spoofing (8.4 - CRÍTICO)**
-1. **Fortalecimento de credenciais:**
-   - Implementar políticas de password robustas no `AccountController`: mínimo 12 caracteres, combinação obrigatória de maiúsculas, minúsculas, números e caracteres especiais
-   - Modificar o `UserManager<AppUser>` para utilizar PBKDF2 com 10.000+ iterações para hashing de passwords
-   - Verificar passwords contra base de dados de passwords comprometidas (integrar API HaveIBeenPwned)
+**Mitigações:**
+- Registos de auditoria detalhados: Implementar logs completos de todas as ações de subscrição, incluindo dados do utilizador, IP, timestamp e detalhes da subscrição.
+- Termos e condições explícitos: Exigir aceitação explícita dos termos antes de cada subscrição, com registo da aceitação.
+- Confirmação por email obrigatória: Enviar confirmação automática de subscrição para o email registado, com todos os detalhes da transação.
+- Assinaturas digitais básicas: Implementar hash de confirmação para cada subscrição, usando dados do utilizador e da transação.
+- Comprovativo de subscrição: Gerar documento PDF com detalhes completos da subscrição, incluindo método de pagamento escolhido.
 
-2. **Proteção contra ataques de força bruta:**
-   - Implementar rate limiting no endpoint `/api/Account/login` com bloqueio progressivo
-   - Configurar o ASP.NET Identity para bloquear contas após 5 tentativas falhadas por 15 minutos
-   - Implementar CAPTCHA em tentativas suspeitas de login, utilizando reCAPTCHA v3
-
-3. **Prevenção de roubo de sessão:**
-   - Implementar fingerprinting de dispositivo nas claims do JWT
-   - Manter histórico de dispositivos autenticados por usuário
-   - Enviar notificações automáticas para o email do utilizador quando um novo dispositivo é detectado
-
-**Risco: Elevation of Privilege (6.6 - ALTO)**
-1. **Segurança de tokens JWT:**
-   - Reduzir o tempo de expiração do token para 15 minutos no serviço `JwtService`
-   - Assinar tokens com algoritmo RS256 utilizando chaves assimétricas
-   - Validar todas as claims do token em cada requisição com filtros de autorização personalizados
-
-2. **Gestão de sessões segura:**
-   - Implementar refresh tokens com rotação única armazenados numa tabela específica
-   - Manter registo central de tokens na base de dados com capacidade de revogação imediata
-   - Destruir todos os tokens ativos quando um utilizador altera a sua password
-
-3. **Controlo de privilégios:**
-   - Verificar permissões baseadas no UserType em cada endpoint usando middleware especializado
-   - Validar as claims de UserType contra a informação armazenada na base de dados em cada requisição 
-   - Implementar logs detalhados de alterações de UserType com aprovação explícita de Gestores
-
-#### Processo 1.2: Gestão de Períodos de Subscrição
-
-**Risco: Tampering (7.2 - ALTO)**
-1. **Validação reforçada de dados:**
-   - Implementar validações rigorosas em `SubscriptionPeriodController` para datas e períodos
-   - Adicionar verificações de integridade de dados e regras de negócio no serviço correspondente
-   - Criar regras de validação para garantir que datas de início, fim e entrega seguem a lógica de negócio
-
-2. **Proteção contra manipulação de períodos:**
-   - Implementar bloqueio automático de períodos após a publicação no `SubscriptionPeriodController`
-   - Criar uma tabela de auditoria específica para registar todas as operações em períodos
-   - Gerar hashes criptográficos dos períodos para detectar alterações não autorizadas
-
-3. **Notificações de modificações:**
-   - Enviar notificações automáticas via `EmailSender` para todos os Produtores quando houver alterações
-   - Implementar mecanismo de confirmação para alterações críticas em períodos já publicados
-   - Registar quem fez cada alteração com timestamp e dados completos (antes/depois)
-
-**Risco: Elevation of Privilege (6.4 - ALTO)**
-1. **Reforço do controlo de acesso:**
-   - Implementar múltiplas camadas de autorização no `SubscriptionPeriodController`
-   - Utilizar políticas de autorização personalizadas específicas para gestão de períodos
-   - Verificar explicitamente o UserType.Manager em cada método do controlador
-
-2. **Segregação de funcionalidades:**
-   - Separar endpoints administrativos em área protegida com autorização adicional
-   - Implementar verificações secundárias para operações críticas (política de quatro olhos)
-   - Criar logs específicos para tentativas de acesso não autorizado à gestão de períodos
-
-#### Processo 1.3: Gestão de Produtos e Quantidades
-
-**Risco: Tampering (7.8 - ALTO)**
-1. **Proteção da integridade dos produtos:**
-   - Implementar validação rigorosa no `ProductController` com regras de negócio específicas
-   - Criar checksums ou hashes de produtos para detectar modificações não autorizadas
-   - Desenvolver sistema de versões para produtos, mantendo histórico de alterações
-
-2. **Validação de uploads:**
-   - Implementar validação rigorosa para uploads de imagens de produtos
-   - Verificar e sanitizar metadados de imagens antes do armazenamento
-   - Restringir tipos de ficheiros permitidos com validação de MIME type e conteúdo
-
-3. **Proteção contra manipulação de dados:**
-   - Implementar bloqueio de alterações em produtos após subscrição
-   - Notificar automaticamente CoProdutores quando houver alterações em produtos subscritos
-   - Validar modificações de preços contra regras de negócio estabelecidas
-
-**Risco: Information Disclosure (6.0 - ALTO)**
-1. **Controlo de acesso aos dados:**
-   - Implementar filtros automáticos no Entity Framework Core baseados no perfil do utilizador
-   - Criar serviço dedicado para controlar o acesso a informações de produtos
-   - Desenvolver mascaramento de informações sensíveis baseado no perfil do utilizador
-
-2. **Proteção de dados confidenciais:**
-   - Implementar controlo de visibilidade de produtos baseado no estado (rascunho/publicado)
-   - Limitar o acesso a dados completos de produtos apenas aos proprietários
-   - Registar todos os acessos a informações de produtos em log de auditoria
-
-#### Processo 1.4: Criação de Ofertas
-
-**Risco: Spoofing (7.4 - ALTO)**
-1. **Verificação de identidade do Produtor:**
-   - Implementar validação cruzada no `ProductOfferController` para garantir que o Produtor é dono do produto
-   - Criar mecanismo de assinatura digital de ofertas pelo Produtor
-   - Implementar verificações em múltiplas camadas para confirmar a identidade do Produtor
-
-2. **Proteção contra falsificação:**
-   - Adicionar tokens anti-falsificação em todas as operações de criação de ofertas
-   - Implementar sistema de verificação para confirmar a propriedade dos produtos nas ofertas
-   - Enviar notificações ao Produtor quando novas ofertas forem criadas em seu nome
-
-**Risco: Tampering (7.4 - ALTO)**
-1. **Integridade das ofertas:**
-   - Implementar controlo de versão para ofertas no `ProductOfferController`
-   - Registar hashes criptográficos das ofertas para detectar alterações não autorizadas
-   - Bloquear alterações em ofertas após o início de subscrições, exceto em campos específicos
-
-2. **Validação reforçada:**
-   - Adicionar validações rigorosas de preço, quantidade e datas no controlador e na camada de serviço
-   - Implementar regras de negócio específicas para alterações de ofertas após publicação
-   - Criar sistema de notificação automática para alterações em ofertas já subscritas
-
-3. **Auditoria de alterações:**
-   - Implementar log detalhado de todas as modificações em ofertas
-   - Registar o autor, data/hora e valores antes/depois de cada alteração
-   - Criar relatórios de alterações para análise pelos Gestores
-
-#### Processo 1.5: Subscrição
-
-**Risco: Tampering (7.0 - ALTO)**
-1. **Proteção de dados de subscrição:**
-   - Implementar validação rigorosa no `SubscriptionController` para todos os campos
-   - Criar tokens únicos para identificar cada subscrição e prevenir manipulação
-   - Implementar verificações de integridade entre subscrição e oferta relacionada
-
-2. **Prevenção de alterações não autorizadas:**
-   - Bloquear alterações em campos críticos após confirmação da subscrição
-   - Implementar workflow de aprovação para modificações posteriores
-   - Validar a consistência dos dados em cada etapa do processo de subscrição
-
-**Risco: Repudiation (7.2 - ALTO)**
-1. **Mecanismos de não-repúdio:**
-   - Implementar assinaturas digitais para subscrições utilizando chaves privadas
-   - Criar timestamps confiáveis (RFC 3161) para todas as operações de subscrição
-   - Manter logs imutáveis de todas as ações do CoProdutor no processo de subscrição
-
-2. **Auditoria completa:**
-   - Registar todas as etapas do processo de subscrição em log dedicado
-   - Armazenar evidências de consentimento do CoProdutor (IP, User-Agent, timestamp)
-   - Criar funcionalidade de exportação de provas de subscrição para resolução de disputas
-
-#### Processo 1.6: Pagamento
-
-**Risco: Tampering (7.4 - ALTO)**
-1. **Integridade dos dados de pagamento:**
-   - Implementar checksums para verificar a integridade dos dados no `PaymentController`
-   - Criar tokens de transação únicos e não sequenciais para cada pagamento
-   - Validar a consistência entre os dados de subscrição e pagamento em cada etapa
-
-2. **Proteção contra manipulação:**
-   - Bloquear alterações em pagamentos após confirmação
-   - Implementar processo formal para estornos ou cancelamentos
-   - Criar fluxo seguro para modificações excepcionais com múltiplas aprovações
-
-**Risco: Repudiation (7.8 - ALTO)**
-1. **Evidências de pagamento:**
-   - Implementar trilhas de auditoria detalhadas para todas as operações financeiras
-   - Gerar recibos digitais assinados para cada transação concluída
-   - Armazenar provas de pagamento com assinaturas digitais e carimbos de tempo
-
-2. **Não-repúdio de transações:**
-   - Implementar confirmações explícitas multi-etapa para pagamentos
-   - Criar confirmações secundárias via canais alternativos (email, SMS)
-   - Manter logs criptograficamente assinados de todas as ações do utilizador
-
-3. **Rastreabilidade completa:**
-   - Registar o fluxo completo desde a subscrição até o pagamento
-   - Implementar IDs de correlação entre subscrições e pagamentos
-   - Manter histórico imutável de todas as transações financeiras
-
-#### Processo 1.7: Controlo de Pagamentos
-
-**Risco: Information Disclosure (6.6 - ALTO)**
-1. **Proteção de dados financeiros:**
-   - Implementar mascaramento de dados sensíveis no `PaymentsInfoController`
-   - Criar views específicas por perfil para limitar a exposição de informações financeiras
-   - Implementar encriptação para dados financeiros sensíveis em trânsito e armazenamento
-
-2. **Controlo de acesso granular:**
-   - Desenvolver políticas de autorização específicas para acesso a dados financeiros
-   - Implementar filtros automáticos baseados no perfil e responsabilidades do utilizador
-   - Manter logs detalhados de todos os acessos a informações de pagamento
-
-**Risco: Elevation of Privilege (6.4 - ALTO)**
-1. **Segregação de responsabilidades:**
-   - Implementar verificação estrita de roles no `PaymentsInfoController`
-   - Criar níveis de acesso diferenciados para funções específicas de gestão financeira
-   - Implementar autorização baseada em políticas para operações de maior sensibilidade
-
-2. **Validação reforçada de autorização:**
-   - Verificar permissões em múltiplas camadas da aplicação
-   - Implementar verificações secundárias para operações financeiras críticas
-   - Criar sistema de alertas para tentativas de acesso não autorizado
-
-#### Processo 1.8: Notificação
-
-**Risco: Tampering (6.2 - ALTO)**
-1. **Integridade das notificações:**
-   - Implementar assinaturas digitais para o conteúdo de emails enviados pelo `EmailSender`
-   - Criar templates pré-aprovados e imutáveis para comunicações críticas
-   - Implementar validação do conteúdo das mensagens antes do envio
-
-2. **Proteção do canal de comunicação:**
-   - Configurar o serviço `EmailSender` para utilizar TLS 1.2+ para comunicação SMTP
-   - Implementar DKIM, SPF e DMARC para autenticação de emails
-   - Validar certificados do servidor SMTP antes de enviar informações sensíveis
-
-**Risco: Information Disclosure (6.4 - ALTO)**
-1. **Proteção de dados em notificações:**
-   - Minimizar a inclusão de dados sensíveis em emails, preferindo links seguros
-   - Criar políticas de conteúdo para diferentes tipos de notificações
-   - Implementar mascaramento automático de informações sensíveis em comunicações
-
-2. **Gestão segura de credenciais:**
-   - Armazenar credenciais SMTP em Azure Key Vault em vez de configurações
-   - Implementar rotação periódica de senhas de serviços de email
-   - Monitorizar logs do serviço de email para detetar atividades suspeitas
-
-#### Processo 5.1: Database Boundary
-
-**Risco: Information Disclosure (8.2 - CRÍTICO)**
-1. **Proteção de dados sensíveis:**
-   - Implementar encriptação transparente de dados (TDE) na base de dados SQL Server
-   - Criar encriptação por campo para dados sensíveis como informações de pagamento
-   - Desenvolver mascaramento dinâmico de dados para informações financeiras e pessoais
-
-2. **Prevenção de vazamentos:**
-   - Utilizar exclusivamente Entity Framework Core parametrizado para todas as consultas
-   - Auditar queries SQL diretas e proibir uso de `FromSqlRaw` sem parametrização
-   - Implementar filtragem automática de dados confidenciais em todos os repositórios
-
-3. **Controlo de acesso à base de dados:**
-   - Implementar princípio de privilégio mínimo para a conta de acesso à base de dados
-   - Criar utilizador dedicado de aplicação com permissões restritas no SQL Server
-   - Segmentar acesso a dados através de views e procedimentos armazenados específicos
-
-**Risco: Tampering (7.0 - ALTO)**
-1. **Integridade da base de dados:**
-   - Implementar verificações de integridade referencial para todas as entidades relacionadas
-   - Configurar triggers SQL para auditar modificações em tabelas críticas
-   - Utilizar transações atómicas via Unit of Work para operações que afetam múltiplas tabelas
-
-2. **Prevenção de injeção SQL:**
-   - Auditar e modificar todas as queries dinâmicas para utilizar parâmetros
-   - Implementar sanitização de entradas para todos os parâmetros usados em consultas
-   - Utilizar ORMs com parametrização automática (Entity Framework Core)
-
-3. **Proteção contra modificações não autorizadas:**
-   - Configurar backups diferenciais frequentes e testes de restauro
-   - Implementar monitoramento de alterações em tabelas críticas
-   - Criar alertas para padrões anormais de modificações na base de dados
-
-#### Processos 2.1-2.3: Fluxos de Dados Críticos
-
-**Risco: Information Disclosure (8.2 - CRÍTICO para Fluxo 2.1, 6.0 - ALTO para outros)**
-1. **Comunicações seguras:**
-   - Configurar HTTPS obrigatório com HSTS no ASP.NET Core
-   - Implementar TLS 1.2+ como requisito mínimo para todas as comunicações
-   - Adicionar cabeçalhos de segurança como CSP, X-Content-Type-Options, X-Frame-Options
-
-2. **Proteção de dados em trânsito:**
-   - Implementar encriptação adicional para dados financeiros sensíveis
-   - Criar canais seguros para transmissão de tokens e credenciais
-   - Utilizar certificados de cliente para comunicações críticas
-
-**Risco: Tampering (7.4 - ALTO para Fluxo 2.1, 7.0 - ALTO para outros)**
-1. **Integridade dos dados transmitidos:**
-   - Implementar assinaturas digitais para verificar a integridade dos dados
-   - Utilizar checksums para dados críticos como credenciais e informações financeiras
-   - Validar a integridade dos dados em cada camada da aplicação
-
-2. **Proteção contra interceptação e modificação:**
-   - Implementar certificate pinning para prevenir ataques MITM
-   - Utilizar tokens anti-falsificação para todas as operações relevantes
-   - Validar a origem e integridade das requisições em cada controlador
+**Justificação:** Estas mitigações são adequadas ao modelo operacional atual do AMAP, onde não existe integração direta com sistemas de pagamento. O foco está em criar evidências claras da intenção de subscrição e do método de pagamento escolhido.
 
 ---
 
-## Requisitos de Segurança
+## 2. Falsificação da identidade de um Gestor (4.1 S) - 8.0 ALTO
+
+**Mitigações:**
+- Autenticação multi-fator para gestores.
+- Tempo de sessão reduzido (JWT expira após 30 minutos).
+- Logs de autenticação detalhados.
+- Notificações de login.
+- Bloqueio progressivo após falhas de login.
+
+**Justificação:** Pode ser implementado sem alterações estruturais significativas no sistema AMAP, que utiliza o ASP.NET Core Identity.
+
+---
+
+## 3. Negação de ações administrativas realizadas (4.1 R) - 8.0 ALTO
+
+**Mitigações:**
+- Logs administrativos detalhados.
+- Rastreabilidade de ações.
+- Histórico de alterações.
+- Relatórios automáticos.
+- Aprovação dupla para ações críticas.
+
+**Justificação:** Mitigações compatíveis com a estrutura atual do AMAP, focadas em rastreabilidade e responsabilização.
+
+---
+
+## 4. Negação de ter criado ofertas específicas (4.2 R) - 8.0 ALTO
+
+**Mitigações:**
+- Confirmação por email ao Produtor.
+- Histórico de versões das ofertas.
+- Logs detalhados de criação/modificação.
+- Termos de responsabilidade.
+- Recibos de criação.
+
+**Justificação:** Aderente ao fluxo atual de criação de ofertas, garantindo transparência e rastreabilidade.
+
+---
+
+## 5. Negação de ter realizado um pagamento (1.6 R) - 8.0 ALTO
+
+**Mitigações:**
+- Comprovativo detalhado de intenção de pagamento.
+- Registo seguro do método de pagamento.
+- Notificação aos Produtores.
+- Interface para confirmação manual por parte do Gestor.
+- Histórico de verificações de pagamento.
+
+**Justificação:** Mitigações adequadas para compensar a ausência de integração com sistemas de pagamento.
+
+---
+
+## 6. Alteração não autorizada de informações de produtos (1.3 T) - 8.0 ALTO
+
+**Mitigações:**
+- Controlo de acesso baseado em funções.
+- Validação rigorosa de inputs.
+- Logs de modificação.
+- Notificação de alterações.
+- Verificação de propriedade.
+
+**Justificação:** Compatível com o modelo de entidades atual, garantindo segurança na edição de produtos.
+
+---
+
+## 7. Falsificação de identidade para obter acesso não autorizado (1.1 S) - 8.0 ALTO
+
+**Mitigações:**
+- Políticas de senha robustas.
+- Limitação de tentativas de login.
+- Verificação de email no registo.
+- Detecção de comportamentos suspeitos.
+- Notificação de login em novo dispositivo.
+
+**Justificação:** Aplicável via ASP.NET Core Identity.
+
+---
+
+## 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
+
+**Mitigações:**
+- HTTPS obrigatório.
+- Configuração segura de TLS.
+- Assinatura robusta de JWT (RS256).
+- Validação completa dos tokens.
+- Renovação segura de tokens.
+
+**Justificação:** Reforça a segurança já presente com JWT no AMAP.
+
+---
+
+## 9. Falsificação de identidade para contornar autenticação (5.2 S) - 7.8 ALTO
+
+**Mitigações:**
+- Filtros de autenticação consistentes.
+- Verificação de claims no JWT.
+- Autenticação com cookies seguros (HttpOnly, Secure).
+- Invalidação de sessão após alteração de senha.
+- Monitorização de tokens gerados.
+
+**Justificação:** Compatível com a autenticação JWT já existente no AMAP.
+
+---
+
+## 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
+
+**Mitigações:**
+- HSTS (HTTP Strict Transport Security).
+- Cookies com flags Secure e HttpOnly.
+- Sanitização de logs.
+- Criptografia forte nas comunicações.
+- Expiração rápida de credenciais temporárias.
+
+**Justificação:** Alinhado com as capacidades de configuração do ASP.NET Core.
+
+---
+
+## 11. Acesso a informações sensíveis do utilizador (3.1 I) - 7.8 ALTO
+
+**Mitigações:**
+- Criptografia de dados sensíveis.
+- Acesso baseado na necessidade.
+- Mascaramento de dados nas interfaces.
+- Logs de acesso a dados sensíveis.
+- Filtragem de dados por tipo de utilizador.
+
+**Justificação:** Protege os dados sensíveis do modelo atual do AMAP.
+
+---
+
+## 12. Modificação não autorizada de dados de utilizador (3.1 T) - 7.6 ALTO
+
+**Mitigações:**
+- Verificação de identidade antes de alterações.
+- Notificação por email de alterações.
+- Histórico de alterações.
+- Validação rigorosa de inputs.
+- Controlo de acesso granular.
+
+**Justificação:** Totalmente suportado pelo ASP.NET Core Identity.
+
+---
+
+## 13. Manipulação não autorizada de dados entre aplicação e base de dados (5.1 T) - 7.6 ALTO
+
+**Mitigações:**
+- Consultas parametrizadas (Entity Framework).
+- Validação de dados antes da persistência.
+- Princípio do menor privilégio.
+- Sanitização de inputs.
+- Verificações de integridade.
+
+**Justificação:** Entity Framework Core já oferece proteção adequada contra injeções, se utilizado corretamente.
+
+---
+
+## 14. Exposição não autorizada de dados sensíveis (5.1 I) - 7.6 ALTO
+
+**Mitigações:**
+- Criptografia em trânsito e em repouso.
+- Controlo de acesso detalhado.
+- Filtragem de dados nas respostas da API.
+- Logging seguro.
+- Política de “need-to-know”.
+
+**Justificação:** Alinhado com a arquitetura de API do AMAP.
+
+---
+
+## 15. Alteração não autorizada de registos de pagamentos (3.3 T) - 7.6 ALTO
+
+**Mitigações:**
+- Segregação de funções.
+- Logs imutáveis de verificação.
+- Notificação automática.
+- Histórico de verificações.
+- Aprovação multi-nível.
+
+**Justificação:** Foca na transparência e rastreabilidade de um processo que é manual por natureza.
+
+---
+
+## Implementação de Mitigações
+
+- **Priorização baseada em risco:** Começar pelas ameaças com maior pontuação DREAD.
+- **Implementação iterativa:** Executar por fases, começando com os controlos mais básicos.
+- **Testes de segurança:** Após cada fase, realizar testes para validação.
+- **Documentação clara:** Atualizar continuamente a documentação das mitigações.
+- **Treinamento da equipa:** Garantir que os programadores compreendam e apliquem corretamente as mitigações.
+
+---
+
+## Conclusão
+
+As mitigações propostas foram adaptadas às vulnerabilidades identificadas no sistema AMAP, sendo específicas, exequíveis e compatíveis com o seu contexto tecnológico atual. O foco foi dado às ameaças com maior prioridade segundo o modelo DREAD, garantindo que os recursos sejam alocados eficientemente para maximizar a segurança do sistema.
+
+Estas soluções consideram as limitações operacionais do AMAP, especialmente no que diz respeito à ausência de integração com sistemas de pagamento. Como tal, privilegiam transparência, rastreabilidade e responsabilização no contexto de um processo manual.
+
+A implementação destas mitigações reduzirá substancialmente os riscos identificados e aumentará significativamente o perfil de segurança do AMAP.Requisitos de Segurança
+
+
 
 ### Requisitos por Categoria
 
