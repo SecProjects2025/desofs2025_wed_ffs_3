@@ -1032,21 +1032,21 @@ A metodologia STRIDE é utilizada para identificar ameaças de segurança, onde 
 
 ##### 3.2 Armazenamento: Ofertas de Produtos
 
-Ameaças STRIDE Aplicáveis: T, I
+**Ameaças STRIDE Aplicáveis:** T, I
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - T (Tampering): Modificação não autorizada de ofertas de produtos, incluindo preços, quantidades disponíveis, datas de entrega ou métodos de pagamento aceites, comprometendo a integridade do sistema.
 
 - I (Information Disclosure): Acesso antecipado ou não autorizado a informações de ofertas, proporcionando vantagens competitivas indevidas ou expondo dados comercialmente sensíveis.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
 - Ataques de injeção SQL direcionados à tabela ProductOffer para manipular dados das ofertas
 
 - Acesso direto não autorizado à base de dados para modificar registos de ofertas
 
-- Exploração de vulnerabilidades na API /api/ProductOffer para alterar ofertas sem autorização adequada
+- Exploração de vulnerabilidades na API `/api/ProductOffer` para alterar ofertas sem autorização adequada
 
 - Manipulação do campo ProductId para associar uma oferta a um produto diferente
 
@@ -1058,7 +1058,7 @@ Vetores de Ataque:
 
 - Exploração de vulnerabilidades no relacionamento entre ProductOffer e SubscriptionPeriod
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - Produtores desonestos tentando manipular o mercado ou prejudicar concorrentes
 
@@ -1072,9 +1072,9 @@ Agentes de Ameaça:
 
 - Concorrentes tentando sabotar ou espionar atividades na plataforma
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um Produtor tecnicamente habilidoso explora uma vulnerabilidade no controlo de acesso da API /api/ProductOffer para modificar ofertas de outros Produtores, reduzindo os preços dos concorrentes a níveis não lucrativos ou alterando as datas de entrega para momentos impossíveis, prejudicando a sua reputação.
+1. Um Produtor tecnicamente habilidoso explora uma vulnerabilidade no controlo de acesso da API `/api/ProductOffer` para modificar ofertas de outros Produtores, reduzindo os preços dos concorrentes a níveis não lucrativos ou alterando as datas de entrega para momentos impossíveis, prejudicando a sua reputação.
 2. Um atacante com acesso direto à base de dados modifica o campo Price em ofertas existentes na tabela ProductOffer após CoProdutores já terem feito subscrições, criando disputas financeiras quando chegar o momento do pagamento ou da entrega.
 3. Um administrador de sistema corrupto utiliza o seu acesso privilegiado para eliminar seletivamente ofertas de determinados Produtores, particularmente as mais atrativas, para favorecer outros Produtores com quem tem acordos clandestinos.
 4. Um desenvolvedor interno malicioso cria um backdoor no código que processa as ofertas, permitindo-lhe monitorizar e modificar silenciosamente o campo Quantity de ofertas populares, reduzindo a disponibilidade para manipular artificialmente a procura ou reservar produtos para CoProdutores específicos.
@@ -1084,19 +1084,19 @@ Casos de Abuso:
 
 ##### 3.3 Armazenamento: Pagamentos
 
-Ameaças STRIDE Aplicáveis: T, I
+**Ameaças STRIDE Aplicáveis:** T, I
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - T (Tampering): Alteração não autorizada de registos de pagamentos, modificando estados, valores ou associações entre pagamentos e subscrições, comprometendo a integridade financeira do sistema.
 
 - I (Information Disclosure): Acesso não autorizado a informações financeiras sensíveis, incluindo métodos de pagamento utilizados e histórico de transações dos utilizadores.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
 - Acesso direto não autorizado à tabela Payment na base de dados
 
-- Ataques de injeção SQL no endpoint /api/Payment para manipular registos de pagamento
+- Ataques de injeção SQL no endpoint `/api/Payment` para manipular registos de pagamento
 
 - Exploração de vulnerabilidades no PaymentController para modificar estados de pagamento
 
@@ -1110,15 +1110,13 @@ Vetores de Ataque:
 
 - Ataque de elevação de privilégios para obter acesso às funcionalidades de gestão de pagamentos
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
-- Funcionários com acesso ao sistema financeiro ou às APIs de pagamento
+- Funcionários com acesso ao sistema financeiro
 
 - Gestores desonestos com acesso legítimo ao controlo de pagamentos
 
 - Administradores de sistema com acesso privilegiado à base de dados
-
-- Atacantes externos visando informações financeiras sensíveis
 
 - CoProdutores mal-intencionados tentando manipular registos de pagamento
 
@@ -1126,34 +1124,34 @@ Agentes de Ameaça:
 
 - Hackers especializados em fraudes financeiras
 
-Casos de Abuso:
+**Casos de Abuso:**
 
 1. Um funcionário com acesso ao backend da aplicação modifica diretamente registos na tabela Payment para indicar que um pagamento foi realizado quando na verdade não foi, permitindo que CoProdutores específicos recebam produtos sem terem efetivamente pago por eles.
 2. Um administrador de sistema corrupto utiliza o seu acesso privilegiado para extrair informações detalhadas sobre os métodos de pagamento e padrões de transação de todos os CoProdutores, vendendo estas informações valiosas para empresas de marketing ou concorrentes.
-3. Um atacante que conseguiu comprometer uma conta de Gestor acede ao endpoint /api/PaymentsInfo/GetPaymentsCC e obtém informações completas sobre o estado de pagamentos de todos os CoProdutores, utilizando estes dados para identificar alvos vulneráveis para fraudes.
+3. Um atacante que conseguiu comprometer uma conta de Gestor acede ao endpoint `/api/PaymentsInfo/GetPaymentsCC` e obtém informações completas sobre o estado de pagamentos de todos os CoProdutores, utilizando estes dados para identificar alvos vulneráveis para fraudes.
 4. Um desenvolvedor interno cria uma backdoor no sistema que lhe permite modificar o campo PaymentType dos registos existentes, alterando o método de pagamento registado para dificultar a reconciliação financeira e encobrir desvios de fundos.
 5. Um hacker realiza um ataque de injeção SQL através de uma vulnerabilidade no sistema, conseguindo manipular a tabela Payment para alterar a associação entre pagamentos e subscrições, atribuindo pagamentos legítimos a subscrições diferentes das originais.
 6. Um administrador de base de dados elimina seletivamente registos de pagamento da tabela Payment para encobrir fraudes ou irregularidades cometidas por CoProdutores específicos, comprometendo a auditabilidade do sistema.
-7. Um atacante com acesso físico a backups não encriptados do servidor extrai toda a base de dados, incluindo o histórico completo de pagamentos da tabela Payment, obtendo informações valiosas sobre comportamentos financeiros dos utilizadores e potencialmente dados sensíveis de pagamento.
+7. Um atacante com acesso físico a backups não encriptados do servidor extrai toda a base de dados, incluindo o histórico completo de pagamentos da tabela Payment, obtendo informações valiosas sobre comportamentos financeiros dos utilizadores.
 8. Um funcionário do departamento financeiro com acesso legítimo ao sistema utiliza o seu acesso para monitorizar padrões de pagamento de CoProdutores específicos, obtendo inteligência competitiva indevida sobre volumes de compra e preferências, que depois vende a terceiros.
 
 ##### 3.4 Armazenamento: Produtos
 
-Ameaças STRIDE Aplicáveis: T, I
+**Ameaças STRIDE Aplicáveis:** T, I
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - T (Tampering): Modificação não autorizada de informações de produtos, incluindo descrições, preços de referência, fotos ou unidades de entrega, afetando a integridade do catálogo.
 
 - I (Information Disclosure): Acesso não autorizado a informações potencialmente confidenciais sobre produtos, incluindo detalhes que ainda não foram publicados.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
 - Ataques de injeção SQL direcionados à tabela Product para manipular dados de produtos
 
 - Acesso direto não autorizado à base de dados para modificar registos de produtos
 
-- Exploração de vulnerabilidades na API /api/Product para alterar produtos sem autorização adequada
+- Exploração de vulnerabilidades na API `/api/Product` para alterar produtos sem autorização adequada
 
 - Manipulação do campo ProducerId para associar produtos a outros Produtores
 
@@ -1163,7 +1161,7 @@ Vetores de Ataque:
 
 - Ataques à funcionalidade de importação/exportação de produtos via ficheiros CSV
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - Produtores desonestos tentando manipular informações de produtos concorrentes
 
@@ -1175,30 +1173,30 @@ Agentes de Ameaça:
 
 - Utilizadores maliciosos explorando funcionalidades de upload de ficheiros
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um Produtor tecnicamente habilidoso explora uma vulnerabilidade no controlo de acesso da API /api/Product para modificar descrições ou fotos de produtos de concorrentes, prejudicando a sua imagem ou reputação.
+1. Um Produtor tecnicamente habilidoso explora uma vulnerabilidade no controlo de acesso da API `/api/Product` para modificar descrições ou fotos de produtos de concorrentes, prejudicando a sua imagem ou reputação.
 2. Um atacante com acesso à base de dados modifica os preços de referência (ReferencePrice) de produtos, criando expectativas irrealistas e causando confusão quando as ofertas forem criadas com preços muito diferentes.
 3. Um atacante explora a funcionalidade de upload de ficheiros para substituir fotos de produtos por imagens contendo código malicioso que será executado quando visualizadas no browser.
 4. Um concorrente utiliza a funcionalidade de importação/exportação de produtos para obter um catálogo completo de todos os produtos da plataforma, usando esta informação para análise competitiva indevida.
 
 ##### 3.5 Armazenamento: Subscrições
 
-Ameaças STRIDE Aplicáveis: T, I
+**Ameaças STRIDE Aplicáveis:** T, I
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - T (Tampering): Modificação não autorizada de dados de subscrições, alterando quantidades esperadas, associações com ofertas ou informações de CoProdutor.
 
 - I (Information Disclosure): Acesso não autorizado a informações de subscrições, revelando padrões de compra de CoProdutores ou volumes de negócio de Produtores.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
 - Ataques de injeção SQL na tabela Subscription para manipular registos
 
 - Acesso direto não autorizado à base de dados
 
-- Exploração de vulnerabilidades na API /api/Subscription
+- Exploração de vulnerabilidades na API `/api/Subscription`
 
 - Modificação do campo ExpectedQuantity após a confirmação
 
@@ -1206,7 +1204,7 @@ Vetores de Ataque:
 
 - Manipulação do campo CoProducerId para associar subscrições a diferentes utilizadores
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - CoProdutores maliciosos tentando alterar suas próprias subscrições
 
@@ -1214,9 +1212,9 @@ Agentes de Ameaça:
 
 - Administradores de sistema com acesso privilegiado
 
-- Produtores tentando manipular volumes de subscrições dos seus produtos
+- Produtores que tentam manipular volumes de subscrições dos seus produtos
 
-Casos de Abuso:
+**Casos de Abuso:**
 
 1. Um CoProdutor tecnicamente habilidoso modifica o campo ExpectedQuantity da sua subscrição após a confirmação, aumentando a quantidade sem pagar a diferença.
 2. Um atacante com acesso à base de dados altera o campo ProductOfferId de subscrições existentes, redirecionando-as para ofertas diferentes e prejudicando o planeamento de produção.
@@ -1224,27 +1222,27 @@ Casos de Abuso:
 
 ##### 3.6 Armazenamento: Períodos de Subscrição
 
-Ameaças STRIDE Aplicáveis: T, I
+**Ameaças STRIDE Aplicáveis:** T, I
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - T (Tampering): Modificação não autorizada de períodos de subscrição e datas de entrega, comprometendo todo o ciclo operacional da plataforma.
 
 - I (Information Disclosure): Acesso prematuro a informações sobre períodos futuros, proporcionando vantagens competitivas indevidas.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
 - Ataques de injeção SQL à tabela SubscriptionPeriod
 
 - Acesso direto não autorizado à base de dados
 
-- Exploração de vulnerabilidades na API /api/SubscriptionPeriod
+- Exploração de vulnerabilidades na API `/api/SubscriptionPeriod`
 
 - Manipulação dos campos StartDate, EndDate ou Duration
 
 - Alteração não autorizada da coleção de DeliveryDates associada a um período
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - Gestores desonestos com acesso legítimo ao sistema
 
@@ -1252,9 +1250,9 @@ Agentes de Ameaça:
 
 - Administradores de sistema com acesso privilegiado
 
-- Produtores buscando informações antecipadas para vantagem competitiva
+- Produtores que procuram  informações antecipadas para vantagem competitiva
 
-Casos de Abuso:
+**Casos de Abuso:**
 
 1. Um Gestor corrupto modifica as datas de entrega num período já publicado, criando conflitos logísticos para Produtores específicos.
 2. Um atacante com acesso à base de dados altera o campo EndDate de períodos ativos, estendendo-os artificialmente ou encerrando-os prematuramente.
@@ -1264,19 +1262,19 @@ Casos de Abuso:
 
 ##### 4.1 Entidade Externa: Gestor
 
-Ameaças STRIDE Aplicáveis: S, R
+**Ameaças STRIDE Aplicáveis:** S, R
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - S (Spoofing): Falsificação da identidade de um Gestor para obter acesso administrativo ao sistema AMAP, permitindo controlo sobre períodos de subscrição, monitorização de pagamentos e outras operações privilegiadas.
 
 - R (Repudiation): Negação de ações administrativas realizadas, especialmente criação ou modificação de períodos de subscrição, alteração de datas de entrega ou outras operações críticas para o funcionamento do sistema.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
-- Roubo ou comprometimento de credenciais de acesso de utilizadores com perfil UserType.Manager
+- Roubo ou comprometimento de credenciais de acesso de utilizadores com perfil `UserType.Manager`
 
-- Exploração de vulnerabilidades no processo de autenticação do endpoint /api/Account/login
+- Exploração de vulnerabilidades no processo de autenticação do endpoint `/api/Account/login`
 
 - Ataques de phishing direcionados a contas de Gestor
 
@@ -1290,13 +1288,13 @@ Vetores de Ataque:
 
 - Exploração de vulnerabilidades no AccountController para elevação de privilégios
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - Ex-funcionários com conhecimento do sistema e potenciais credenciais ativas
 
 - Atacantes externos motivados a obter controlo administrativo
 
-- Produtores tentando obter privilégios elevados para manipular períodos ou visualizar informações privilegiadas
+- Produtores que tentam obter privilégios elevados para manipular períodos ou visualizar informações privilegiadas
 
 - Insiders maliciosos com acesso físico a dispositivos de Gestores
 
@@ -1304,28 +1302,28 @@ Agentes de Ameaça:
 
 - Funcionários descontentes com intenção de causar danos ao sistema
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um ex-funcionário que anteriormente tinha perfil de Gestor (UserType.Manager) utiliza credenciais que não foram revogadas após a sua saída para aceder ao endpoint /api/SubscriptionPeriod/SubscriptionPeriod e criar períodos de subscrição com datas de entrega impossíveis, causando confusão e problemas logísticos para Produtores e CoProdutores.
+1. Um ex-funcionário que anteriormente tinha perfil de Gestor (`UserType.Manager`) utiliza credenciais que não foram revogadas após a sua saída para aceder ao endpoint `/api/SubscriptionPeriod/SubscriptionPeriod` e criar períodos de subscrição com datas de entrega impossíveis, causando confusão e problemas logísticos para Produtores e CoProdutores.
 2. Um atacante realiza um ataque de phishing direcionado enviando um email falso sobre uma suposta violação de segurança da plataforma AMAP. Quando o Gestor clica no link e insere as suas credenciais, o atacante captura-as e utiliza-as para aceder ao sistema, criando contas adicionais com privilégios administrativos para manter acesso permanente.
-3. Um Produtor tecnicamente habilidoso explora uma vulnerabilidade no controlo de acesso baseado em roles, manipulando o seu token JWT para incluir claims de UserType.Manager. Com este acesso elevado, acede ao endpoint /api/PaymentsInfo para visualizar informações financeiras confidenciais sobre outros Produtores e CoProdutores.
-4. Um Gestor realiza modificações nos períodos de subscrição através da API /api/SubscriptionPeriod, favorecendo certos Produtores com datas de entrega mais convenientes. Quando questionado sobre estas alterações, nega ter efetuado tais mudanças, aproveitando-se da ausência de logs detalhados ou assinaturas digitais que comprovem a autoria das ações.
+3. Um Produtor tecnicamente habilidoso explora uma vulnerabilidade no controlo de acesso baseado em roles, manipulando o seu token JWT para incluir claims de `UserType.Manager`. Com este acesso elevado, acede ao endpoint `/api/PaymentsInfo` para visualizar informações financeiras confidenciais sobre outros Produtores e CoProdutores.
+4. Um Gestor realiza modificações nos períodos de subscrição através da API `/api/SubscriptionPeriod`, favorecendo certos Produtores com datas de entrega mais convenientes. Quando questionado sobre estas alterações, nega ter efetuado tais mudanças, aproveitando-se da ausência de logs detalhados ou assinaturas digitais que comprovem a autoria das ações.
 5. Um atacante com acesso físico temporário ao computador de um Gestor que deixou a sua sessão aberta consegue aceder ao sistema administrativo e modificar configurações críticas, como os métodos de pagamento aceites ou os períodos de subscrição ativos, sem deixar vestígios da sua identidade real.
 6. Um funcionário de TI com acesso aos sistemas aproveita uma falha no controlo de acesso para criar contas de Gestor fantasma que não aparecem nas listagens normais, usando estas contas para monitorizar todas as atividades do sistema e extrair informações comercialmente sensíveis sem ser detetado.
 
 ##### 4.2 Entidade Externa: Produtor
 
-Ameaças STRIDE Aplicáveis: S, R
+**Ameaças STRIDE Aplicáveis:** S, R
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - S (Spoofing): Falsificação da identidade de um Produtor para criar produtos, ofertas ou interagir com CoProdutores, potencialmente danificando a reputação do Produtor legítimo ou realizando atividades fraudulentas.
 
 - R (Repudiation): Negação por parte de um Produtor de ter criado ofertas específicas, definido certos preços ou concordado com condições particulares, após estas terem sido subscritas por CoProdutores.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
-- Comprometimento de credenciais de contas com perfil UserType.Producer
+- Comprometimento de credenciais de contas com perfil `UserType.Producer`
 
 - Ataques de phishing direcionados a Produtores ativos na plataforma
 
@@ -1337,47 +1335,47 @@ Vetores de Ataque:
 
 - Exploração de falhas no ProductController ou ProductOfferController
 
-- Ataques de força bruta contra o endpoint /api/Account/login
+- Ataques de força bruta contra o endpoint `/api/Account/login`
 
 - Manipulação de tokens de sessão para aceder como Produtor específico
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - Produtores concorrentes tentando prejudicar a reputação de outros Produtores
 
 - Atacantes externos visando ganhos financeiros através de fraudes
 
-- Indivíduos mal-intencionados criando contas falsas de Produtor
+- Indivíduos mal-intencionados que criam contas falsas de Produtor
 
-- Produtores desonestos que negam intencionalmente suas próprias ações
+- Produtores desonestos que negam intencionalmente as suas próprias ações
 
-- Hackers contratados para sabotar operações de Produtores específicos
+- Hackers contratados para danificar operações de Produtores específicos
 
 - Atacantes motivados pela disrupção do mercado ou danos à plataforma
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um atacante compromete a conta de um Produtor bem estabelecido através de um ataque de phishing e utiliza o acesso ao endpoint /api/Product para adicionar produtos de qualidade inferior ou descrições enganosas. Isto danifica a reputação do Produtor legítimo e resulta em reclamações quando os CoProdutores recebem produtos que não correspondem às descrições originais.
-2. Um Produtor desonesto cria deliberadamente ofertas com preços artificialmente baixos através do endpoint /api/ProductOffer, atraindo numerosas subscrições. Quando chega o momento de entregar, alega ter ocorrido um "erro técnico" no sistema ao definir os preços, tentando renegociar valores mais elevados ou entregando quantidades inferiores às acordadas.
-3. Um atacante cria uma conta falsa de Produtor, passando-se por um agricultor local respeitado. Utiliza a API /api/Product para cadastrar produtos aparentemente legítimos e depois cria ofertas atraentes via /api/ProductOffer. Após receber pagamentos adiantados dos CoProdutores (utilizando o método PaymentType.BankTransfer), desaparece sem entregar nenhum produto.
+1. Um atacante compromete a conta de um Produtor bem estabelecido através de um ataque de phishing e utiliza o acesso ao endpoint `/api/Product` para adicionar produtos de qualidade inferior ou descrições enganosas. Isto danifica a reputação do Produtor legítimo e resulta em reclamações quando os CoProdutores recebem produtos que não correspondem às descrições originais.
+2. Um Produtor desonesto cria deliberadamente ofertas com preços artificialmente baixos através do endpoint `/api/ProductOffer`, atraindo numerosas subscrições. Quando chega o momento de entregar, alega ter ocorrido um "erro técnico" no sistema ao definir os preços, tentando renegociar valores mais elevados ou entregando quantidades inferiores às acordadas.
+3. Um atacante cria uma conta falsa de Produtor, passando-se por um agricultor local respeitado. Utiliza a API `/api/Product` para criar produtos aparentemente legítimos e depois cria ofertas atraentes via `/api/ProductOffer`. Após receber pagamentos adiantados dos CoProdutores (utilizando o método `PaymentType.BankTransfer`), desaparece sem entregar nenhum produto.
 4. Um Produtor concorrente compromete a conta de outro Produtor e modifica intencionalmente os campos DeliveryDate nas suas ofertas para datas impossíveis ou conflituantes, prejudicando a sua capacidade de cumprir compromissos e danificando a sua reputação junto dos CoProdutores.
 5. Um Produtor cria ofertas com condições específicas, mas após várias subscrições e quando os preços de mercado aumentam, tenta negar as condições originais alegando não ter definido aqueles preços ou quantidades. Na ausência de logs detalhados ou assinaturas digitais nas transações, consegue repudiar parcialmente os termos originais.
-6. Um atacante que obteve credenciais de vários Produtores modifica as suas ofertas para aceitar apenas pagamentos difíceis de rastrear (PaymentType.Money), facilitando um esquema de fraude onde os pagamentos são desviados sem deixar provas digitais.
+6. Um atacante que obteve credenciais de vários Produtores modifica as suas ofertas para aceitar apenas pagamentos difíceis de rastrear (`PaymentType.Money`), facilitando um esquema de fraude onde os pagamentos são desviados sem deixar provas digitais.
 7. Um indivíduo mal-intencionado cria várias contas falsas de Produtor, explora vulnerabilidades no sistema para estabelecer reputação artificial e, em seguida, cria grande volume de ofertas atraentes para um período futuro. Após acumular um valor significativo em pagamentos antecipados, todas as contas desaparecem num ataque coordenado de "exit scam".
 
 ##### 4.3 Entidade Externa: CoProdutor
 
-Ameaças STRIDE Aplicáveis: S, R
+**Ameaças STRIDE Aplicáveis:** S, R
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - S (Spoofing): Falsificação da identidade de um CoProdutor para realizar subscrições fraudulentas, aceder a informações pessoais ou modificar detalhes de entregas e pagamentos.
 
-- R (Repudiation): Negação por parte de um CoProdutor de ter realizado uma subscrição específica ou um pagamento, após ter recebido os produtos, tentando evitar obrigações financeiras.
+- R (Repudiation): Negação por parte de um CoProdutor de ter realizado uma subscrição específica ou um pagamento, após ter recebido os produtos, que tenta evitar obrigações financeiras.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
-- Comprometimento de credenciais de contas com perfil UserType.CoProducer
+- Comprometimento dos dados de acesso das contas com perfil `UserType.CoProducer`
 
 - Ataques de phishing direcionados a CoProdutores ativos na plataforma
 
@@ -1387,13 +1385,13 @@ Vetores de Ataque:
 
 - Engenharia social para obter acesso a contas legítimas
 
-- Ataques de força bruta contra o endpoint /api/Account/login
+- Ataques de força bruta contra o endpoint `/api/Account/login`
 
 - Manipulação de tokens JWT para falsificar a identidade de um CoProdutor
 
 - Exploração de falhas no SubscriptionController ou no registo de transações de pagamento
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - Atacantes visando benefícios financeiros através de fraudes
 
@@ -1407,32 +1405,31 @@ Agentes de Ameaça:
 
 - Atacantes oportunistas explorando falhas no sistema de verificação de pagamentos
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um atacante compromete a conta de um CoProdutor através de credenciais obtidas num ataque de phishing e utiliza o acesso ao endpoint /api/Subscription para modificar as informações de entrega, redirecionando produtos para outro local. O CoProdutor legítimo não recebe os produtos e o sistema mostra que a entrega foi realizada.
-2. Um CoProdutor faz uma subscrição através do endpoint /api/Subscription, define o método de pagamento como transferência bancária (PaymentType.BankTransfer), recebe os produtos e depois nega ter autorizado a transação. Na ausência de provas robustas de pagamento ou assinaturas digitais, consegue repudiar a transação e evitar o pagamento.
-3. Um atacante explora vulnerabilidades no processo de registo para criar dezenas de contas falsas de CoProdutor e utiliza-as coordenadamente para subscrever todas as ofertas de produtos populares ou limitados assim que ficam disponíveis. Isto impede que CoProdutores legítimos tenham acesso a estas ofertas e potencialmente cria um mercado negro ou simplesmente sabota o sistema.
-4. Um CoProdutor desonesto realiza uma subscrição para uma grande quantidade de produtos, recebe-os e efetua um pagamento. Posteriormente, contacta o seu banco alegando não reconhecer a transação, realizando um chargeback. Devido à falta de provas suficientes de entrega ou autorização, o sistema AMAP acaba por sofrer perda financeira.
+1. Um atacante compromete a conta de um CoProdutor através de credenciais obtidas num ataque de phishing e utiliza o acesso ao endpoint `/api/Subscription` para modificar as informações de entrega, redirecionando produtos para outro local. O CoProdutor legítimo não recebe os produtos e o sistema mostra que a entrega foi realizada.
+3. Um atacante explora vulnerabilidades no processo de registo para criar dezenas de contas falsas de CoProdutor e utiliza-as coordenadamente para subscrever todas as ofertas de produtos populares ou limitados assim que ficam disponíveis. Isto impede que CoProdutores legítimos tenham acesso a estas ofertas e potencialmente cria um mercado negro ou simplesmente pejudicar o sistema.
+4. Um CoProdutor desonesto realiza uma subscrição para uma grande quantidade de produtos, recebe-os e efetua um pagamento. Posteriormente, contacta o seu banco e alega não reconhecer a transação, realizando um chargeback. Devido à falta de provas suficientes de entrega ou autorização, o sistema AMAP acaba por sofrer perda financeira.
 5. Um atacante que obteve acesso à conta de um CoProdutor monitoriza as suas subscrições regulares para identificar padrões de compra. Utiliza esta informação para criar um perfil de consumo detalhado que pode ser vendido para fins de marketing ou para fraudes mais sofisticadas.
 6. Um indivíduo mal-intencionado cria uma conta falsa de CoProdutor e utiliza meios fraudulentos para estabelecer um histórico de transações aparentemente legítimas. Gradualmente aumenta o volume de compras até realizar uma grande subscrição de produtos valiosos. Após indicar falsamente que o pagamento foi realizado e receber os produtos, desaparece sem deixar rasto.
-7. Um CoProdutor explora uma vulnerabilidade no sistema de verificação de pagamentos, manipulando os dados enviados ao endpoint /api/Payment para fazer parecer que um pagamento foi concluído quando na realidade não foi. Isto permite que obtenha produtos sem efetivamente pagar por eles.
+7. Um CoProdutor explora uma vulnerabilidade no sistema de verificação de pagamentos, manipulando os dados enviados ao endpoint `/api/Payment` para fazer parecer que um pagamento foi concluído quando na realidade não foi. Isto permite que obtenha produtos sem efetivamente pagar por eles.
 8. Um atacante com conhecimentos técnicos compromete várias contas de CoProdutores e utiliza-as para criar um padrão artificial de alta procura para certos produtos. Isto pode manipular os preços ou criar escassez artificial, que posteriormente pode ser explorada para benefício financeiro.
 
 ##### 4.4 Entidade Externa: Sistema de Email
 
-Ameaças STRIDE Aplicáveis: S, I
+**Ameaças STRIDE Aplicáveis:** S, I
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
--  (Spoofing): Falsificação do sistema de email da AMAP para enviar notificações maliciosas a Produtores, CoProdutores e Gestores, potencialmente comprometendo as suas credenciais ou dispositivos.
+-  (Spoofing): Falsificação do sistema de email da AMAP para enviar notificações maliciosas a Produtores, CoProdutores e Gestores, potencialmente comprometendo os seus dados de acesso ou dispositivos.
 
 - I (Information Disclosure): Intercepção ou acesso não autorizado a notificações contendo informações sensíveis sobre períodos de subscrição, ofertas, pagamentos ou dados pessoais dos utilizadores.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
-- Comprometimento das credenciais SMTP utilizadas pelo método SendEmailAsync na classe EmailSender
+- Comprometimento das credenciais SMTP utilizadas pelo método `SendEmailAsync` na classe `EmailSender`
 
-- Modificação maliciosa das configurações de email no ficheiro appsettings.json
+- Modificação maliciosa das configurações de e-mail no ficheiro a`ppsettings.json`
 
 - Interceptação de comunicações entre o servidor AMAP e o serviço de email
 
@@ -1444,13 +1441,13 @@ Vetores de Ataque:
 
 - Criação de domínios de phishing similares ao domínio oficial da AMAP
 
-- Exploração de vulnerabilidades na biblioteca de email utilizada pela aplicação
+- Exploração de vulnerabilidades na biblioteca de e-mail utilizada pela aplicação
 
-- Acesso não autorizado aos templates de email ou ao código que gera as notificações
+- Acesso não autorizado aos templates de e-mail ou ao código que gera as notificações
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
-- Atacantes com acesso à infraestrutura de rede ou de email
+- Atacantes com acesso à infraestrutura de rede ou de e-mail
 
 - Administradores de sistema maliciosos com acesso às configurações
 
@@ -1460,33 +1457,33 @@ Agentes de Ameaça:
 
 - Concorrentes visando informações privilegiadas
 
-- Hackers tentando comprometer contas de utilizador através de engenharia social
+- Hackers que tentam comprometer contas de utilizador através de engenharia social
 
 - Entidades maliciosas interessadas em interromper comunicações críticas
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um atacante compromete as credenciais SMTP armazenadas em appsettings.json e utiliza-as para enviar emails fraudulentos em nome da AMAP. Estes emails contêm links de phishing que direcionam Produtores e CoProdutores para uma página falsa que imita o login do sistema, onde as suas credenciais são capturadas.
-2. Um administrador de sistema malicioso modifica o código no método SendEmailAsync da classe EmailSender para encaminhar cópias de todas as notificações para um endereço de email externo. Isto permite ao atacante recolher informações confidenciais, como detalhes sobre novos períodos de subscrição antes do seu anúncio oficial ou informações sobre pagamentos.
-3. Um atacante realiza um ataque de DNS poisoning, redirecionando o tráfego SMTP da aplicação AMAP para um servidor controlado pelo atacante. Isto permite interceptar todas as comunicações por email, extrair informações sensíveis e potencialmente modificar o conteúdo antes de reencaminhar as mensagens para os destinatários legítimos.
-4. Um phisher cria uma campanha sofisticada utilizando um domínio muito similar ao oficial (por exemplo, ama-p.com em vez de amap.com), enviando notificações falsas sobre problemas de pagamento. Estas notificações incluem um link para uma página falsa, onde os CoProdutores são incentivados a inserir novamente os seus dados de pagamento, que são então capturados pelo atacante.
-5. Um atacante com acesso à base de dados extrai endereços de email de todos os utilizadores e depois utiliza um serviço externo para enviar notificações falsas em massa, contendo malware disfarçado de "atualização necessária" da plataforma AMAP.
-6. Um concorrente compromete o sistema de email para monitorizar as notificações enviadas aos Produtores sobre novos períodos de subscrição, obtendo assim informação privilegiada que permite planear estrategicamente a sua própria produção ou ofertas.
+1. Um atacante compromete as credenciais SMTP armazenadas em `appsettings.json` e utiliza-as para enviar e-mails fraudulentos em nome da AMAP. Estes e-mails contêm links de phishing que direcionam Produtores e CoProdutores para uma página falsa que imita o login do sistema, onde as suas credenciais são capturadas.
+2. Um administrador de sistema malicioso modifica o código no método `SendEmailAsync` da classe `EmailSender` para encaminhar cópias de todas as notificações para um endereço de e-mail externo. Isto permite ao atacante recolher informações confidenciais, como detalhes sobre novos períodos de subscrição antes do seu anúncio oficial ou informações sobre pagamentos.
+3. Um atacante realiza um ataque de DNS poisoning, redirecionando o tráfego SMTP da aplicação AMAP para um servidor controlado pelo atacante. Isto permite interceptar todas as comunicações por e-mail, extrair informações sensíveis e potencialmente modificar o conteúdo antes de reencaminhar as mensagens para os destinatários legítimos.
+4. Um phisher cria uma campanha sofisticada utilizando um domínio muito similar ao oficial (por exemplo, ama-p.com em vez de amap.com), enviando notificações falsas sobre problemas de pagamento. Estas notificações incluem um link para uma página falsa, onde os CoProdutores são incentivados a inserir dados, que são então capturados pelo atacante.
+5. Um atacante com acesso à base de dados extrai endereços de e-mail de todos os utilizadores e depois utiliza um serviço externo para enviar notificações falsas em massa, contendo malware disfarçado de "atualização necessária" da plataforma AMAP.
+6. Um concorrente compromete o sistema de e-mail para monitorizar as notificações enviadas aos Produtores sobre novos períodos de subscrição, obtendo assim informação privilegiada que permite planear estrategicamente a sua própria produção ou ofertas.
 7. Um desenvolvedor interno insere código malicioso na função que notifica os Produtores após a criação de um novo período de subscrição, alterando subtilmente dados críticos como datas de entrega ou condições, sem modificar a base de dados. Isto causa confusão quando os Produtores tentam planear a sua produção com base nas informações recebidas.
 
 #### 5. Limites de Confiança
 
 ##### 5.1 Limite: Database Boundary
 
-Ameaças STRIDE Aplicáveis: T, I,
+**Ameaças STRIDE Aplicáveis:** T, I,
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - T (Tampering): Manipulação não autorizada de dados quando cruzam o limite entre a aplicação e a base de dados, comprometendo a integridade das informações armazenadas.
 
 - I (Information Disclosure): Exposição não autorizada de dados sensíveis durante a comunicação entre a aplicação e a base de dados, violando a confidencialidade das informações.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
 - Ataques de injeção SQL explorando consultas parametrizadas mal implementadas nos repositórios da aplicação
 
@@ -1496,7 +1493,7 @@ Vetores de Ataque:
 
 - Acesso direto não autorizado à base de dados contornando a camada de aplicação
 
-- Exploração de configurações de conexão inseguras no appsettings.json
+- Exploração de configurações de conexão inseguras no `appsettings.json`
 
 - Manipulação de transações de base de dados para comprometer a integridade dos dados
 
@@ -1504,7 +1501,7 @@ Vetores de Ataque:
 
 - Exploração de falhas no controlo de acesso implementado no DbContext
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - Desenvolvedores com conhecimento do modelo de dados e da estrutura das entidades
 
@@ -1518,10 +1515,10 @@ Agentes de Ameaça:
 
 - Hackers especializados em ataques a bases de dados SQL Server
 
-Casos de Abuso:
+**Casos de Abuso:**
 
 1. Um atacante identifica uma vulnerabilidade de injeção SQL num dos métodos de filtragem dos repositórios que não utiliza corretamente consultas parametrizadas do Entity Framework. Através desta vulnerabilidade, executa o ataque ' OR 1=1; -- para obter acesso a todos os registos da tabela AspNetUsers, incluindo informações de perfil e hashes de passwords.
-2. Um administrador de sistemas com acesso ao servidor de aplicação extrai as credenciais de conexão à base de dados do ficheiro appsettings.json e utiliza-as para estabelecer uma conexão direta à base de dados, contornando toda a lógica de autorização implementada na aplicação. Isto permite-lhe aceder, modificar ou eliminar dados sensíveis como informações de pagamento na tabela Payment.
+2. Um administrador de sistemas com acesso ao servidor de aplicação extrai as credenciais de conexão à base de dados do ficheiro `appsettings.json` e utiliza-as para estabelecer uma conexão direta à base de dados, contornando toda a lógica de autorização implementada na aplicação. Isto permite-lhe aceder, modificar ou eliminar dados sensíveis como informações de pagamento na tabela Payment.
 3. Um desenvolvedor malicioso insere um backdoor na camada de acesso a dados da aplicação, modificando as classes de repositório que gerem o acesso a entidades como Subscription ou ProductOffer. Este backdoor permite enviar cópias dos dados sensíveis para um servidor externo controlado pelo atacante, sempre que determinadas consultas são executadas.
 4. Um utilizador com conhecimentos técnicos explora uma vulnerabilidade no mecanismo de filtragem baseado em UserType implementado no DbContext. Manipulando as consultas LINQ, consegue contornar as restrições que normalmente limitariam o acesso apenas aos dados relacionados com o seu próprio utilizador, obtendo assim acesso a informações de outros CoProdutores ou Produtores.
 5. Um atacante que conseguiu acesso ao servidor de aplicação intercepta a comunicação entre a aplicação e a base de dados. Mesmo sem conseguir desencriptar o tráfego, observa padrões de comunicação que revelam informações sobre operações sensíveis, como criação de novos períodos ou processamento de pagamentos.
@@ -1531,17 +1528,17 @@ Casos de Abuso:
 
 ##### 5.2 Limite: Perímetro de Autenticação
 
-Ameaças STRIDE Aplicáveis: S, T
+**Ameaças STRIDE Aplicáveis:** S, T
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - S (Spoofing): Falsificação de identidade para contornar o processo de autenticação e obter acesso não autorizado ao sistema.
 
 - T (Tampering): Manipulação dos dados de autenticação durante a transmissão ou processamento, permitindo comprometer o mecanismo de verificação de identidade.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
-- Ataques de força bruta contra o endpoint /api/Account/login
+- Ataques de força bruta contra o endpoint `/api/Account/login`
 
 - Interceptação de tokens JWT utilizados para autenticação
 
@@ -1555,35 +1552,35 @@ Vetores de Ataque:
 
 - Manipulação dos cabeçalhos de autenticação em requisições API
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
-- Atacantes externos tentando obter acesso não autorizado
+- Atacantes externos que tentam obter acesso não autorizado
 
-- Ex-utilizadores tentando recuperar acesso após desativação
+- Ex-utilizadores que tentam recuperar acesso após desativação
 
-- Utilizadores tentando elevar seus privilégios de acesso
+- Utilizadores que tentam elevar seus privilégios de acesso
 
 - Atacantes especializados em segurança de autenticação web
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um atacante utiliza uma ferramenta automatizada para realizar ataques de força bruta contra o endpoint /api/Account/login, tentando descobrir credenciais válidas de Gestores para obter acesso administrativo.
+1. Um atacante utiliza uma ferramenta automatizada para realizar ataques de força bruta contra o endpoint `/api/Account/login`, tentando descobrir credenciais válidas de Gestores para obter acesso administrativo.
 2. Um atacante que conseguiu um token JWT válido manipula as claims no payload, alterando o valor de UserType de "CoProducer" para "Manager", tentando assim elevar seus privilégios de acesso.
 3. Um utilizador com conhecimentos técnicos explora uma falha na implementação do refresh token para manter acesso perpétuo ao sistema, mesmo após a tentativa de revogação dos seus privilégios.
 
 ##### 5.3 Limite: Controlo de Acesso por Perfil
 
-Ameaças STRIDE Aplicáveis: E, I 
+**Ameaças STRIDE Aplicáveis:** E, I 
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - E (Elevation of Privilege): Contornar os mecanismos de controlo de acesso baseados em perfil (UserType) para aceder a funcionalidades restritas.
 
 - I (Information Disclosure): Obter acesso a informações que deveriam estar restritas ao perfil do utilizador, violando a confidencialidade.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
-- Manipulação de atributos de autorização como [Authorize(Roles = nameof(UserType.Manager))]
+- Manipulação de atributos de autorização como [`Authorize(Roles = nameof(UserType.Manager))`]
 
 - Exploração de falhas nas verificações de autorização nos controladores
 
@@ -1593,36 +1590,36 @@ Vetores de Ataque:
 
 - Ataques horizontais, tentando aceder a recursos de outros utilizadores do mesmo nível
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
-- CoProdutores tentando aceder a funcionalidades de Produtores
+- CoProdutores que tentam aceder a funcionalidades de Produtores
 
-- Produtores tentando aceder a funcionalidades de Gestores
+- Produtores que tentam aceder a funcionalidades de Gestores
 
-- Utilizadores tentando aceder a dados de outros utilizadores do mesmo tipo
+- Utilizadores que tentam aceder a dados de outros utilizadores do mesmo tipo
 
 - Atacantes que comprometeram contas de nível básico
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um Produtor descobriu que o endpoint /api/PaymentsInfo verifica a autorização apenas na interface e não no backend. Enviando requisições diretas à API, consegue aceder a informações financeiras que deveriam estar restritas a Gestores.
-2. Um CoProdutor manipula os parâmetros de requisição ao acessar o endpoint /api/Subscription para visualizar ou modificar subscrições de outros CoProdutores, explorando uma falha na verificação de propriedade dos recursos.
+1. Um Produtor descobriu que o endpoint `/api/PaymentsInfo` verifica a autorização apenas na interface e não no backend. Enviando requisições diretas à API, consegue aceder a informações financeiras que deveriam estar restritas a Gestores.
+2. Um CoProdutor manipula os parâmetros de requisição ao acessar o endpoint `/api/Subscription` para visualizar ou modificar subscrições de outros CoProdutores, explorando uma falha na verificação de propriedade dos recursos.
 
 ##### 5.4 Limite: Integração com Sistema de Email
 
-Ameaças STRIDE Aplicáveis: T, I 
+**Ameaças STRIDE Aplicáveis:** T, I 
 
-Ameaças Identificadas:
+**Ameaças Identificadas:**
 
 - T (Tampering): Manipulação do conteúdo das mensagens durante a transmissão entre o sistema AMAP e o serviço de email.
 
 - I (Information Disclosure): Intercepção de informações sensíveis contidas nas notificações enviadas pelo sistema.
 
-Vetores de Ataque:
+**Vetores de Ataque:**
 
 - Interceptação da comunicação SMTP entre o sistema e o servidor de email
 
-- Comprometimento das credenciais de email no appsettings.json
+- Comprometimento das credenciais de email no `appsettings.json`
 
 - Manipulação dos templates de email antes do envio
 
@@ -1630,7 +1627,7 @@ Vetores de Ataque:
 
 - Exploração de configurações inseguras na comunicação com o serviço de email
 
-Agentes de Ameaça:
+**Agentes de Ameaça:**
 
 - Atacantes com acesso à rede ou infraestrutura
 
@@ -1638,10 +1635,10 @@ Agentes de Ameaça:
 
 - Entidades capazes de interceptar tráfego de rede
 
-Casos de Abuso:
+**Casos de Abuso:**
 
-1. Um atacante com acesso à rede intercepta a comunicação SMTP não encriptada entre o sistema AMAP e o servidor de email, conseguindo capturar o conteúdo de todas as notificações enviadas, incluindo informações sobre novos períodos de subscrição e confirmações de pagamento.
-2. Um administrador de sistema malicioso modifica os templates de email utilizados para notificações, inserindo links maliciosos ou alterando informações críticas como datas de entrega ou valores de pagamento.
+1. Um atacante com acesso à rede intercepta a comunicação SMTP não encriptada entre o sistema AMAP e o servidor de email, conseguindo capturar o conteúdo de todas as notificações enviadas, incluindo informações sobre novos períodos de subscrição.
+2. Um administrador de sistema malicioso modifica os templates de email utilizados para notificações, inserindo links maliciosos ou alterando informações críticas como datas de entrega.
 
 ### Tabela Resumo de Ameaças STRIDE
 
