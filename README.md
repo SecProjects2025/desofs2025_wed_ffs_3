@@ -1675,7 +1675,7 @@ A metodologia STRIDE é utilizada para identificar ameaças de segurança, onde 
 | 5.3 Controlo de Acesso por Perfil | E, I           | Contorno de verificações RBAC, acesso a dados restritos      |
 | 5.4 Integração Sistema de Email   | T, I           | Intercepção SMTP, manipulação de templates                   |
 
-## Conclusão
+### Conclusão
 
 A análise STRIDE identificou diversas ameaças potenciais ao sistema AMAP, aplicadas a cada elemento do DFD. As ameaças mais relevantes estão relacionadas com autenticação, manipulação de dados de pagamento, e proteção de informações sensíveis.
 
@@ -1687,256 +1687,741 @@ Esta análise fornece a base para o desenvolvimento de estratégias de mitigaç�
 
 ## Avaliação de Risco
 
-### Metodologia de Avaliação
-
-A avaliação de risco foi realizada utilizando a metodologia DREAD (ou outra metodologia simples), atribuindo pontuações aos seguintes critérios: Dano, Reprodutibilidade, Exploração, Atingibilidade e Descoberta.
-
-# Avaliação de Risco Utilizando DREAD para o Sistema AMAP
-
-## 1. Introdução à Metodologia
-Para avaliar o risco das ameaças identificadas no sistema AMAP, aplicaremos a metodologia DREAD conforme sugerido pelo professor. Esta abordagem permite uma avaliação quantitativa dos riscos através de cinco fatores de risco:
+### Introdução à Metodologia
+Para avaliar o risco das ameaças identificadas no sistema AMAP, aplicamos a metodologia DREAD. Esta abordagem permite uma avaliação quantitativa dos riscos através de cinco fatores:
 
 - **Damage potential (Potencial de dano):** Quão significativo seria o dano se a ameaça fosse explorada?
 - **Reproducibility (Reprodutibilidade):** Quão fácil é reproduzir o ataque?
 - **Exploitability (Facilidade de exploração):** Quão fácil é executar o ataque?
-- **Affected users (Usuários afetados):** Que percentagem de usuários seria afetada?
+- **Affected users (Usuários afetados):** Que percentagem de utilizadores seria afetada?
 - **Discoverability (Facilidade de descoberta):** Quão fácil é descobrir esta vulnerabilidade?
 
-## 2. Critérios de Avaliação DREAD
+### Critérios de Avaliação DREAD
 Para cada fator, utilizaremos uma escala de 1-10, onde 1 representa o menor risco e 10 o maior:
 
-### Damage Potential (D)
+#### Damage Potential (D)
 - **1-3:** Dano mínimo, sem impacto significativo
 - **4-6:** Dano moderado, impacto temporário nas operações
 - **7-8:** Dano significativo, impacto nas finanças ou reputação
 - **9-10:** Dano crítico, comprometimento do sistema ou risco legal
 
-### Reproducibility (R)
+#### Reproducibility (R)
 - **1-3:** Muito difícil de reproduzir, requer condições específicas raras
 - **4-6:** Reproduzível com esforço considerável
 - **7-8:** Reproduzível com algum esforço e conhecimento específico
 - **9-10:** Facilmente reproduzível em qualquer momento
 
-### Exploitability (E)
+#### Exploitability (E)
 - **1-3:** Requer conhecimento avançado e múltiplos pré-requisitos
 - **4-6:** Requer conhecimento técnico moderado e acesso específico
 - **7-8:** Requer habilidades básicas e poucas barreiras
 - **9-10:** Muito fácil de explorar, não requer conhecimento técnico especial
 
-### Affected Users (A)
+#### Affected Users (A)
 - **1-3:** Afeta pouquíssimos usuários individuais
 - **4-6:** Afeta um grupo específico de usuários
 - **7-8:** Afeta a maioria dos usuários
 - **9-10:** Afeta todos os usuários do sistema
 
-### Discoverability (D)
+#### Discoverability (D)
 - **1-3:** Extremamente difícil de descobrir
 - **4-6:** Descobrível apenas com análise direcionada
 - **7-8:** Facilmente descobrível com ferramentas comuns
 - **9-10:** Óbvia de detectar, visível por qualquer pessoa
 
-## 3. Avaliação de Risco das Principais Ameaças
+### Avaliação de Risco das Principais Ameaças
 
-### Processo de Autenticação (1.1)
-**Spoofing (S):** Falsificação de identidade para acesso não autorizado
+#### Processo de Autenticação (1.1)
+**Spoofing (S):** Falsificação de identidade para obter acesso não autorizado
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 10 | Comprometimento de uma conta de Gestor permite controle administrativo total do sistema |
-| Reproducibility | 8 | Ataques de phishing e credential stuffing são amplamente reproduzíveis |
-| Exploitability | 7 | Técnicas como phishing são relativamente fáceis de implementar |
-| Affected Users | 9 | Afeta todos os usuários do sistema, principalmente quando comprometidas contas de Gestores |
-| Discoverability | 8 | Vulnerabilidades de autenticação são comumente pesquisadas e detectadas |
-| **Pontuação DREAD** | **8.4** | **CRÍTICO** |
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 9         | Acesso administrativo completo ao sistema permite manipulação de períodos, visualização de dados financeiros e controlo de transações |
+| **Reproducibility ** | 7         | Requer obtenção de credenciais via phishing ou outros meios; após a obtenção, o acesso é totalmente reproduzível |
+| **Exploitability **  | 6         | Requer técnicas de engenharia social ou exploração de vulnerabilidades no processo de autenticação |
+| **Affected Users **  | 10        | Afecta todos os utilizadores do sistema, pois um Gestor comprometido pode impactar todas as operações |
+| **Discoverability ** | 8         | Vulnerabilidades de autenticação são amplamente conhecidas e testadas |
+| **Pontuação DREAD**  | **8.0**   | **ALTO**                                                     |
 
-**Elevation of Privilege (E):** Escalação de privilégios
+**Elevation of Privilege (E):** Escalação de privilégios de CoProdutor para Produtor/Gestor
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 9 | Permite acesso a funcionalidades administrativas restritas |
-| Reproducibility | 6 | Requer conhecimento específico do sistema de tokens JWT |
-| Exploitability | 5 | Necessita compreensão do mecanismo de autorização e autenticação |
-| Affected Users | 8 | Impacta potencialmente todos os usuários se explorado |
-| Discoverability | 5 | Requer análise específica do sistema de autorização |
-| **Pontuação DREAD** | **6.6** | **ALTO** |
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 9         | Permite acesso a funcionalidades restritas e potencial manipulação do sistema |
+| **Reproducibility ** | 6         | Requer manipulação de tokens JWT ou exploração de vulnerabilidades específicas no controlo de acesso |
+| **Exploitability **  | 7         | Necessita de conhecimentos técnicos, mas existem ferramentas para manipular tokens JWT |
+| **Affected Users **  | 9         | Pode afectar todos os utilizadores do sistema se funções administrativas forem comprometidas |
+| **Discoverability ** | 7         | Vulnerabilidade conhecida em sistemas que usam JWT ou implementam RBAC de forma incorrecta |
+| **Pontuação DREAD**  | **7.6**   | **ALTO**                                                     |
 
-### Processo de Gestão de Períodos de Subscrição (1.2)
-**Tampering (T):** Modificação não autorizada de períodos de subscrição
+#### Processo de Gestão de Períodos de Subscrição (1.2)
+**Tampering (T):** Modificação não autorizada de períodos de subscrição e datas de entrega
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 9 | Compromete todo o planeamento de distribuição e entrega de produtos |
-| Reproducibility | 7 | Reproduzível ao explorar vulnerabilidades no controlo de acesso |
-| Exploitability | 6 | Requer conhecimento técnico e acesso específico ao sistema |
-| Affected Users | 8 | Afeta todos os Produtores e CoProdutores que dependem das datas dos períodos |
-| Discoverability | 6 | Requer análise específica dos mecanismos de gestão de períodos |
-| **Pontuação DREAD** | **7.2** | **ALTO** |
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**           | 8         | Compromete todo o ciclo operacional da plataforma, afectando o planeamento e as entregas |
+| **Reproducibility ** | 6         | Requer acesso à API ou à base de dados com permissões específicas |
+| **Exploitability **  | 7         | Requer conhecimentos técnicos sobre a estrutura da API e métodos de autenticação |
+| **Affected Users**   | 9         | Afecta todos os utilizadores que dependem dos períodos para o planeamento |
+| **Discoverability ** | 6         | Requer conhecimento da estrutura de dados e de endpoints específicos |
+| **Pontuação DREAD**  | **7.2**   | **ALTO**                                                     |
 
 **Elevation of Privilege (E):** Acesso indevido às funcionalidades de gestão de períodos
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 8 | Permite manipulação de períodos fundamentais para o funcionamento do sistema |
-| Reproducibility | 6 | Requer exploração de vulnerabilidades específicas no RBAC |
-| Exploitability | 5 | Necessita conhecimento sobre o mecanismo de controlo de acesso |
-| Affected Users | 8 | Impacta potencialmente todos os utilizadores do sistema |
-| Discoverability | 5 | Requer análise específica do sistema de autorização |
-| **Pontuação DREAD** | **6.4** | **ALTO** |
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**           | 8         | Permite manipulação de períodos fundamentais para o funcionamento do sistema |
+| **Reproducibility ** | 6         | Requer exploração de vulnerabilidades específicas no RBAC    |
+| **Exploitability **  | 6         | Necessita de conhecimento sobre o mecanismo de controlo de acesso e as suas falhas |
+| **Affected Users**   | 8         | Impacta potencialmente todos os utilizadores do sistema      |
+| **Discoverability ** | 5         | Requer análise específica do sistema de autorização          |
+| **Pontuação DREAD**  | **6.6**   | **ALTO**                                                     |
 
-### Gestão de Produtos e Quantidades (1.3)
+#### Processo de Gestão de Produtos e Quantidades (1.3)
 **Tampering (T):** Alteração não autorizada de informações de produtos
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 8 | Compromete a confiança na plataforma e pode resultar em perdas financeiras |
-| Reproducibility | 9 | Facilmente reproduzível quando explorada uma vulnerabilidade de validação |
-| Exploitability | 7 | Viável para Produtores ou atacantes com acesso ao sistema |
-| Affected Users | 7 | Afeta CoProdutores e Produtores relacionados aos produtos comprometidos |
-| Discoverability | 8 | Vulnerabilidades de validação de dados são frequentemente identificáveis |
-| **Pontuação DREAD** | **7.8** | **ALTO** |
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**           | 7         | Compromete a confiança no sistema e causa prejuízo financeiro aos CoProdutores |
+| **Reproducibility ** | 9         | Facilmente reproduzível por qualquer Produtor com acesso legítimo |
+| **Exploitability **  | 8         | Requer apenas acesso de Produtor e conhecimentos básicos da interface |
+| **Affected Users**   | 7         | Afecta todos os CoProdutores que subscreveram os produtos modificados |
+| **Discoverability ** | 9         | Funcionalidade de edição facilmente identificável na interface normal do sistema |
+| **Pontuação DREAD**  | **8.0**   | **ALTO**                                                     |
 
-**Information Disclosure (I):** Divulgação não autorizada de informações
+**Information Disclosure (I):** Divulgação não autorizada de informações de produtos
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 6 | Exposição de dados de produtos pode dar vantagens competitivas indevidas |
-| Reproducibility | 7 | Reproduzível em sistemas com controle de acesso inadequado |
-| Exploitability | 6 | Requer algum conhecimento específico do sistema |
-| Affected Users | 5 | Afeta principalmente Produtores cujas informações são expostas |
-| Discoverability | 6 | Necessita análise específica dos mecanismos de controle de acesso |
-| **Pontuação DREAD** | **6.0** | **ALTO** |
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 7         | Exposição de informações comerciais sensíveis, comprometendo a concorrência justa |
+| **Reproducibility ** | 7         | Reproduzível se existirem vulnerabilidades no controlo de acesso |
+| **Exploitability **  | 6         | Requer conhecimentos sobre o sistema de controlo de acesso ou acesso direto à base de dados |
+| **Affected Users **  | 6         | Afeta principalmente os Produtores cujas informações são expostas |
+| **Discoverability ** | 6         | Requer análise do sistema e conhecimento dos endpoints       |
+| **Pontuação DREAD**  | **6.4**   | **ALTO**                                                     |
 
-### Processo de Pagamento (1.6)
+#### Processo de Criação de Ofertas (1.4)
+
+**Spoofing (S):** Criação de ofertas falsas em nome de outros Produtores
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 8         | Prejudica a reputação do Produtor legítimo e causa perdas financeiras aos CoProdutores |
+| **Reproducibility ** | 6         | Requer comprometimento de credenciais ou exploração de vulnerabilidades específicas |
+| **Exploitability **  | 7         | Necessita de conhecimentos técnicos ou acesso a credenciais  |
+| **Affected Users **  | 8         | Afecta o Produtor vítima e todos os CoProdutores que realizarem subscrições |
+| **Discoverability ** | 7         | Requer investigação sobre o funcionamento do sistema de ofertas |
+| **Pontuação DREAD**  | **7.2**   | **ALTO**                                                     |
+
+**Tampering (T):** Modificação não autorizada de ofertas existentes
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 8         | Compromete a confiabilidade do sistema e causa prejuízos diretos aos CoProdutores |
+| **Reproducibility ** | 8         | Relativamente fácil para Produtores modificarem as suas próprias ofertas ou para atacantes com acesso ao sistema |
+| **Exploitability **  | 7         | Requer acesso à API ou à base de dados, com conhecimentos técnicos moderados |
+| **Affected Users **  | 7         | Afecta CoProdutores que subscreveram as ofertas modificadas  |
+| **Discoverability ** | 8         | Funcionalidade de modificação é parte normal do sistema      |
+| **Pontuação DREAD**  | **7.6**   | **ALTO**                                                     |
+
+#### Processo de Subscrição (1.5)
+**Tampering (T):** Alteração não autorizada de dados de subscrição
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 7         | Causa prejuízos financeiros e operacionais para Produtores e outros CoProdutores |
+| **Reproducibility ** | 7         | Requer interceptação e modificação de comunicações ou acesso à base de dados |
+| **Exploitability **  | 6         | Necessita de conhecimentos técnicos para manipular comunicações da API |
+| **Affected Users **  | 6         | Afecta diretamente os Produtores e CoProdutores envolvidos nas transacções específicas |
+| **Discoverability ** | 7         | Requer análise específica dos mecanismos de subscrição       |
+| **Pontuação DREAD**  | **6.6**   | **ALTO**                                                     |
+
+**Repudiation (R):** Negação de ter realizado uma subscrição específica
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 6         | Causa prejuízo financeiro ao Produtor e afecta a confiança no sistema |
+| **Reproducibility ** | 8         | Facilmente reproduzível na ausência de mecanismos de não-repúdio |
+| **Exploitability **  | 9         | Requer apenas negar a acção, sem necessidade de habilidades técnicas |
+| **Affected Users**   | 5         | Afecta principalmente o Produtor envolvido na transacção específica |
+| **Discoverability ** | 9         | Trivial descobrir esta possibilidade em sistemas sem rastreabilidade adequada |
+| **Pontuação DREAD**  | **7.4**   | **ALTO**                                                     |
+
+#### Processo de Pagamento (1.6)
+
 **Tampering (T):** Alteração não autorizada de informações de pagamento
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 10 | Impacto financeiro direto e comprometimento da integridade transacional |
-| Reproducibility | 7 | Reproduzível em sistemas com validação inadequada |
-| Exploitability | 6 | Requer conhecimento técnico para interceptar/modificar comunicações |
-| Affected Users | 8 | Afeta Produtores e CoProdutores envolvidos nas transações |
-| Discoverability | 6 | Requer análise focada nas transações de pagamento |
-| **Pontuação DREAD** | **7.4** | **ALTO** |
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 9         | Causa prejuízos financeiros diretos significativos           |
+| **Reproducibility ** | 7         | Requer acesso à API ou à base de dados com permissões específicas |
+| **Exploitability **  | 8         | Necessita de conhecimentos técnicos sobre o sistema de pagamentos |
+| **Affected Users **  | 7         | Afeta diretamente as partes envolvidas na transação e, indiretamente, a confiança no sistema |
+| **Discoverability ** | 7         | Requer investigação sobre o processamento de pagamentos      |
+| **Pontuação DREAD**  | **7.6**   | **ALTO**                                                     |
 
 **Repudiation (R):** Negação de ter realizado um pagamento
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 9 | Perdas financeiras diretas e problemas de confiança na plataforma |
-| Reproducibility | 8 | Bastante viável na ausência de mecanismos robustos de não-repúdio |
-| Exploitability | 7 | Relativamente simples de executar se o sistema não possui logs adequados |
-| Affected Users | 7 | Afeta principalmente Produtores que não recebem pagamentos |
-| Discoverability | 8 | Facilmente descobrível em testes básicos de pagamento |
-| **Pontuação DREAD** | **7.8** | **ALTO** |
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 8         | Causa prejuízo financeiro direto aos Produtores e afecta a confiança no sistema |
+| **Reproducibility ** | 8         | Facilmente reproduzível na ausência de mecanismos robustos de não-repúdio |
+| **Exploitability **  | 9         | Requer apenas negar a ação, sem necessidade de habilidades técnicas |
+| **Affected Users **  | 6         | Afeta diretamente os Produtores que não recebem os pagamentos e, indiretamente, outros utilizadores |
+| **Discoverability ** | 9         | Trivial em sistemas sem verificação adequada de pagamentos   |
+| **Pontuação DREAD**  | **8.0**   | **ALTO**                                                     |
 
-### Database Boundary (5.1)
-**Information Disclosure (I):** Exposição de dados sensíveis
+#### Processo de Controlo de Pagamentos (1.7)
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 10 | Exposição de todos os dados do sistema, incluindo informações financeiras e pessoais |
-| Reproducibility | 7 | Reproduzível quando identificadas vulnerabilidades de injeção SQL |
-| Exploitability | 6 | Requer conhecimento técnico de SQL e da estrutura do banco |
-| Affected Users | 10 | Potencialmente afeta todos os usuários do sistema |
-| Discoverability | 8 | Vulnerabilidades de injeção SQL são comumente detectáveis com ferramentas automatizadas |
-| **Pontuação DREAD** | **8.2** | **CRÍTICO** |
+**Information Disclosure (I):**  Divulgação não autorizada de informações financeiras
 
-**Tampering (T):** Manipulação não autorizada de dados
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 8         | Viola a privacidade dos utilizadores e expõe dados financeiros sensíveis |
+| **Reproducibility ** | 6         | Requer elevação de privilégios ou comprometimento de contas específicas |
+| **Exploitability **  | 7         | Necessita de conhecimentos técnicos para manipular tokens ou explorar vulnerabilidades |
+| **Affected Users**   | 9         | Potencialmente expõe dados financeiros de todos os utilizadores |
+| **Discoverability ** | 6         | Requer conhecimento da estrutura de autorização e dos endpoints específicos |
+| **Pontuação DREAD**  | **7.2**   | **ALTO**                                                     |
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 10 | Compromete a integridade de todo o sistema |
-| Reproducibility | 6 | Requer identificação de vulnerabilidades específicas |
-| Exploitability | 5 | Necessita conhecimento técnico avançado e acesso específico |
-| Affected Users | 9 | Pode afetar todos os usuários dependendo dos dados comprometidos |
-| Discoverability | 5 | Requer análise direcionada das consultas e transações |
-| **Pontuação DREAD** | **7.0** | **ALTO** |
+**Elevation of Privilege (E):** Acesso não autorizado a funcionalidades de controlo
 
-### Gestor (4.1)
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 8         | Permite acesso a informações financeiras sensíveis e potencial manipulação |
+| **Reproducibility    | 6         | Requer exploração de vulnerabilidades no controlo de acesso baseado em roles |
+| **Exploitability **  | 7         | Necessita de conhecimentos técnicos sobre tokens JWT e mecanismos de autorização |
+| **Affected Users**   | 9         | Afecta potencialmente todos os utilizadores via acesso a informações sensíveis |
+| **Discoverability ** | 6         | Requer análise específica do mecanismo de autorização        |
+| **Pontuação DREAD**  | **7.2**   | **ALTO**                                                     |
+
+------
+
+#### Processo de Notificação (1.8)
+
+**Tampering (T):** Modificação não autorizada do conteúdo das notificações
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**           | 7         | Pode causar confusão operacional e potencialmente redirecionar utilizadores para sites maliciosos |
+| **Reproducibility ** | 6         | Requer acesso ao servidor ou às credenciais de email do sistema |
+| **Exploitability **  | 5         | Necessita de conhecimentos técnicos e acesso à infraestrutura |
+| **Affected Users **  | 8         | Pode afectar todos os utilizadores que recebem notificações  |
+| **Discoverability ** | 5         | Requer conhecimento específico da implementação do sistema de notificações |
+| **Pontuação DREAD**  | **6.2**   | **ALTO**                                                     |
+
+------
+
+**Information Disclosure (I):**  Acesso não autorizado a informações nas notificações
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 6         | Exposição de informações potencialmente sensíveis sobre períodos e operações |
+| **Reproducibility ** | 6         | Requer acesso à infraestrutura de rede ou email              |
+| **Exploitability **  | 5         | Necessita de conhecimentos técnicos específicos e posicionamento privilegiado |
+| **Affected Users **  | 7         | Afecta utilizadores cujas informações estão contidas nas notificações |
+| **Discoverability ** | 5         | Requer monitorização específica das comunicações             |
+| **Pontuação DREAD**  | **5.8**   | **MÉDIO**                                                    |
+
+#### Fluxo: Credenciais de Login → Autenticação (2.1)
+
+**Tampering (T):** Modificação das credenciais ou tokens durante a transmissão
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 9         | Permite acesso não autorizado a contas potencialmente privilegiadas |
+| **Reproducibility ** | 8         | Altamente reproduzível em redes não seguras com ferramentas MitM disponíveis |
+| **Exploitability **  | 7         | Requer posicionamento na rede ou capacidade de interceptar tráfego |
+| **Affected Users **  | 8         | Afeta qualquer utilizador que aceda ao sistema a partir de redes não seguras |
+| **Discoverability ** | 8         | Vulnerabilidade bem conhecida em sistemas sem HTTPS adequado |
+| **Pontuação DREAD**  | **8.0**   | **ALTO**                                                     |
+
+**Information Disclosure (I):** Interceção de credenciais durante a transmissão
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 9         | Exposição de credenciais permite acesso completo às contas comprometidas |
+| **Reproducibility ** | 8         | Facilmente reproduzível em redes não seguras ou com ferramentas de MitM |
+| **Exploitability **  | 7         | Requer posicionamento na rede ou ferramentas específicas     |
+| **Affected Users**   | 8         | Afeta todos os utilizadores que acedem ao sistema via redes não seguras |
+| **Discoverability ** | 7         | Vulnerabilidade comumente testada e conhecida em aplicações web |
+| **Pontuação DREAD**  | **7.8**   | **ALTO**                                                     |
+
+------
+
+#### Fluxo: Dados do Novo Período → Gestão de Períodos (2.2)
+
+**Tampering (T):** Adulteração dos dados de períodos durante a transmissão
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 8         | Compromete o planeamento operacional do sistema com datas inválidas |
+| **Reproducibility ** | 6         | Requer intercetação de comunicações específicas durante a criação de períodos |
+| **Exploitability **  | 6         | Necessita de conhecimentos técnicos e posicionamento adequado na rede |
+| **Affected Users**   | 9         | Afeta todos os utilizadores que dependem de períodos válidos para operações |
+| **Discoverability ** | 6         | Requer análise do tráfego específico de criação de períodos  |
+| **Pontuação DREAD**  | **7.0**   | **ALTO**                                                     |
+
+**Information Disclosure (I): **Acesso antecipado a informações de períodos
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 7         | Proporciona vantagem competitiva indevida a certos Produtores |
+| **Reproducibility ** | 6         | Requer intercetação de comunicações específicas ou acesso privilegiado |
+| **Exploitability **  | 6         | Necessita conhecimentos técnicos e acesso à infraestrutura de rede |
+| **Affected Users **  | 7         | Afeta a concorrência justa entre Produtores no sistema       |
+| **Discoverability ** | 5         | Requer monitorização específica de tráfego relacionado a períodos |
+| **Pontuação DREAD**  | **6.2**   | **ALTO**                                                     |
+
+------
+
+#### Fluxo: Dados de Subscrição para Pagamento → Pagamento (2.3)
+
+ **Tampering (T):** Modificação não autorizada dos dados de subscrição
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 9         | Permite fraudes financeiras diretas, como pagamentos reduzidos por produtos recebidos |
+| **Reproducibility ** | 7         | Requer interseção de comunicações específicas relacionadas a pagamentos |
+| **Exploitability **  | 7         | Necessita conhecimentos técnicos sobre a estrutura da API e o fluxo de pagamento |
+| **Affected Users**   | 7         | Afeta Produtores que não recebem o valor correto e compromete a integridade do sistema |
+| **Discoverability ** | 7         | Requer análise específica do fluxo de pagamento, mas é um alvo comum de ataques |
+| **Pontuação DREAD**  | **7.4**   | **ALTO**                                                     |
+
+**Information Disclosure (I):** Acesso a informações de transações
+
+| Fator DREAD          | Pontuação | Justificação                                                 |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Damage **          | 8         | Exposição de dados financeiros sensíveis, violando a privacidade dos utilizadores |
+| **Reproducibility ** | 6         | Requer intercetação de comunicações específicas entre módulos |
+| **Exploitability **  | 6         | Necessita conhecimentos técnicos sobre a arquitetura do sistema |
+| **Affected Users **  | 7         | Afeta a privacidade dos utilizadores envolvidos nas transações capturadas |
+| **Discoverability ** | 6         | Requer análise dos fluxos internos entre módulos de subscrição e pagamento |
+| **Pontuação DREAD**  | **6.6**   | **ALTO**                                                     |
+
+#### Armazenamento: Utilizadores (3.1)
+
+**Tampering (T):**  Modificação não autorizada de dados de utilizador
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 10        | Alteração de UserType permite elevação de privilégios, comprometendo todo o sistema |
+| **Reproducibility** | 6         | Requer acesso direto à base de dados ou exploração de vulnerabilidades críticas |
+| **Exploitability**  | 7         | Necessita conhecimentos técnicos avançados ou acesso privilegiado |
+| **Affected Users**  | 9         | Impacto potencial em todos os utilizadores se contas administrativas forem comprometidas |
+| **Discoverability** | 6         | Requer conhecimento da estrutura da base de dados e pontos de acesso |
+| **Pontuação DREAD** | **7.6**   | **ALTO**                                                     |
+
+**Information Disclosure (I):**  Acesso a informações sensíveis do utilizador
+
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 9         | Exposição de dados sensíveis, incluindo credenciais, comprometendo a segurança dos utilizadores |
+| **Reproducibility** | 7         | Possível através de acesso direto a backups ou vulnerabilidades de consulta |
+| **Exploitability**  | 6         | Requer acesso privilegiado ou exploração de falhas específicas |
+| **Affected Users**  | 10        | Potencialmente afeta todos os utilizadores do sistema        |
+| **Discoverability** | 7         | Estruturas de armazenamento de utilizadores são alvos primários de ataques |
+| **Pontuação DREAD** | **7.8**   | **ALTO**                                                     |
+
+#### Armazenamento: Ofertas de Produtos (3.2)
+
+**Tampering (T):** Modificação não autorizada de ofertas de produtos
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 8         | Compromete a integridade do negócio e causa prejuízos financeiros diretos |
+| **Reproducibility** | 7         | Reproduzível através de acesso direto à base de dados ou exploração de APIs |
+| **Exploitability**  | 7         | Requer conhecimentos técnicos sobre a estrutura do sistema ou acesso privilegiado |
+| **Affected Users**  | 8         | Afeta produtores e coprodutores envolvidos nas ofertas manipuladas |
+| **Discoverability** | 7         | Vulnerabilidades em APIs de gestão de ofertas são comumente exploradas |
+| **Pontuação DREAD** | **7.4**   | **ALTO**                                                     |
+
+**Information Disclosure (I):** Acesso antecipado a informações de ofertas
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 7         | Proporciona vantagem competitiva indevida e compromete a concorrência justa |
+| **Reproducibility** | 6         | Requer acesso à base de dados ou pontos de falha específicos na API |
+| **Exploitability**  | 6         | Necessita conhecimentos técnicos sobre o sistema de ofertas  |
+| **Affected Users**  | 7         | Afeta produtores cuja informação comercial é exposta antecipadamente |
+| **Discoverability** | 6         | Requer conhecimento da estrutura dos dados e pontos de acesso |
+| **Pontuação DREAD** | **6.4**   | **ALTO**                                                     |
+
+#### Armazenamento: Pagamentos (3.3)
+
+**Tampering (T):** Alteração não autorizada de registros de pagamentos
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 10        | Permite fraudes financeiras diretas com prejuízo monetário significativo |
+| **Reproducibility** | 7         | Requer acesso privilegiado à base de dados ou exploração de vulnerabilidades críticas |
+| **Exploitability**  | 7         | Necessita conhecimentos técnicos sobre o sistema financeiro  |
+| **Affected Users**  | 8         | Afeta diretamente produtores e compromete a confiabilidade do sistema |
+| **Discoverability** | 6         | Requer conhecimentos específicos sobre a estrutura financeira do sistema |
+| **Pontuação DREAD** | **7.6**   | **ALTO**                                                     |
+
+**Information Disclosure (I):** Acesso a informações financeiras sensíveis
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 8         | Exposição de dados financeiros sensíveis comprometendo privacidade |
+| **Reproducibility** | 7         | Possível através de acesso não autorizado a backups ou explorações do sistema |
+| **Exploitability**  | 6         | Requer acesso privilegiado ou conhecimentos técnicos específicos |
+| **Affected Users**  | 9         | Potencialmente expõe informações financeiras de todos os utilizadores |
+| **Discoverability** | 7         | Dados financeiros são alvos primários de ataques             |
+| **Pontuação DREAD** | **7.4**   | **ALTO**                                                     |
+
+#### Armazenamento: Produtos (3.4)
+
+**Tampering (T):** Modificação não autorizada de informações de produtos
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 7         | Compromete a integridade do catálogo e afeta a confiabilidade do sistema |
+| **Reproducibility** | 8         | Relativamente fácil se houver acesso à base de dados ou falhas na API |
+| **Exploitability**  | 7         | Requer conhecimentos técnicos ou acesso privilegiado         |
+| **Affected Users**  | 7         | Afeta produtores cujos produtos são modificados e coprodutores que dependem de informações precisas |
+| **Discoverability** | 8         | Funcionalidades de edição de produtos são comuns e facilmente identificáveis |
+| **Pontuação DREAD** | **7.4**   | **ALTO**                                                     |
+
+**Information Disclosure (I):** Acesso a informações confidenciais sobre produtos
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 6         | Compromete segredos comerciais e estratégias de negócio      |
+| **Reproducibility** | 7         | Possível através de consultas não autorizadas ou exportações |
+| **Exploitability**  | 6         | Requer conhecimentos técnicos ou acesso privilegiado         |
+| **Affected Users**  | 6         | Afeta principalmente produtores cuja informação é exposta    |
+| **Discoverability** | 7         | Vulnerabilidades de acesso a dados de produtos são comuns    |
+| **Pontuação DREAD** | **6.4**   | **ALTO**                                                     |
+
+#### Armazenamento: Subscrições (3.5)
+
+**Tampering (T): **Modificação não autorizada de dados de subscrições
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 8         | Permite obter produtos sem pagar o valor correto, causando prejuízos diretos |
+| **Reproducibility** | 7         | Requer acesso à base de dados ou exploração de vulnerabilidades na API |
+| **Exploitability**  | 6         | Necessita conhecimentos técnicos sobre o sistema de subscrições |
+| **Affected Users**  | 7         | Afeta produtores e o planejamento de produção                |
+| **Discoverability** | 7         | Requer conhecimento da estrutura do sistema de subscrições   |
+| **Pontuação DREAD** | **7.0**   | **ALTO**                                                     |
+
+**Information Disclosure (I): **Acesso a informações de subscrições
+
+| Fator DREAD         | Pontuação | Justificativa                                              |
+| ------------------- | --------- | ---------------------------------------------------------- |
+| **Damage**          | 6         | Exposição de padrões de compra e estratégias de negócio    |
+| **Reproducibility** | 6         | Requer acesso à base de dados ou falhas na API de consulta |
+| **Exploitability**  | 6         | Necessita conhecimentos técnicos ou acesso privilegiado    |
+| **Affected Users**  | 7         | Afeta produtores e coprodutores cujos dados são expostos   |
+| **Discoverability** | 6         | Requer investigação específica do sistema de subscrições   |
+| **Pontuação DREAD** | **6.2**   | **ALTO**                                                   |
+
+#### Armazenamento: Períodos de Subscrição (3.6)
+
+**Tampering (T):** Modificação não autorizada de períodos de subscrição
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 8         | Compromete todo o ciclo operacional da plataforma, afetando planejamento e entregas |
+| **Reproducibility** | 6         | Requer acesso privilegiado ou vulnerabilidades específicas na API |
+| **Exploitability**  | 6         | Necessita conhecimentos técnicos sobre a estrutura do sistema |
+| **Affected Users**  | 9         | Afeta todos os utilizadores que dependem dos períodos para planejamento |
+| **Discoverability** | 6         | Requer conhecimento do modelo de dados e pontos de acesso    |
+| **Pontuação DREAD** | **7.0**   | **ALTO**                                                     |
+
+**Information Disclosure (I):** Acesso prematuro a informações sobre períodos
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 7         | Proporciona vantagem competitiva indevida a certos produtores |
+| **Reproducibility** | 6         | Requer acesso específico à base de dados ou falhas na API    |
+| **Exploitability**  | 6         | Necessita conhecimentos técnicos sobre o sistema             |
+| **Affected Users**  | 7         | Afeta a concorrência justa entre produtores no sistema       |
+| **Discoverability** | 5         | Requer conhecimento específico da estrutura de dados de períodos |
+| **Pontuação DREAD** | **6.2**   | **ALTO**                                                     |
+
+#### Entidade Externa: Gestor (4.1)
+
 **Spoofing (S):** Falsificação da identidade de um Gestor
 
-| Fator DREAD | Pontuação | Justificativa |
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 10        | Acesso administrativo completo permite controle sobre todas as operações e manipulação do sistema |
+| **Reproducibility** | 7         | Requer obtenção de credenciais via phishing ou outras técnicas, mas depois é totalmente reproduzível |
+| **Exploitability**  | 6         | Necessita de engenharia social direcionada ou técnicas avançadas de ataque |
+| **Affected Users**  | 10        | Impacta potencialmente todos os usuários do sistema, comprometendo a integridade global |
+| **Discoverability** | 7         | Contas administrativas são alvos conhecidos em sistemas corporativos |
+| **Pontuação DREAD** | **8.0**   | **ALTO**                                                     |
+
+**Repudiation (R):** Negação de ações administrativas realizadas
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 8         | Compromete a responsabilização por operações críticas e pode causar disputas internas |
+| **Reproducibility** | 9         | Facilmente reproduzível se não houver mecanismos robustos de auditoria |
+| **Exploitability**  | 8         | Requer apenas negar as ações realizadas se não existirem registros adequados |
+| **Affected Users**  | 8         | Afeta a confiabilidade do sistema e impacta usuários que dependem das operações administrativas |
+| **Discoverability** | 7         | Vulnerabilidade comum em sistemas sem auditoria adequada     |
+| **Pontuação DREAD** | **8.0**   | **ALTO**                                                     |
+
+#### Entidade Externa: Produtor (4.2)
+
+**Spoofing (S):** Falsificação da identidade de um Produtor
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 8         | Permite criar ofertas fraudulentas, danificando reputações e causando prejuízos financeiros |
+| **Reproducibility** | 7         | Requer comprometimento de credenciais ou criação de contas falsas |
+| **Exploitability**  | 7         | Necessita de técnicas de phishing ou exploração de vulnerabilidades no registro |
+| **Affected Users**  | 8         | Afeta o Produtor alvo, CoProdutores e a integridade do mercado |
+| **Discoverability** | 7         | Vulnerabilidade conhecida em sistemas de e-commerce          |
+| **Pontuação DREAD** | **7.4**   | **ALTO**                                                     |
+
+**Repudiation (R):** Negação de ter criado ofertas específicas
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 8         | Causa disputas comerciais e compromete a confiabilidade do sistema |
+| **Reproducibility** | 9         | Facilmente reproduzível na ausência de mecanismos de não-repúdio |
+| **Exploitability**  | 8         | Requer apenas negar as condições originais das ofertas       |
+| **Affected Users**  | 7         | Afeta CoProdutores que realizaram subscrições baseados nas condições |
+| **Discoverability** | 8         | Vulnerabilidade comum em sistemas sem assinaturas digitais   |
+| **Pontuação DREAD** | **8.0**   | **ALTO**                                                     |
+
+#### Entidade Externa: CoProdutor (4.3)
+
+**Spoofing (S):** Falsificação da identidade de um CoProdutor
+
+| **Fator DREAD**     | **Pontuação** | **Justificativa**                                            |
+| ------------------- | ------------- | ------------------------------------------------------------ |
+| **Damage**          | 7             | Permite realizar subscrições fraudulentas e manipular entregas |
+| **Reproducibility** | 7             | Requer comprometimento de credenciais ou criação de contas falsas |
+| **Exploitability**  | 7             | Necessita de técnicas de phishing ou exploração de vulnerabilidades |
+| **Affected Users**  | 6             | Afeta principalmente o CoProdutor alvo e Produtores específicos |
+| **Discoverability** | 7             | Vulnerabilidade comum em sistemas com contas de usuários     |
+| **Pontuação DREAD** | **6.8**       | **ALTO**                                                     |
+
+**Repudiation (R):** Negação de ter realizado subscrição ou pagamento
+
+| **Fator DREAD**     | **Pontuação** | **Justificativa**                                            |
+| ------------------- | ------------- | ------------------------------------------------------------ |
+| **Damage**          | **8**         | **Causa prejuízos financeiros diretos aos Produtores**       |
+| **Reproducibility** | **9**         | **Facilmente reproduzível sem mecanismos robustos de não-repúdio** |
+| **Exploitability**  | 9             | Requer apenas negar a transação e potencialmente solicitar chargeback |
+| **Affected Users**  | 7             | Afeta Produtores e a confiabilidade do sistema de pagamentos |
+| **Discoverability** | 9             | Vulnerabilidade óbvia em sistemas de comércio eletrônico     |
+| **Pontuação DREAD** | **8.4**       | **CRÍTICO**                                                  |
+
+#### Entidade Externa: Sistema de Email (4.4)
+
+**Spoofing (S):** Falsificação do sistema de email da AMAP
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 9         | Permite campanhas de phishing direcionadas com alta taxa de sucesso |
+| **Reproducibility** | 6         | Requer comprometimento de credenciais SMTP ou exploração de DNS |
+| **Exploitability**  | 6         | Necessita conhecimentos técnicos sobre sistemas de email e infraestrutura |
+| **Affected Users**  | 9         | Potencialmente afeta todos os usuários que recebem emails do sistema |
+| **Discoverability** | 6         | Requer investigação específica da infraestrutura de email    |
+| **Pontuação DREAD** | **7.2**   | **ALTO**                                                     |
+
+**Information Disclosure (I):**  Intercepção de notificações
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 7         | Exposição de informações sensíveis sobre negócios e usuários |
+| **Reproducibility** | 6         | Requer acesso à infraestrutura de rede ou email              |
+| **Exploitability**  | 6         | Necessita conhecimentos técnicos e posicionamento adequado   |
+| **Affected Users**  | 8         | Afeta todos os usuários cujas informações são transmitidas por email |
+| **Discoverability** | 6         | Requer monitoramento específico do tráfego SMTP              |
+| **Pontuação DREAD** | **6.6**   | **ALTO**                                                     |
+
+#### Database Boundary (5.1)
+
+**Information Disclosure (I):** Manipulação não autorizada de dados entre aplicação e base de dados
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 9         | Compromete a integridade fundamental dos dados, permitindo modificações maliciosas que podem afetar todo o sistema |
+| **Reproducibility** | 7         | Reproduzível através de injeção SQL ou acesso direto à base de dados |
+| **Exploitability**  | 7         | Requer conhecimentos técnicos avançados ou acesso privilegiado |
+| **Affected Users**  | 9         | Potencialmente afeta todos os usuários do sistema através da corrupção de dados críticos |
+| **Discoverability** | 6         | Requer conhecimento específico sobre arquitetura e implementação do banco de dados |
+| **Pontuação DREAD** | **7.6**   | **ALTO**                                                     |
+
+**Tampering (T):** Exposição não autorizada de dados sensíveis
+
+| Fator DREAD         | Pontuação | Justificativa                                                |
 |-------------|-----------|---------------|
-| Damage | 10 | Acesso completo às funcionalidades administrativas críticas |
-| Reproducibility | 7 | Reproduzível através de ataques de phishing bem estruturados |
-| Exploitability | 5 | Requer direcionar especificamente Gestores, que são usuários mais cautelosos |
-| Affected Users | 9 | Impacta potencialmente todos os usuários do sistema |
-| Discoverability | 6 | Necessita reconhecimento de alvos específicos e engenharia social |
-| **Pontuação DREAD** | **7.4** | **ALTO** |
+| **Damage**          | 9         | Exposição de dados confidenciais, incluindo informações financeiras e pessoais |
+| **Reproducibility** | 6         | Requer vulnerabilidades específicas ou acessos privilegiados |
+| **Exploitability**  | 7         | Necessita conhecimentos técnicos sobre o modelo de dados e pontos de acesso |
+| **Affected Users**  | 10        | Potencialmente expõe dados de todos os usuários do sistema   |
+| **Discoverability** | 6         | Requer análise detalhada da implementação do banco de dados  |
+| **Pontuação DREAD** | **7.6**   | **ALTO**                                                     |
 
-### Sistema de Email (4.4)
-**Information Disclosure (I):** Interceptação de notificações
+#### Limite: Perímetro de Autenticação (5.2)
 
-| Fator DREAD | Pontuação | Justificativa |
-|-------------|-----------|---------------|
-| Damage | 7 | Exposição de informações potencialmente sensíveis sobre períodos e operações |
-| Reproducibility | 6 | Requer acesso à infraestrutura de rede ou email |
-| Exploitability | 5 | Necessita conhecimentos técnicos específicos e posição privilegiada |
-| Affected Users | 8 | Pode afetar grande parte dos usuários que recebem comunicações |
-| Discoverability | 5 | Requer monitoramento específico do tráfego SMTP |
-| **Pontuação DREAD** | **6.2** | **ALTO** |
+**Spoofing (S):** Falsificação de identidade para contornar autenticação
 
-## 4. Matriz de Risco Consolidada
-Organizando as ameaças avaliadas em ordem decrescente de risco:
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 10        | Permite acesso não autorizado ao sistema, potencialmente em nível administrativo |
+| **Reproducibility** | 7         | Requer exploração de vulnerabilidades de autenticação ou roubo de credenciais |
+| **Exploitability**  | 6         | Necessita técnicas específicas ou acesso a tokens/cookies    |
+| **Affected Users**  | 9         | Impacta potencialmente todos os usuários do sistema          |
+| **Discoverability** | 7         | Vulnerabilidades de autenticação são alvos comuns de ataques |
+| **Pontuação DREAD** | **7.8**   | **ALTO**                                                     |
 
-| Ameaça | Pontuação DREAD | Nível de Risco |
-|--------|----------------|---------------|
-| Autenticação - Spoofing | 8.4 | CRÍTICO |
-| Database Boundary - Information Disclosure | 8.2 | CRÍTICO |
-| Fluxo Credenciais Login - Information Disclosure | 8.2 | CRÍTICO |
-| Gestão de Produtos - Tampering | 7.8 | ALTO |
-| Processo de Pagamento - Repudiation | 7.8 | ALTO |
-| Gestor - Spoofing | 7.4 | ALTO |
-| Processo de Pagamento - Tampering | 7.4 | ALTO |
-| Criação de Ofertas - Spoofing | 7.4 | ALTO |
-| Criação de Ofertas - Tampering | 7.4 | ALTO |
-| Fluxo Credenciais Login - Tampering | 7.4 | ALTO |
-| Gestão de Períodos - Tampering | 7.2 | ALTO |
-| Processo de Subscrição - Repudiation | 7.2 | ALTO |
-| Database Boundary - Tampering | 7.0 | ALTO |
-| Processo de Subscrição - Tampering | 7.0 | ALTO |
-| Fluxo Subscrição para Pagamento - Tampering | 7.0 | ALTO |
-| Autenticação - Elevation of Privilege | 6.6 | ALTO |
-| Controlo de Pagamentos - Information Disclosure | 6.6 | ALTO |
-| Fluxo Dados Período - Tampering | 6.6 | ALTO |
-| Gestão de Períodos - Elevation of Privilege | 6.4 | ALTO |
-| Controlo de Pagamentos - Elevation of Privilege | 6.4 | ALTO |
-| Processo de Notificação - Information Disclosure | 6.4 | ALTO |
-| Sistema de Email - Information Disclosure | 6.2 | ALTO |
-| Processo de Notificação - Tampering | 6.2 | ALTO |
-| Gestão de Produtos - Information Disclosure | 6.0 | ALTO |
-| Fluxo Dados Período - Information Disclosure | 6.0 | ALTO |
-| Fluxo Subscrição para Pagamento - Information Disclosure | 6.0 | ALTO |
+**Tampering (T): **Manipulação dos dados de autenticação durante transmissão
 
-## 5. Análise dos Resultados e Justificativa da Priorização
-A avaliação de risco DREAD mostra que as ameaças mais críticas para o sistema AMAP estão relacionadas com:
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 9         | Permite acesso não autorizado comprometendo a verificação de identidade |
+| **Reproducibility** | 7         | Reproduzível com ferramentas especializadas em ambientes sem proteções adequadas |
+| **Exploitability**  | 7         | Requer conhecimentos técnicos sobre protocolos de autenticação |
+| **Affected Users**  | 8         | Afeta qualquer usuário cujas credenciais são interceptadas   |
+| **Discoverability** | 7         | Vulnerabilidades em transmissão de credenciais são comumente testadas |
+| **Pontuação DREAD** | **7.6**   | **ALTO**                                                     |
 
-1. **Autenticação e controlo de acesso:** Falsificação de identidade (spoofing) representa um risco crítico pois compromete todo o modelo de segurança do sistema. O comprometimento de contas de Gestor oferece controlo administrativo completo. A interceção de credenciais durante a transmissão também foi classificada como crítica.
+#### Limite: Controle de Acesso por Perfil (5.3)
 
-2. **Segurança do banco de dados:** Vulnerabilidades que permitem acesso não autorizado a dados sensíveis representam um risco crítico pois podem comprometer todas as informações do sistema, incluindo dados pessoais e financeiros.
+**Elevation of Privilege (E): **Contornar mecanismos de controle de acesso
 
-3. **Integridade de transações e operações:** A manipulação de dados (tampering) em várias componentes do sistema, incluindo produtos, períodos, ofertas e subscrições, representa um risco alto para a integridade das operações. O repúdio de pagamentos e subscrições impacta diretamente a confiabilidade financeira do sistema.
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 9         | Permite acesso não autorizado a funcionalidades restritas e dados sensíveis |
+| **Reproducibility** | 6         | Requer identificação de falhas específicas no controle de acesso |
+| **Exploitability**  | 7         | Necessita conhecimentos técnicos sobre RBAC e vulnerabilidades de autorização |
+| **Affected Users**  | 9         | Potencialmente impacta todos os usuários via acesso a funcionalidades restritas |
+| **Discoverability** | 6         | Requer análise específica das implementações de autorização  |
+| **Pontuação DREAD** | **7.4**   | **ALTO**                                                     |
 
-4. **Fluxos de comunicação interna e externa:** Interceptação ou modificação de dados durante a transmissão entre componentes do sistema representa um risco significativo, especialmente para credenciais de login e informações financeiras.
+**Information Disclosure (I): **Acesso a informações restritas ao perfil
 
-A diferenciação na priorização destas ameaças deve-se principalmente a:
+| Fator DREAD            | Pontuação | Justificativa                                                |
+| ---------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**             | 8         | Exposição de dados sensíveis que deveriam estar limitados por perfil |
+| **Reproducibility**    | 7         | Reproduzível se identificadas falhas na implementação dos filtros baseados em perfil |
+| **Exploitability**     | 6         | Requer conhecimentos sobre a estrutura de autorização e endpoints específicos |
+| **Affected** **Users** | 8         | Afeta usuários cujos dados estão protegidos pelo controle de acesso por perfil |
+| **Discoverability**    | 6         | Requer análise das implementações de autorização e filtragem de dados |
+| **Pontuação DREAD**    | **7.0**   | **ALTO**                                                     |
 
-- **Potencial de dano (Damage):** Ameaças que impactam a integridade financeira ou comprometem todo o sistema receberam pontuações mais altas.
-- **Utilizadores afetados (Affected Users):** Ameaças que afetam todos ou a maioria dos utilizadores foram priorizadas sobre aquelas que impactam apenas grupos específicos.
-- **Reprodutibilidade e Exploitabilidade:** Ameaças facilmente reproduzíveis e exploráveis representam maior risco imediato.
+#### Limite: Integração com Sistema de Email (5.4)
 
-As ameaças foram classificadas em três níveis de prioridade:
+**Tampering (T): **Manipulação do conteúdo das mensagens
 
-1. **Crítico (DREAD ≥ 8.0):** Requerem mitigação imediata e monitorização contínua.
-   - Autenticação - Spoofing (8.4)
-   - Database Boundary - Information Disclosure (8.2)
-   - Fluxo Credenciais Login - Information Disclosure (8.2)
+| Fator DREAD            | Pontuação | Justificativa                                                |
+| ---------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**             | 8         | Pode resultar em phishing eficaz, informações falsas ou links maliciosos |
+| **Reproducibility**    | 6         | Requer acesso à infraestrutura de email ou servidores        |
+| **Exploitability**     | 6         | Necessita conhecimentos técnicos e acesso privilegiado       |
+| **Affected** **Users** | 8         | Potencialmente afeta todos os usuários que recebem emails do sistema |
+| **Discoverability**    | 5         | Requer conhecimento específico da implementação do sistema de emails |
+| **Pontuação DREAD**    | **6.6**   | **ALTO**                                                     |
 
-2. **Alto (6.0 ≤ DREAD < 8.0):** Necessitam de mitigação prioritária e verificações regulares.
-   - Inclui ameaças à integridade dos dados, repúdio de transações e manipulação de fluxos.
+**Information Disclosure (I):** Interceptação de informações sensíveis
 
-3. **Médio (4.0 ≤ DREAD < 6.0):** Requerem monitorização e mitigação conforme recursos disponíveis.
-   - Nenhuma ameaça avaliada foi classificada neste nível, demonstrando a criticidade geral do sistema.
+| Fator DREAD         | Pontuação | Justificativa                                                |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| **Damage**          | 7         | Exposição de dados potencialmente sensíveis contidos em notificações |
+| **Reproducibility** | 6         | Requer acesso à infraestrutura de rede ou email              |
+| **Exploitability**  | 6         | Necessita conhecimentos técnicos e posicionamento adequado   |
+| **Affected Users**  | 8         | Afeta todos os usuários cujas informações são transmitidas via email |
+| **Discoverability** | 5         | Requer monitoramento específico de tráfego de email          |
+| **Pontuação DREAD** | **6.4**   | **ALTO**                                                     |
+
+
+
+### Priorização de Ameaças por Pontuação DREAD
+
+A tabela abaixo apresenta todas as ameaças identificadas no sistema AMAP, ordenadas por ordem decrescente de pontuação DREAD:
+
+| Posição | Ameaça                                                       | Referência | Pontuação DREAD | Severidade |
+| ------- | ------------------------------------------------------------ | ---------- | --------------- | ---------- |
+| 1       | Negação de ter realizado subscrição ou pagamento             | 4.3 R      | 8.4             | CRÍTICO    |
+| 2       | Falsificação da identidade de um Gestor                      | 4.1 S      | 8.0             | ALTO       |
+| 2       | Negação de ações administrativas realizadas                  | 4.1 R      | 8.0             | ALTO       |
+| 2       | Negação de ter criado ofertas específicas                    | 4.2 R      | 8.0             | ALTO       |
+| 2       | Negação de ter realizado um pagamento                        | 1.6 R      | 8.0             | ALTO       |
+| 2       | Alteração não autorizada de informações de produtos          | 1.3 T      | 8.0             | ALTO       |
+| 2       | Falsificação de identidade para obter acesso não autorizado  | 1.1 S      | 8.0             | ALTO       |
+| 2       | Modificação das credenciais ou tokens durante a transmissão  | 2.1 T      | 8.0             | ALTO       |
+| 9       | Falsificação de identidade para contornar autenticação       | 5.2 S      | 7.8             | ALTO       |
+| 9       | Interceção de credenciais durante a transmissão              | 2.1 I      | 7.8             | ALTO       |
+| 9       | Acesso a informações sensíveis do utilizador                 | 3.1 I      | 7.8             | ALTO       |
+| 12      | Modificação não autorizada de dados do utilizador            | 3.1 T      | 7.6             | ALTO       |
+| 12      | Manipulação não autorizada de dados entre aplicação e base de dados | 5.1 T      | 7.6             | ALTO       |
+| 12      | Exposição não autorizada de dados sensíveis                  | 5.1 I      | 7.6             | ALTO       |
+| 12      | Alteração não autorizada de registos de pagamentos           | 3.3 T      | 7.6             | ALTO       |
+| 12      | Modificação não autorizada de ofertas existentes             | 1.4 T      | 7.6             | ALTO       |
+| 12      | Alteração não autorizada de informações de pagamento         | 1.6 T      | 7.6             | ALTO       |
+| 12      | Elevação de privilégios de CoProdutor para Produtor/Gestor   | 1.1 E      | 7.6             | ALTO       |
+| 12      | Manipulação dos dados de autenticação durante transmissão    | 5.2 T      | 7.6             | ALTO       |
+| 20      | Modificação não autorizada dos dados de subscrição           | 2.3 T      | 7.4             | ALTO       |
+| 20      | Contornar mecanismos de controlo de acesso                   | 5.3 E      | 7.4             | ALTO       |
+| 20      | Modificação não autorizada de ofertas de produtos            | 3.2 T      | 7.4             | ALTO       |
+| 20      | Acesso a informações financeiras sensíveis                   | 3.3 I      | 7.4             | ALTO       |
+| 20      | Modificação não autorizada de informações de produtos        | 3.4 T      | 7.4             | ALTO       |
+| 20      | Falsificação da identidade de um Produtor                    | 4.2 S      | 7.4             | ALTO       |
+| 20      | Negação de ter realizado uma subscrição específica           | 1.5 R      | 7.4             | ALTO       |
+| 27      | Falsificação do sistema de email da AMAP                     | 4.4 S      | 7.2             | ALTO       |
+| 27      | Modificação não autorizada de períodos de subscrição e datas de entrega | 1.2 T      | 7.2             | ALTO       |
+| 27      | Divulgação não autorizada de informações financeiras         | 1.7 I      | 7.2             | ALTO       |
+| 27      | Acesso não autorizado a funcionalidades de controlo          | 1.7 E      | 7.2             | ALTO       |
+| 27      | Criação de ofertas falsas em nome de outros Produtores       | 1.4 S      | 7.2             | ALTO       |
+| 32      | Acesso a informações restritas ao perfil                     | 5.3 I      | 7.0             | ALTO       |
+| 32      | Adulteração dos dados de períodos durante a transmissão      | 2.2 T      | 7.0             | ALTO       |
+| 32      | Modificação não autorizada de dados de subscrições           | 3.5 T      | 7.0             | ALTO       |
+| 32      | Modificação não autorizada de períodos de subscrição         | 3.6 T      | 7.0             | ALTO       |
+| 36      | Falsificação da identidade de um CoProdutor                  | 4.3 S      | 6.8             | ALTO       |
+| 37      | Alteração não autorizada de dados de subscrição              | 1.5 T      | 6.6             | ALTO       |
+| 37      | Acesso a informações de transações                           | 2.3 I      | 6.6             | ALTO       |
+| 37      | Interceção de notificações                                   | 4.4 I      | 6.6             | ALTO       |
+| 37      | Manipulação do conteúdo das mensagens                        | 5.4 T      | 6.6             | ALTO       |
+| 37      | Acesso indevido às funcionalidades de gestão de períodos     | 1.2 E      | 6.6             | ALTO       |
+| 42      | Divulgação não autorizada de informações de produtos         | 1.3 I      | 6.4             | ALTO       |
+| 42      | Acesso antecipado a informações de ofertas                   | 3.2 I      | 6.4             | ALTO       |
+| 42      | Acesso a informações confidenciais sobre produtos            | 3.4 I      | 6.4             | ALTO       |
+| 42      | Interceptação de informações sensíveis                       | 5.4 I      | 6.4             | ALTO       |
+| 46      | Acesso antecipado a informações de períodos                  | 2.2 I      | 6.2             | ALTO       |
+| 46      | Modificação não autorizada do conteúdo das notificações      | 1.8 T      | 6.2             | ALTO       |
+| 46      | Acesso a informações de subscrições                          | 3.5 I      | 6.2             | ALTO       |
+| 46      | Acesso prematuro a informações sobre períodos                | 3.6 I      | 6.2             | ALTO       |
+| 50      | Acesso não autorizado a informações nas notificações         | 1.8 I      | 5.8             | MÉDIO      |
+
+## Conclusão e Justificação das Decisões Tomadas
+
+A priorização das ameaças foi realizada utilizando a metodologia DREAD, permitindo uma avaliação quantitativa dos riscos com base em cinco fatores críticos: potencial de dano, reprodutibilidade, facilidade de exploração, número de utilizadores afetados e facilidade de descoberta.
+
+A ordenação decrescente das pontuações DREAD revela padrões importantes nas vulnerabilidades do sistema AMAP:
+
+- **Ameaças de Repúdio (R)** encabeçam a lista de prioridades, com a negação de pagamentos e subscrições a representar o maior risco individual (8.4). Este resultado justifica-se pela combinação de alto impacto financeiro direto, extrema facilidade de exploração (não requer competências técnicas) e elevada reprodutibilidade na ausência de mecanismos adequados de não repúdio.
+
+- **Falsificação de Identidade (S)** surge consistentemente nas posições superiores, especialmente quando direcionada a contas privilegiadas como Gestores (8.0). A justificação para esta priorização baseia-se no potencial catastrófico de acesso administrativo não autorizado, que pode comprometer todo o sistema.
+
+- **Exposição de Dados Sensíveis (I)** e **Manipulação de Dados (T)** representam a maioria das ameaças classificadas como de alto risco, refletindo preocupações significativas com a integridade e confidencialidade dos dados no sistema AMAP.
+
+- **Elevação de Privilégios (E)** aparece como um risco consistente, embora geralmente classificado abaixo das ameaças de repúdio e falsificação de identidade, devido à maior complexidade técnica necessária para a sua exploração.
+
+Esta priorização fornece uma base objetiva para a alocação de recursos de segurança, permitindo que a equipa do AMAP concentre esforços nas vulnerabilidades que representam o maior risco para o sistema. As decisões tomadas nesta avaliação foram baseadas em:
+
+- Impacto financeiro direto nas operações  
+- Facilidade de exploração e reprodutibilidade  
+- Número de utilizadores potencialmente afetados  
+- Conhecimento técnico necessário para explorar a vulnerabilidade  
+
+A implementação de contramedidas deve focar-se prioritariamente em:
+
+- Mecanismos robustos de não repúdio  
+- Reforço da autenticação e autorização  
+- Proteção da integridade dos dados  
+- Salvaguarda da confidencialidade das informações sensíveis
 
 ---
 
@@ -2274,7 +2759,7 @@ Será adotado um processo contínuo de revisão da modelação de ameaças com b
 
 ---
 
-## Conclusão
+### Conclusão
 
 O presente relatório identificou as principais ameaças ao sistema AMAP e propôs um conjunto de mitigações e requisitos de segurança com base em metodologias reconhecidas. A próxima fase incluirá testes detalhados e a implementação prática das medidas propostas.
 
