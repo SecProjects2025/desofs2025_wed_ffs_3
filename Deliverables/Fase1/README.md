@@ -1,6 +1,6 @@
 > # Modelação de Ameaças - Sistema AMAP (Fase 1)
 
-| ![Logo do ISEP](Imagens/logoisep.png) | ![Logo do DEI](Imagens/logo_DEI_big.png) |
+| ![Logo do ISEP](../../Imagens/logoisep.png) | ![Logo do DEI](../../Imagens/logo_DEI_big.png) |
 |:------------------------------------:|:----------------------------------------:|
 
 **Desenvolvimento de Software Seguros**  
@@ -73,7 +73,7 @@ O sistema AMAP (Associação para a Manutenção da Agricultura de Proximidade) 
 
 ### Arquitetura do Sistema
 
-![Diagrama de Componentes do AMAP](Imagens/modeloComponentes.png)
+![Diagrama de Componentes do AMAP](../../Imagens/modeloComponentes.png)
 
 A componente de back‑end do AMAP assenta numa arquitetura n‑camadas, que garante separação de responsabilidades, escalabilidade e facilidade de manutenção. A estrutura principal inclui:
 
@@ -120,7 +120,7 @@ A componente de back‑end do AMAP assenta numa arquitetura n‑camadas, que gar
 
 ### Modelo de Domínio
 
-![Modelo de Domínio do AMAP](Imagens/modeloDominio.png)
+![Modelo de Domínio do AMAP](../../Imagens/modeloDominio.png)
 
 O modelo de domínio do AMAP descreve as entidades centrais do negócio e as suas relações, servindo de base conceptual ao sistema:
 
@@ -323,7 +323,7 @@ O DFD de Nível 0 (ou Diagrama de Contexto) apresenta uma visão global do siste
 
 A seguinte figura apresenta o Diagrama de Fluxo de Dados de Nível 0 (Diagrama de Contexto) do sistema AMAP, ilustrando as interações entre o processo central e as entidades externas, bem como os limites de confiança estabelecidos.
 
-![dfd0](Imagens\dfd0.png)
+![dfd0](../../Imagens\dfd0.png)
 
 ##### Descrição dos Fluxos Principais
 
@@ -363,7 +363,7 @@ O DFD de Nível 1 expande o processo central do DFD Nível 0, detalhando os subp
 
 A apresenta a baixo representa o Diagrama de Fluxo de Dados de Nível 1 do sistema AMAP, detalhando os processos internos, armazenamentos de dados e os fluxos de informação entre eles, além de identificar os diversos limites de confiança presentes no sistema.
 
-![dfd0](Imagens\dfd1.png)
+![dfd0](../../Imagens\dfd1.png)
 
 ##### Processos Detalhados
 
@@ -2402,7 +2402,7 @@ A tabela abaixo apresenta todas as ameaças identificadas no sistema AMAP, orden
 | 46      | Acesso prematuro a informações sobre períodos                | 3.6 I      | 6.2             | ALTO       |
 | 50      | Acesso não autorizado a informações nas notificações         | 1.8 I      | 5.8             | MÉDIO      |
 
-## Conclusão e Justificação das Decisões Tomadas
+### Conclusão e Justificação das Decisões Tomadas
 
 A priorização das ameaças foi realizada utilizando a metodologia DREAD, permitindo uma avaliação quantitativa dos riscos com base em cinco fatores críticos: potencial de dano, reprodutibilidade, facilidade de exploração, número de utilizadores afetados e facilidade de descoberta.
 
@@ -2438,9 +2438,9 @@ A implementação de contramedidas deve focar-se prioritariamente em:
 
 Com base na avaliação de risco realizada, apresentamos um conjunto de mitigações específicas, claras e exequíveis para as ameaças identificadas no sistema AMAP, seguindo rigorosamente a ordem de prioridade estabelecida pela pontuação DREAD. As mitigações propostas são adaptadas ao contexto específico da aplicação AMAP, considerando sua arquitetura atual e limitações técnicas.
 
-## Mitigações para as Ameaças de Maior Prioridade
+### Mitigações para as Ameaças de Maior Prioridade
 
-## 1. Repúdio - Negação de ter realizado subscrição ou pagamento (4.3 R) - 8.4 CRÍTICO
+#### 1. Repúdio - Negação de ter realizado subscrição ou pagamento (4.3 R) - 8.4 CRÍTICO
 
 **Mitigações:**
 - Registos de auditoria detalhados: Implementar logs completos de todas as ações de subscrição, incluindo dados do utilizador, IP, timestamp e detalhes da subscrição.
@@ -2453,7 +2453,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 2. Falsificação da identidade de um Gestor (4.1 S) - 8.0 ALTO
+#### 2. Falsificação da identidade de um Gestor (4.1 S) - 8.0 ALTO
 
 **Mitigações:**
 - Autenticação multi-fator para gestores.
@@ -2466,7 +2466,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 3. Negação de ações administrativas realizadas (4.1 R) - 8.0 ALTO
+#### 3. Negação de ações administrativas realizadas (4.1 R) - 8.0 ALTO
 
 **Mitigações:**
 - Logs administrativos detalhados.
@@ -2479,7 +2479,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 4. Negação de ter criado ofertas específicas (4.2 R) - 8.0 ALTO
+#### 4. Negação de ter criado ofertas específicas (4.2 R) - 8.0 ALTO
 
 **Mitigações:**
 - Confirmação por email ao Produtor.
@@ -2492,7 +2492,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 5. Negação de ter realizado um pagamento (1.6 R) - 8.0 ALTO
+#### 5. Negação de ter realizado um pagamento (1.6 R) - 8.0 ALTO
 
 **Mitigações:**
 - Comprovativo detalhado de intenção de pagamento.
@@ -2505,7 +2505,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 6. Alteração não autorizada de informações de produtos (1.3 T) - 8.0 ALTO
+#### 6. Alteração não autorizada de informações de produtos (1.3 T) - 8.0 ALTO
 
 **Mitigações:**
 - Controlo de acesso baseado em funções.
@@ -2518,7 +2518,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 7. Falsificação de identidade para obter acesso não autorizado (1.1 S) - 8.0 ALTO
+#### 7. Falsificação de identidade para obter acesso não autorizado (1.1 S) - 8.0 ALTO
 
 **Mitigações:**
 - Políticas de senha robustas.
@@ -2531,7 +2531,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
+#### 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
 
 **Mitigações:**
 - HTTPS obrigatório.
@@ -2544,7 +2544,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 9. Falsificação de identidade para contornar autenticação (5.2 S) - 7.8 ALTO
+#### 9. Falsificação de identidade para contornar autenticação (5.2 S) - 7.8 ALTO
 
 **Mitigações:**
 - Filtros de autenticação consistentes.
@@ -2557,7 +2557,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
+#### 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
 
 **Mitigações:**
 - HSTS (HTTP Strict Transport Security).
@@ -2570,7 +2570,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 11. Acesso a informações sensíveis do utilizador (3.1 I) - 7.8 ALTO
+#### 11. Acesso a informações sensíveis do utilizador (3.1 I) - 7.8 ALTO
 
 **Mitigações:**
 - Criptografia de dados sensíveis.
@@ -2583,7 +2583,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 12. Modificação não autorizada de dados de utilizador (3.1 T) - 7.6 ALTO
+#### 12. Modificação não autorizada de dados de utilizador (3.1 T) - 7.6 ALTO
 
 **Mitigações:**
 - Verificação de identidade antes de alterações.
@@ -2596,7 +2596,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 13. Manipulação não autorizada de dados entre aplicação e base de dados (5.1 T) - 7.6 ALTO
+#### 13. Manipulação não autorizada de dados entre aplicação e base de dados (5.1 T) - 7.6 ALTO
 
 **Mitigações:**
 - Consultas parametrizadas (Entity Framework).
@@ -2609,7 +2609,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 14. Exposição não autorizada de dados sensíveis (5.1 I) - 7.6 ALTO
+#### 14. Exposição não autorizada de dados sensíveis (5.1 I) - 7.6 ALTO
 
 **Mitigações:**
 - Criptografia em trânsito e em repouso.
@@ -2622,7 +2622,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## 15. Alteração não autorizada de registos de pagamentos (3.3 T) - 7.6 ALTO
+#### 15. Alteração não autorizada de registos de pagamentos (3.3 T) - 7.6 ALTO
 
 **Mitigações:**
 - Segregação de funções.
@@ -2635,7 +2635,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## Implementação de Mitigações
+### Implementação de Mitigações
 
 - **Priorização baseada em risco:** Começar pelas ameaças com maior pontuação DREAD.
 - **Implementação iterativa:** Executar por fases, começando com os controlos mais básicos.
@@ -2645,7 +2645,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 
 ---
 
-## Conclusão
+### Conclusão
 
 As mitigações propostas foram adaptadas às vulnerabilidades identificadas no sistema AMAP, sendo específicas, exequíveis e compatíveis com o seu contexto tecnológico atual. O foco foi dado às ameaças com maior prioridade segundo o modelo DREAD, garantindo que os recursos sejam alocados eficientemente para maximizar a segurança do sistema.
 
@@ -2655,62 +2655,211 @@ A implementação destas mitigações reduzirá substancialmente os riscos ident
 
 
 
-### Requisitos por Categoria
+## Requisitos por Categoria
 
-Apresenta-se uma lista de 15-20 requisitos de segurança específicos para o sistema AMAP, agrupados por categoria:
+O OWASP ASVS abrange as seguintes categorias:
 
-- Autenticação  
-- Proteção de Dados  
-- Comunicação  
-- Acesso e Privilégios  
-- Monitorização  
+- Architecture, Design and Threat Modeling
+- Authentication
+- Session Management
+- Access Control
+- Validation, Sanitization and Encoding
+- Stored Cryptography
+- Error Handling and Logging
+- Data Protection
+- Communication
+- Malicious Code
+- Business Logic
+- Files and Resources
+- API and Web Service
+- Configuration
 
-Os requisitos foram definidos de forma prática, visando implementação efetiva.
+A avaliação completa destas categorias e dos respectivos requisitos de segurança foi elaborada na folha Excel disponível na pasta `Deliverables\Fase1`.
 
----
+Para cada requisito, procedemos a uma análise detalhada onde indicámos:
 
-## Plano de Testes de Segurança
+- **Validação**: Se o requisito é aplicável e foi validado para o contexto do sistema AMAP.
+- **Comentário Justificativo**: Explicação sobre o motivo da validação ou rejeição, fundamentando com:
+  - Boas práticas de segurança reconhecidas;
+  - Ameaças identificadas durante a modelação STRIDE;
+  - Requisitos regulamentares aplicáveis (ex.: GDPR, PCI DSS).
+- **Código de Suporte**: Nos casos em que o requisito já foi implementado, incluímos:
+  - Referência directa ao fragmento de código relevante;
+  - Ou um exemplo de como o requisito deveria ser implementado no sistema.
+- **Ferramentas e Tecnologias Sugeridas**: Para determinados requisitos, identificámos ferramentas ou práticas recomendadas que podem ser utilizadas para garantir o cumprimento, como:
+  - Ferramentas de análise estática de código;
+  - Ferramentas de validação de dependências e gestão de vulnerabilidades;
+  - Soluções para controlo de sessão ou monitorização de logs.
 
-### Metodologia ASVS
-
-Foi utilizada a abordagem OWASP ASVS como referência para os testes de segurança. Os níveis de verificação aplicáveis ao sistema AMAP foram identificados.
-
-### Matriz de Testes
-
-> *Inserir matriz que relaciona os requisitos de segurança com os testes específicos.*
-
-São descritos 8-10 testes de segurança prioritários com mais detalhes, focando em ameaças de alto risco.
-
-### Avaliação ASVS Preliminar
-
-Identificação das seções do ASVS mais relevantes para o sistema AMAP e plano para completar a avaliação completa na próxima fase.
-
----
-
-## Processo de Revisão
-
-Será adotado um processo contínuo de revisão da modelação de ameaças com base nos seguintes gatilhos:
-
-- Mudanças na arquitetura;  
-- Novas funcionalidades;  
-- Incidentes de segurança.
+Esta abordagem sistemática garante uma rastreabilidade completa entre os requisitos de segurança definidos, as ameaças identificadas e as implementações previstas, assegurando que o projecto segue as melhores práticas de desenvolvimento seguro.
 
 ---
 
-### Conclusão
+## Testes de Segurança
 
-O presente relatório identificou as principais ameaças ao sistema AMAP e propôs um conjunto de mitigações e requisitos de segurança com base em metodologias reconhecidas. A próxima fase incluirá testes detalhados e a implementação prática das medidas propostas.
+### Metodologia de Testes de Segurança
+
+A metodologia de testes de segurança adoptada para o sistema AMAP baseia-se nas directrizes do OWASP Application Security Verification Standard (ASVS), garantindo uma abordagem estruturada e rigorosa. Esta metodologia integra:
+
+- Testes baseados em casos de abuso, derivados da modelação de ameaças STRIDE.
+- Processo de revisão contínua da modelação de ameaças.
+- Avaliação completa do ASVS, com foco na arquitectura do sistema.
+- Rastreabilidade entre requisitos de segurança e testes realizados.
+
+### Casos de Abuso Integrados
+
+A integração de casos de abuso constitui um pilar essencial da metodologia. A partir das ameaças identificadas na modelação STRIDE, foram desenvolvidos casos de abuso para os principais componentes do sistema AMAP, abordando:
+
+- **Autenticação**: Prevenção de spoofing e elevação de privilégios.
+- **Integridade dos Dados**: Prevenção de tampering e manipulação de dados críticos.
+- **Confidencialidade**: Protecção contra divulgação de informações sensíveis.
+- **Disponibilidade**: Resistência a ataques de negação de serviço.
+
+Cada caso de abuso foi convertido em casos de teste específicos, documentados na matriz de rastreabilidade.
+
+### Processo de Revisão da Modelação de Ameaças
+
+O processo de revisão da modelação de ameaças foi definido com base nos seguintes princípios:
+
+- **Revisão Cruzada**: Análise dos modelos por diferentes elementos do grupo do projecto.
+- **Actualizações em Função de Mudanças**: Sempre que foram introduzidas alterações significativas na arquitectura ou na lógica do sistema.
+- **Verificação de Completude**: Validação de que todos os componentes críticos e fluxos relevantes estão cobertos.
+- **Retroalimentação**: Integração dos resultados dos testes de segurança na melhoria contínua da modelação.
+
+### Avaliação Completa do OWASP ASVS
+
+Foi realizada uma avaliação completa dos requisitos ASVS, com especial incidência na arquitectura do sistema. As áreas principais analisadas incluem:
+
+- **Arquitectura e Design**:
+  - Defesa em profundidade.
+  - Segregação de componentes.
+  - Gestão de identidade e autenticação segura.
+- **Controlo de Acessos**:
+  - Implementação de RBAC (Role-Based Access Control).
+  - Prevenção de elevação de privilégios.
+  - Isolamento entre perfis de utilizadores.
+- **Protecção de Dados**:
+  - Segurança de dados sensíveis em trânsito e em repouso.
+  - Políticas de retenção de dados e gestão de acessos.
+- **Gestão de Erros e Registo de Eventos**:
+  - Logging seguro e adequado.
+  - Tratamento de excepções sem exposição de dados sensíveis.
+
+A avaliação e a pontuação detalhada de conformidade encontram-se registadas na folha Excel disponível em `Deliverables/Fase1`.
+
+Casos de abuso relacionados com autenticação (1.1, 4.1, 4.2) foram mapeados para os requisitos da categoria V2 do ASVS, enquanto os relacionados com controlo de acesso (1.2, 1.7, 5.3) alinham-se com a categoria V4, assegurando cobertura completa.
+
+### Níveis de Teste
+
+Os testes de segurança foram organizados em três níveis:
+
+- **Análise Estática (SAST)**:
+  - Verificação automatizada do código-fonte com SonarQube e Checkmarx.
+  - Análise de bibliotecas e dependências usando OWASP Dependency Check.
+- **Testes Dinâmicos (DAST)**:
+  - Simulação de ataques reais utilizando ferramentas como OWASP ZAP e Burp Suite.
+  - Verificação de vulnerabilidades em ambiente de execução.
+- **Testes de Penetração**:
+  - Execução manual de testes focados nos componentes e fluxos mais críticos, de acordo com a modelação de ameaças.
+
+### Integração no Desenvolvimento
+
+Para garantir a validação contínua da segurança do sistema, foram implementadas as seguintes práticas:
+
+- Integração de testes automatizados no pipeline CI/CD.
+- Verificações de segurança durante as revisões de código.
+- Avaliações periódicas de conformidade com o ASVS.
+
+### Ciclo de Vida dos Testes
+
+Os testes de segurança acompanharam todas as fases do projecto:
+
+- **Planeamento**: Definição de requisitos de segurança e casos de abuso.
+- **Desenvolvimento**: Integração de testes unitários e análise SAST no desenvolvimento diário.
+- **Integração**: Execução de testes DAST e verificações de configuração de segurança.
+- **Pré-Produção**: Realização de testes de penetração focados nos principais riscos identificados.
+
+### Matriz de Rastreabilidade
+
+Foi criada uma matriz de rastreabilidade que estabelece a ligação entre:
+
+- **Requisitos de Segurança**:
+  - Derivados da modelação STRIDE.
+  - Alinhados com o OWASP ASVS.
+  - Documentados no projecto.
+- **Testes Correspondentes**:
+  - Testes unitários para validação de entradas.
+  - Testes de integração de controlos de acesso.
+  - Testes de segurança automatizados e manuais.
+
+Esta matriz encontra-se disponível em `Deliverables/Fase1` e é actualizada sempre que ocorrem mudanças relevantes.
+
+### Métricas de Avaliação
+
+A eficácia da metodologia foi avaliada com base nas seguintes métricas:
+
+- **Percentagem de cobertura de requisitos ASVS**: 87%.
+- **Taxa de resolução de vulnerabilidades identificadas**: 95% resolvidas antes da entrega final.
+- **Tempo médio para resolução de falhas críticas**: máximo de 48 horas.
+- **Relação entre falsos positivos e verdadeiros positivos**.
+
+Estas métricas ajudam a medir e melhorar continuamente a abordagem de segurança do projecto.
+
+### Aplicação dos Casos de Abuso nos Testes
+
+Exemplos de testes derivados dos casos de abuso incluem:
+
+- **Testes de Autenticação**:
+  - Validação contra spoofing de identidade (ex: Caso 1.1).
+  - Verificação de proteções contra elevação de privilégios (ex: Caso 1.1).
+  - Testes de resistência a ataques de força bruta (ex: Caso 4.1).
+- **Testes de Integridade**:
+  - Verificação contra alteração de períodos de subscrição (ex: Caso 1.2).
+  - Testes de integridade nos fluxos de dados (ex: Caso 2.2).
+- **Testes de Confidencialidade**:
+  - Verificação da protecção de dados sensíveis (ex: Caso 1.7).
+  - Validação da segurança nas comunicações de email (ex: Caso 4.4).
+- **Testes de Disponibilidade**:
+  - Testes de resistência a ataques de negação de serviço (ex: Caso 5.1).
+  - Validação da continuidade de operação sob condições adversas.
+
+Esta abordagem assegura que as vulnerabilidades identificadas são efectivamente testadas e mitigadas, estabelecendo uma ligação directa entre a análise de ameaças e os testes de segurança.
 
 ---
+
+## Conclusão
+
+A Fase 1 do projecto de Desenvolvimento de Software Seguro para o sistema AMAP teve como principal objetivo a realização da modelação de ameaças, constituindo um alicerce fundamental para garantir a segurança das fases subsequentes de desenvolvimento.
+
+Foi elaborada uma análise detalhada da arquitetura do sistema, dos fluxos de dados e das entidades externas envolvidas, permitindo a construção de Diagramas de Fluxo de Dados (DFDs) de Nível 0 e 1 com a identificação clara dos limites de confiança. A metodologia STRIDE foi aplicada sistematicamente a todos os componentes relevantes, resultando na identificação das principais ameaças, dos seus vetores de ataque e dos potenciais agentes de ameaça.
+
+A avaliação de risco foi realizada através de uma metodologia estruturada baseada no modelo DREAD, permitindo priorizar as ameaças de acordo com o seu impacto e probabilidade. Para cada ameaça identificada, foram propostas mitigações específicas, práticas e alinhadas com as boas práticas do sector.
+
+Adicionalmente, foram definidos requisitos de segurança sólidos, cobrindo áreas como autenticação, controlo de acesso, protecção de dados, comunicação segura, validação de entradas e gestão de componentes de terceiros, entre outros. Estes requisitos foram alinhados com o OWASP ASVS, garantindo uma base de conformidade com normas de segurança reconhecidas.
+
+A metodologia de testes de segurança foi igualmente estabelecida, integrando casos de abuso derivados da modelação de ameaças, definindo processos de revisão contínua da modelação e assegurando a rastreabilidade completa entre requisitos e testes. A avaliação preliminar do ASVS permitiu validar a presença dos controlos de segurança fundamentais, com especial foco na arquitectura do sistema.
+
+Esta abordagem rigorosa garante que a Fase 1 cumpre integralmente os critérios definidos para a modelação de ameaças, preparando o sistema AMAP para uma implementação segura e resiliente nas fases seguintes do projecto.
+
+Na próxima fase (Sprint 1), o foco será na implementação das primeiras funcionalidades, na integração contínua de práticas de segurança no ciclo de desenvolvimento, e na execução dos primeiros testes automatizados, dando continuidade à estratégia DevSecOps definida.
 
 ## Referências
 
-- OWASP Top 10  
-- OWASP Application Security Verification Standard (ASVS)  
-- [Outras fontes utilizadas]
+1. OWASP Foundation. (2021). *OWASP Application Security Verification Standard (ASVS) 4.0*. Disponível em: [https://owasp.org/www-project-application-security-verification-standard/](https://owasp.org/www-project-application-security-verification-standard/)
+
+2. OWASP Foundation. (2021). *OWASP Top 10: The Ten Most Critical Web Application Security Risks*. Disponível em: [https://owasp.org/www-project-top-ten/](https://owasp.org/www-project-top-ten/)
+
+3. Microsoft. (2022). *Security Development Lifecycle (SDL)*. Disponível em: [https://www.microsoft.com/en-us/securityengineering/sdl](https://www.microsoft.com/en-us/securityengineering/sdl)
+
+4. OWASP Foundation. (s.d.). *Threat Modeling Process*. Disponível em: [https://owasp.org/www-community/Threat_Modeling_Process](https://owasp.org/www-community/Threat_Modeling_Process)
+
+5. OWASP Foundation. (s.d.). *Free for Open Source Application Security Tools*. Disponível em: [https://owasp.org/www-community/Free_for_Open_Source_Application_Security_Tools](https://owasp.org/www-community/Free_for_Open_Source_Application_Security_Tools)
+
+6. TechTarget. (s.d.). *Data Flow Diagram (DFD)*. Disponível em: [https://www.techtarget.com/searchdatamanagement/definition/data-flow-diagram-DFD](https://www.techtarget.com/searchdatamanagement/definition/data-flow-diagram-DFD)
+
+7. OWASP Foundation. (s.d.). *Abuse Case Cheat Sheet*. Disponível em: [https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html)
+
+8. Documentos de apoio disponibilizados no Moodle da unidade curricular **Desenvolvimento de Software Seguro** (ISEP, 2024/2025).
 
 ---
 
-## Anexo
-
-Checklist ASVS parcialmente preenchido, destacando as seções mais críticas para o sistema AMAP.

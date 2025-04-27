@@ -14,7 +14,7 @@ O repositório está organizado da seguinte forma:
   - **`Fase1/`**:  
     - Arquivos `.json` dos DFDs (Diagramas de Fluxo de Dados), que podem ser abertos no programa **Threat Dragon**.  
     - Checklist do **ASVS** com os requisitos de segurança.  
-    - Relatório em formato Markdown referente à Fase 1.  
+    - Relatório (`README`) em formato **Markdown** e **PDF** referente à Fase 1.  
   - **`Fase2 Sprint1/`**: (ainda vazia).  
   - **`Fase2 Sprint2/`**: (ainda vazia).  
 - **`Imagens/`**: Contém todas as imagens utilizadas no relatório.  
