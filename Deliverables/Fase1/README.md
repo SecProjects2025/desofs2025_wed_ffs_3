@@ -2825,6 +2825,621 @@ Exemplos de testes derivados dos casos de abuso incluem:
 
 Esta abordagem assegura que as vulnerabilidades identificadas são efectivamente testadas e mitigadas, estabelecendo uma ligação directa entre a análise de ameaças e os testes de segurança.
 
+## Plano de Testes de Segurança
+
+
+## Objetivos dos Testes de Segurança
+
+Os principais objetivos dos testes de segurança para o sistema AMAP são:
+
+1. **Identificar vulnerabilidades** na API Web ASP.NET Core e na base de dados SQL Server
+2. **Avaliar a eficácia** dos controlos de segurança implementados
+3. **Verificar a conformidade** com os requisitos de segurança definidos
+4. **Proteger dados sensíveis** contra acesso não autorizado
+5. **Garantir a integridade** das transações e dos dados
+6. **Assegurar a disponibilidade** do sistema contra potenciais ataques
+7. **Validar a autenticação e autorização** para diferentes perfis de utilizador (Gestor, Produtor, Co-produtor)
+
+## Âmbito dos Testes
+
+Os testes de segurança abrangerão os seguintes componentes do sistema AMAP:
+
+1. **Backend (ASP.NET Core Web API):**
+    - Controladores da API (AccountController, ProductController, SubscriptionController, etc.)
+    - Mecanismos de autenticação e autorização do ASP.NET Identity
+    - Validação de dados de entrada e saída
+    - Configuração CORS e tratamento de pedidos cross-origin
+    - Gestão de sessões e cookies
+    - Proteção contra ataques comuns (ameaças STRIDE)
+
+2. **Camada de Dados:**
+    - Segurança do Entity Framework Core e da base de dados SQL Server
+    - Acesso à base de dados através do padrão IUnitOfWork e Repositories
+    - Proteção contra injeção SQL
+    - Controlo de acesso à base de dados e privilégio mínimo
+    - Encriptação de dados sensíveis
+
+3. **Configurações e Infraestrutura:**
+    - Configurações de segurança no Program.cs
+    - Configurações de segurança de cookies (HttpOnly, Secure, SameSite)
+    - Proteção de segredos da aplicação
+    - Segurança da comunicação por email
+
+## Metodologia de Testes
+
+A metodologia de testes de segurança para o sistema AMAP seguirá uma abordagem estruturada e abrangente, incorporando métodos e frameworks reconhecidos na indústria:
+
+1. **OWASP Application Security Verification Standard (ASVS)**:
+    - Adoção do ASVS Nível 2 como base para requisitos de verificação
+    - Foco específico nos requisitos de arquitetura e design (V1)
+    - Alinhamento com requisitos de autenticação (V2), controlo de acesso (V4) e validação de entrada (V5)
+
+2. **Security Development Lifecycle (SDL)**:
+    - Incorporação de testes de segurança nas fases iniciais do desenvolvimento
+    - Análise de modelação de ameaças como input para definição de casos de teste
+    - Ciclo contínuo de verificação e validação durante todo o processo de desenvolvimento
+
+3. **Threat-Based Testing**:
+    - Derivação de casos de teste diretamente do modelo de ameaças STRIDE
+    - Foco em ameaças identificadas durante a modelação de ameaças
+    - Testes específicos para cada categoria STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege)
+
+4. **Abuse Case Testing**:
+    - Desenvolvimento de casos de teste baseados em abuse cases documentados
+    - Simulação de comportamento malicioso alinhado com cenários de abuso
+    - Verificação da eficácia dos controlos de segurança contra cada abuse case
+
+5. **Security Architecture Analysis**:
+    - Revisão da arquitetura de segurança baseada nos requisitos ASVS
+    - Verificação da implementação correta de padrões de segurança
+    - Análise da eficácia das decisões arquiteturais em relação aos requisitos de segurança
+
+6. **Combinação de Técnicas de Teste**:
+    - Testes de caixa preta: sem conhecimento do código fonte
+    - Testes de caixa cinza: com conhecimento parcial da implementação
+    - Testes de caixa branca: com acesso completo ao código fonte e arquitetura
+    - Análise estática e dinâmica de código
+
+7. **Processo Iterativo**:
+    - Feedback contínuo para melhorar controlos de segurança
+    - Reavaliação do modelo de ameaças com base nos resultados dos testes
+    - Atualização regular dos casos de teste baseados em novas ameaças identificadas
+
+Esta abordagem metodológica garante uma cobertura abrangente de todos os aspetos de segurança do sistema AMAP, desde a arquitetura até a implementação, alinhada com os requisitos de segurança documentados e o modelo de ameaças desenvolvido.
+
+## Tipos de Testes de Segurança
+
+Serão realizados os seguintes tipos de testes de segurança:
+
+1. **Testes de Autenticação e Autorização**
+    - Verificação da implementação do ASP.NET Identity
+    - Teste do controlo de acesso baseado em funções (Gestor, Produtor, Co-produtor)
+    - Validação do controlo de acesso em todos os Controladores
+    - Teste de bloqueio de conta após tentativas de login falhadas
+
+2. **Testes de Validação de Entrada**
+    - Verificação da validação de dados de entrada nos Controladores
+    - Teste de consultas parametrizadas através do Entity Framework Core
+    - Testes de XSS (Cross-Site Scripting) nas entradas de dados
+    - Testes de CSRF (Cross-Site Request Forgery) para operações que alteram o estado
+
+3. **Testes de Gestão de Sessão**
+    - Análise da configuração e flags de segurança dos cookies
+    - Verificação do timeout de sessão (configurado para 100 minutos)
+    - Teste das configurações de segurança de cookies (HttpOnly, SameSite, Secure)
+
+4. **Testes de Criptografia**
+    - Verificação da implementação de hashing de passwords no ASP.NET Identity
+    - Teste de políticas de força de password
+    - Análise do armazenamento seguro de credenciais
+
+5. **Testes de Configuração**
+    - Análise da segurança da configuração CORS
+    - Verificação da aplicação de HTTPS
+    - Exame da configuração do middleware de autenticação e autorização
+
+6. **Testes de Lógica de Negócio**
+    - Validação de fluxos críticos (pagamentos, subscrições)
+    - Testes de manipulação de preços e quantidades
+    - Verificação da integridade transacional usando o padrão UnitOfWork
+
+7. **Análise Estática de Código**
+    - Revisão de código automatizada com ferramentas de segurança .NET
+    - Verificação de vulnerabilidades conhecidas em dependências
+    - Análise da configuração de segurança no Program.cs
+
+## Ambientes de Teste
+
+Os testes de segurança serão realizados nos seguintes ambientes:
+
+1. **Ambiente de Desenvolvimento**
+    - Testes durante o ciclo de desenvolvimento
+    - Análise estática de código e testes unitários
+
+2. **Ambiente de Testes**
+    - Ambiente isolado para testes de penetração
+    - Simulação de ataques sem impacto na produção
+
+3. **Ambiente de Pré-Produção**
+    - Testes finais antes da implementação
+    - Análise de vulnerabilidades em condições semelhantes à produção
+
+## Ferramentas de Teste
+
+Serão utilizadas as seguintes ferramentas para os testes de segurança:
+
+1. **Ferramentas de Análise Estática**
+    - SonarQube
+    - OWASP Dependency Check
+    - Security Code Scan (.NET)
+
+2. **Ferramentas de Teste de Penetração**
+    - OWASP ZAP (Zed Attack Proxy)
+    - Burp Suite
+    - Postman (para testes de API)
+
+3. **Ferramentas de Análise de Vulnerabilidades**
+    - OWASP Dependency Track
+    - Nessus
+    - Snyk
+
+4. **Ferramentas de Automação**
+    - Scripts de Teste OWASP ASVS
+    - Scripts personalizados de testes de segurança .NET
+
+## Casos de Teste de Segurança
+
+### 1. Autenticação e Autorização
+
+| # | Caso de Teste | Descrição | Resultados Esperados |
+|---|--------------|-----------|---------------------|
+| 1.1 | Validação de Credenciais | Tentativas de login com credenciais inválidas | Rejeição de credenciais inválidas e bloqueio após múltiplas tentativas (configurado no ASP.NET Identity) |
+| 1.2 | Bloqueio de Conta | Teste de bloqueio após tentativas de login falhadas | Conta bloqueada após 5 tentativas falhadas conforme especificado no README |
+| 1.3 | Elevação de Privilégios | Tentativa de acesso a endpoints exclusivos de Gestor como Produtor/CoProdutor | Rejeição com código de status 401/403 |
+| 1.4 | Acesso a Recursos | Verificação do controlo de acesso baseado em funções | Aplicação das políticas "Manager", "Producer" e "CoProducer" |
+| 1.5 | Timeout de Sessão | Validação da expiração da sessão | Sessões expiram após 100 minutos conforme configurado |
+
+### 2. Validação de Entrada
+
+| # | Caso de Teste | Descrição | Resultados Esperados |
+|---|--------------|-----------|---------------------|
+| 2.1 | Injeção SQL | Tentativas de injeção SQL em parâmetros do controlador | Proteção através de consultas parametrizadas no Entity Framework |
+| 2.2 | Proteção XSS | Teste de inserção de scripts maliciosos | Codificação e sanitização adequadas de entradas do utilizador |
+| 2.3 | Validação de Modelo | Envio de dados incorretos para controladores | Validação através do ModelState e respostas de erro apropriadas |
+| 2.4 | Upload de Ficheiros | Teste de upload de ficheiros maliciosos no ProductController | Validação de tipos de ficheiros e conteúdo |
+| 2.5 | Manipulação de Parâmetros | Tentativa de manipular valores de ProductOffer | Validação do lado do servidor e verificação contra valores da base de dados |
+
+### 3. Gestão de Dados Sensíveis
+
+| # | Caso de Teste | Descrição | Resultados Esperados |
+|---|--------------|-----------|---------------------|
+| 3.1 | Aplicação de HTTPS | Verificação do requisito HTTPS | Redirecionamento de HTTP para HTTPS via middleware UseHttpsRedirection |
+| 3.2 | Armazenamento de Passwords | Análise do armazenamento de credenciais | Passwords armazenadas usando hashing seguro do ASP.NET Identity |
+| 3.3 | Dados de Pagamento | Verificação do tratamento de dados de pagamento no PaymentController | Validação adequada e armazenamento seguro |
+| 3.4 | Exposição de Dados | Verificação de dados sensíveis nas respostas | Uso adequado de DTOs e ViewModels para limitar a exposição de dados |
+| 3.5 | Proteção de Cookies | Análise das configurações de segurança de cookies | Flags HttpOnly, Secure e SameSite configuradas adequadamente |
+
+### 4. Configuração e Infraestrutura
+
+| # | Caso de Teste | Descrição | Resultados Esperados |
+|---|--------------|-----------|---------------------|
+| 4.1 | Configuração CORS | Análise da política CORS | Restrição adequada a origens especificadas (localhost:3000) |
+| 4.2 | Segurança de Cookies | Verificação das configurações de segurança de cookies | Ambiente de produção aplica Secure e SameSite=Strict |
+| 4.3 | Configuração de Autenticação | Análise do middleware de autenticação | Configuração correta do ASP.NET Identity |
+| 4.4 | Autorização por Função | Teste de políticas baseadas em funções | Políticas para "Manager", "Producer" e "CoProducer" corretamente aplicadas |
+
+### 5. Lógica de Negócio
+
+| # | Caso de Teste | Descrição | Resultados Esperados |
+|---|--------------|-----------|---------------------|
+| 5.1 | Manipulação de Preços | Tentativa de alterar preços no ProductOfferController | Validação do lado do servidor impede alterações não autorizadas |
+| 5.2 | Modificação de Quantidades | Tentativa de manipular quantidades | Verificação contra valores da base de dados impede adulteração |
+| 5.3 | Integridade de Transações | Teste do comportamento da transação durante falhas | Padrão UnitOfWork garante operações atómicas |
+| 5.4 | Lógica de Controlo de Acesso | Teste dos controlos de acesso da lógica de negócio | Controladores aplicam corretamente as regras de propriedade e autorização |
+
+## Abuse Cases
+
+Os abuse cases foram desenvolvidos com base no modelo de ameaças STRIDE para o sistema AMAP, identificando cenários de utilização maliciosa que poderiam comprometer a segurança do sistema. Cada abuse case é mapeado para uma categoria STRIDE específica e será testado como parte do plano de testes de segurança.
+
+### 1. Spoofing (Falsificação de Identidade)
+
+| Cenário | Teste Proposto | Resultado Esperado | Controlos de Segurança |
+|---------|---------------|-------------------|-----------------------|
+| Atacante modifica token JWT para elevar privilégios | Manipular claim `UserType` para `Manager` e aceder a `/api/PaymentsInfo` | HTTP 403 e registo de tentativa | Validação de assinatura JWT, validação de claims no middleware |
+| Produtor cria oferta em nome de outro | POST em `/api/ProductOffer` com `ProducerId` diferente | HTTP 401 por violação de propriedade | Verificação de identidade e propriedade no ProductOfferController |
+| CoProdutor manipula token de autenticação para alterar UserType para Gestor | Modificar token JWT para aceder a `/api/SubscriptionPeriod` | Rejeição com verificação de token inválido | Verificação criptográfica de integridade de token, registo de tentativas |
+| Atacante obtém credenciais via phishing e acede a funcionalidades administrativas | Tentativa de login com credenciais roubadas a partir de IP desconhecido | Deteção de anomalia, requisição de autenticação adicional | Análise de comportamento, autenticação multi-fator para funções administrativas |
+
+### 2. Tampering (Manipulação de Dados)
+
+| Cenário | Teste Proposto | Resultado Esperado | Controlos de Segurança |
+|---------|---------------|-------------------|-----------------------|
+| Alteração não autorizada de preços | PATCH em `/api/ProductOffer/{id}` com novo `Price` | HTTP 400 para ofertas subscritas | Validação de integridade, verificação de estado da oferta |
+| SQL Injection em pagamentos | Injetar `' OR 1=1; --` no `PaymentController` | HTTP 500 por sanitização do EF Core | Consultas parametrizadas, validação de entrada |
+| Gestor corrupto cria períodos favoráveis para Produtores específicos | Criar períodos com datas estrategicamente favoráveis | Verificação de conformidade temporal e equidade | Aprovação multi-nível, auditoria de criação de períodos |
+| Produtor altera características após subscrições | PATCH em `/api/Product` após produtos terem sido subscritos | Rejeição da modificação para produtos com subscrições ativas | Bloqueio de edição baseado no estado do produto |
+
+### 3. Repudiation (Negação de Ação)
+
+| Cenário | Teste Proposto | Resultado Esperado | Controlos de Segurança |
+|---------|---------------|-------------------|-----------------------|
+| CoProdutor nega subscrição | Verificar registos imutáveis com hash criptográfico | Registo auditável com timestamp | Registo seguro, assinatura digital de ações críticas |
+| Gestor alega não ter modificado período | Verificar registos em `/api/SubscriptionPeriod` | Rastreamento completo da ação | Trilha de auditoria, registo de endereço IP e agente de utilizador |
+| Produtor nega ter definido preços após receber subscrições | Tentativa de repudiar condições originais de oferta | Evidência criptográfica das condições originais | Assinatura digital de ofertas, timestamps confiáveis |
+| CoProdutor realiza pagamento e depois o contesta | Alegação de transação não autorizada após receber produtos | Evidência de autenticação e autorização da transação | Confirmações multi-canal, prova de entrega digital |
+
+### 4. Information Disclosure (Divulgação de Informação)
+
+| Cenário | Teste Proposto | Resultado Esperado | Controlos de Segurança |
+|---------|---------------|-------------------|-----------------------|
+| Acesso a dados de pagamento de outros utilizadores | GET em `/api/Payment` com ID de outro utilizador | HTTP 403 Forbidden | Filtros de autorização, verificação de propriedade |
+| Exposição de informações em mensagens de erro | Forçar erros para obter stack traces | Mensagens de erro genéricas sem detalhes técnicos | Tratamento de exceções personalizado, registo seguro |
+| Produtor técnico tenta aceder a informações de produtos antes do lançamento | Tentativa de obter informações sobre produtos futuros | Rejeição do acesso, registo da tentativa | Controlo de acesso temporal, segregação de dados sensíveis |
+| Exploração de vulnerabilidade para acesso a dados financeiros agregados | Tentativa de acesso direto a `/api/PaymentsInfo/GetPaymentsCC` | HTTP 403 e registo de tentativa | Verificação de autorização em profundidade |
+
+### 5. Denial of Service (Negação de Serviço)
+
+| Cenário | Teste Proposto | Resultado Esperado | Controlos de Segurança |
+|---------|---------------|-------------------|-----------------------|
+| Sobrecarga de API com requisições | Flood de requisições em `/api/ProductOffer` | Limitação de taxa ativada, serviço mantido | Rate limiting, filas de requisições |
+| Upload de ficheiros excessivamente grandes | Upload de imagem de produto com 50MB | Rejeição do ficheiro, mensagem adequada | Validação de tamanho, timeout ajustado |
+| Criação de múltiplas contas falsas para reservar produtos limitados | Bot para criar contas e subscrever ofertas populares | Deteção de comportamento anómalo, bloqueio | Verificação anti-bot, limitação de subscrições por conta nova |
+| Manipulação de fluxos de pagamento para criar inconsistências | Iniciar muitas transações de pagamento sem completá-las | Timeout para transações pendentes | Gestão de estados de transação, limpeza automática |
+
+### 6. Elevation of Privilege (Elevação de Privilégio)
+
+| Cenário | Teste Proposto | Resultado Esperado | Controlos de Segurança |
+|---------|---------------|-------------------|-----------------------|
+| Co-produtor tenta aceder a recursos de Produtor | GET em `/api/Producer/Dashboard` como Co-produtor | HTTP 403 Forbidden | Verificação de roles, políticas de autorização |
+| Bypass de autorizações via manipulação de URLs | Acesso direto a `/api/Admin/Users` | Rejeição com HTTP 401/403 | Autorização ao nível do controlador e ação |
+| Produtor explora vulnerabilidade para aceder a `/api/SubscriptionPeriod` | Tentativa de contornar controlo de acesso baseado em roles | Rejeição com registos detalhados | Verificação de autorização em múltiplas camadas |
+| Funcionário técnico tenta criar contas de Gestor fantasma | Inserção direta na tabela AspNetUsers | Deteção por monitorização de criação de contas privilegiadas | Auditoria de contas administrativas, aprovação multi-nível |
+
+### Referência a casos de abuso no documento de modelação de ameaças
+
+Este documento de testes de segurança referencia diretamente os casos de abuso identificados na modelação de ameaças do sistema AMAP (Fase 1), especialmente os seguintes elementos:
+
+1. **Gestão de Períodos de Subscrição**:
+    - Gestor corrupto cria períodos favoráveis para certos Produtores
+    - Exploração de vulnerabilidades no controlo de acesso à API de períodos
+    - Manipulação de datas de entrega causando problemas logísticos
+
+2. **Gestão de Produtos e Quantidades**:
+    - Alteração de características após subscrições
+    - Upload de imagens maliciosas para produtos
+    - Inserção de preços artificialmente baixos para atrair subscrições
+    - Manipulação de ficheiros CSV durante importação/exportação
+
+3. **Criação de Ofertas**:
+    - Criação de ofertas falsas em nome de outros Produtores
+    - Modificação de ofertas após receberem subscrições
+    - Alteração de condições de pagamento após confirmações
+
+4. **Processo de Subscrição e Pagamento**:
+    - Manipulação de quantidades esperadas após confirmação
+    - Negação de subscrições após recebimento de produtos
+    - Falsificação de comprovação de pagamentos
+
+5. **Controlo de Pagamentos**:
+    - Elevação de privilégios para acesso a informações financeiras
+    - Exploração de vulnerabilidades no controlo de acesso a dados financeiros
+
+6. **Fluxos de Autenticação e Autorização**:
+    - Falsificação de identidade através de manipulação de tokens
+    - Ataques de força bruta contra credenciais
+    - Modificação de claims para obter acesso privilegiado
+
+Cada um dos casos de teste definidos  está alinhado com os cenários de abuso identificados, garantindo uma cobertura abrangente dos riscos de segurança do sistema AMAP.
+
+## Threat Modelling Review Process
+
+O processo de revisão da modelação de ameaças é uma etapa fundamental para garantir que os testes de segurança estejam alinhados com as ameaças identificadas e que as mitigações propostas sejam eficazes. Este processo iterativo ocorre antes, durante e após a execução dos testes de segurança.
+
+### 1. Revisão Inicial do Modelo de Ameaças
+
+#### 1.1 Validação dos Diagramas de Fluxo de Dados (DFD)
+- **Completude**: Verificação se todos os componentes do sistema estão representados
+- **Precisão**: Confirmação de que os fluxos de dados refletem a arquitetura atual
+- **Limites de Confiança**: Validação da correta identificação dos limites de confiança
+
+#### 1.2 Análise da Cobertura STRIDE
+| Elemento DFD | Ameaça STRIDE | Mitigação Documentada | Teste Correspondente |
+|--------------|---------------|----------------------|----------------------|
+| Processo de Autenticação | Spoofing | JWT assinado com algoritmo seguro | Teste 1.1, 1.3 |
+| API de Pagamentos | Tampering | Validação de integridade transacional | Teste 2.1, 5.3 |
+| Base de Dados | Information Disclosure | Encriptação de dados sensíveis | Teste 3.2, 3.3 |
+| Processo de Entrega | Repudiation | Logging imutável com assinatura temporal | Teste 3.1 |
+| Serviço de Email | Denial of Service | Rate limiting, filas assíncronas | Teste 5.2 |
+| Sistema de Autorização | Elevation of Privilege | Verificação baseada em claims | Teste 1.2, 1.4, 6.3 |
+
+#### 1.3 Revisão das Classificações de Risco
+- Verificação da adequação das classificações de probabilidade e impacto
+- Confirmação de que os riscos mais elevados têm mitigações prioritárias
+- Análise da aplicação da matriz DREAD (Damage, Reproducibility, Exploitability, Affected users, Discoverability)
+
+### 2. Processo de Integração do Modelo nos Testes
+
+#### 2.1 Mapeamento Bidirecional
+- **De Ameaças para Testes**: Derivação de casos de teste específicos para cada ameaça
+- **De Testes para Ameaças**: Verificação de que todos os testes têm rastreabilidade para ameaças
+
+#### 2.2 Verificação das Mitigações Propostas
+| Tipo de Mitigação | Abordagem de Verificação | Ferramentas de Teste |
+|-------------------|--------------------------|---------------------|
+| Controles Preventivos | Testes de penetração | OWASP ZAP, Burp Suite |
+| Controles Detectivos | Revisão de logs e alertas | Scripts de auditoria |
+| Controles Corretivos | Testes de recuperação | Simulações de incidentes |
+| Controles Compensatórios | Análise de fallback | Testes de degradação controlada |
+
+#### 2.3 Validação das Suposições de Segurança
+- Teste explícito de todas as suposições de segurança documentadas
+- Verificação de dependências de segurança externas
+- Análise de fronteiras de confiança e comunicações entre sistemas
+
+### 3. Processo de Atualização Pós-Teste
+
+#### 3.1 Reconciliação de Descobertas
+- Atualização do modelo de ameaças com vulnerabilidades recém-descobertas
+- Ajuste das classificações de risco com base em evidências dos testes
+- Documentação de novas ameaças não previstas inicialmente
+
+#### 3.2 Ciclo de Melhoria Contínua
+1. **Atualização do Modelo**: Refinamento baseado em resultados dos testes
+2. **Revisão de Mitigações**: Avaliação da eficácia das medidas implementadas
+3. **Novos Casos de Teste**: Desenvolvimento de testes para novas ameaças
+4. **Feedback à Arquitetura**: Recomendações para melhorias arquiteturais
+
+#### 3.3 Documentação e Comunicação
+- Elaboração de relatório de revisão do modelo de ameaças
+- Comunicação dos resultados às partes interessadas
+- Incorporação das lições aprendidas em futuras iterações do modelo
+
+### 4. Rastreabilidade End-to-End
+
+#### 4.1 Matriz de Rastreabilidade Completa
+| ID Ameaça | Categoria STRIDE | Componente Afetado | Mitigação | Caso de Teste | Resultado |
+|-----------|-----------------|-------------------|-----------|--------------|-----------|
+| T-001 | S | Processo de Login | Implementação de autenticação de múltiplos fatores | Teste 1.1, 1.2 | Pendente |
+| T-002 | T | API de Ofertas | Validação de integridade e verificação de propriedade | Teste 2.1, 5.1 | Pendente |
+| T-003 | R | Pagamentos | Logging seguro e assinaturas digitais | Teste 3.1, 3.3 | Pendente |
+
+#### 4.2 Garantia de Qualidade
+- Revisão por pares do modelo de ameaças e casos de teste
+- Verificação de cobertura por especialistas em segurança
+- Avaliação independente da eficácia dos testes
+
+Este processo estruturado de revisão da modelação de ameaças garante que os testes de segurança estejam diretamente alinhados com as ameaças reais enfrentadas pelo sistema AMAP, proporcionando uma abordagem sistemática e abrangente para a verificação de segurança.
+
+## ASVS Assessment
+
+A avaliação do sistema AMAP usando o OWASP Application Security Verification Standard (ASVS) é uma parte crítica do processo de teste de segurança. Com foco específico nos requisitos de arquitetura e design, esta avaliação garante que o sistema foi construído seguindo princípios de segurança fundamentais desde as etapas iniciais do desenvolvimento.
+
+### 1. Avaliação de Arquitetura de Segurança (V1)
+
+| ID | Requisito ASVS | Caso de Teste | Evidência |
+|----|--------------|--------------|-----------|
+| V1.1.1 | Utilização de um ciclo de desenvolvimento seguro | Análise Documental | Implementação SDL documentada na arquitetura |
+| V1.1.2 | Identificação de componentes de alto valor e ativos |Análise de Arquitetura | Modelo de ameaças com identificação de componentes críticos |
+| V1.1.3 | Arquitetura de segurança definida |  Análise de Design | Documento de arquitetura com controlos de segurança mapeados |
+| V1.2.1 | Implementação de APIs seguras | Teste 2.1, 2.3, 4.3 | Validação de entrada em todos os endpoints |
+| V1.4.1 | Validação de entrada em componentes confiáveis |  Teste 2.2, 2.5 | Implementação de ModelState e validações personalizadas |
+| V1.5.1 | Catálogo de componentes e dependências |  Análise SCA | Relatório de composição de software |
+| V1.5.3 | Integração de segurança em pipeline CI/CD |  Revisão de Pipeline | Verificação parcial de segurança no CI/CD |
+| V1.6.1 | Implementação de TLS para todos os componentes |  Teste 3.1, 4.1 | Uso de HTTPS forçado via middleware |
+| V1.7.1 | Lista de permissão para acesso a recursos externos |  Teste 4.1 | Configuração CORS restritiva |
+| V1.8.1 | Catálogo de administração centralizado |  Teste 1.4 | Controlo de acesso centralizado via ASP.NET Identity |
+| V1.9.1 | Arquitetura de comunicação entre componentes |  Análise de Design | Diagrama de componentes com fluxos de comunicação |
+| V1.10.1 | Arquitetura protegida contra falsificação | | Teste 1.1, 1.3 | Proteção CSRF nos formulários e tokens JWT |
+| V1.11.1 | Segregação de componentes por risco | Análise de Arquitetura | Separação parcial de componentes sensíveis |
+| V1.12.1 | Processo de partilha segura | Teste 3.4 | Uso de DTOs e ViewModels para limitar exposição de dados |
+| V1.14.1 | Tratamento de upload de ficheiros |  Teste 2.4 | Validação e sanitização de uploads |
+
+### 2. Avaliação da Implementação da Arquitetura
+
+#### 2.1 Implementação de Camadas e Separação de Responsabilidades
+- **Padrão MVC**: Implementação correta com separação entre Model, View e Controller
+- **Padrão Repository**: Uso adequado para abstrair acesso a dados
+- **Padrão UnitOfWork**: Implementação para garantir integridade transacional
+
+#### 2.2 Avaliação dos Padrões de Segurança Implementados
+
+| Padrão de Segurança | Implementação | Avaliação | Caso de Teste |
+|---------------------|---------------|-----------|---------------|
+| Defense in Depth | Múltiplas camadas de segurança | ✅ | Testes 1.x, 2.x, 3.x, 4.x |
+| Princípio do Privilégio Mínimo | Autorização baseada em roles | ✅ | Teste 1.3, 1.4 |
+| Fail Secure | Comportamento seguro em caso de falha | ⚠️ | Teste 5.3 |
+| Complete Mediation | Verificação de autorização em cada requisição | ✅ | Teste 1.3, 6.1 |
+| Separation of Duties | Segregação funcional entre perfis | ✅ | Teste 1.4, 6.2 |
+| Zero Trust | Verificação contínua de autenticação | ⚠️ | Teste 1.1, 1.5 |
+
+### 3. Mapeamento Arquitetural para Requisitos ASVS
+
+#### 3.1 Arquitetura de Autenticação (V2)
+- Implementação do ASP.NET Identity
+- Armazenamento seguro de credenciais
+- Mecanismos de proteção contra ataques de força bruta
+
+#### 3.2 Arquitetura de Gestão de Sessão (V3)
+- Configuração segura de cookies
+- Implementação de timeout de sessão
+- Proteção contra fixação de sessão
+
+#### 3.3 Arquitetura de Controlo de Acesso (V4)
+- Modelo de autorização baseado em roles e claims
+- Verificação granular de propriedade de recursos
+- Aplicação consistente de políticas de autorização
+
+#### 3.4 Arquitetura de Validação e Sanitização (V5)
+- Validação de modelo no ASP.NET Core
+- Sanitização de dados para prevenção de XSS
+- Consultas parametrizadas via Entity Framework Core
+
+### 4. Análise de Lacunas Arquiteturais
+
+| Área | Lacuna Identificada | Recomendação | Prioridade |
+|------|---------------------|--------------|-----------|
+| Resiliência | Tratamento limitado de falhas em componentes externos | Implementar Circuit Breaker | Média |
+| Criptografia | Armazenamento de chaves em configuração | Utilizar Azure Key Vault ou equivalente | Alta |
+| Monitorização | Registo de segurança não centralizado | Implementar solução SIEM | Média |
+| API Gateway | Ausência de camada de gateway | Considerar implementação de API Gateway | Baixa |
+| Redundância | Single point of failure em autenticação | Implementar alta disponibilidade | Alta |
+
+### 5. Roteiro de Melhorias Arquiteturais
+
+| Fase | Melhoria | Requisito ASVS | Prazo |
+|------|---------|---------------|-------|
+| 1 | Implementação de Secret Management | V1.5.2 | Q2 2025 |
+| 2 | Segmentação de rede completa | V1.11.2 | Q3 2025 |
+| 3 | Implementação de SIEM | V1.7.2, V7.4.1 | Q3 2025 |
+| 4 | Arquitetura de alta disponibilidade | V1.12.2 | Q4 2025 |
+| 5 | Maturação do DevSecOps | V1.5.3 | Q4 2025 |
+
+Esta avaliação ASVS com foco em arquitetura fornece uma visão abrangente do estado atual da segurança arquitetural do sistema AMAP, identificando tanto os pontos fortes quanto as áreas que necessitam de melhorias. O alinhamento com os requisitos ASVS garante que a arquitetura de segurança esteja em conformidade com as melhores práticas da indústria.
+
+## Traceability Matrix
+
+A matriz de rastreabilidade estabelece ligações claras entre os requisitos de segurança documentados, as ameaças identificadas no modelo STRIDE, os controlos de segurança implementados e os testes de verificação correspondentes. Esta abordagem garante a cobertura completa e sistematizada de todos os aspetos de segurança do sistema AMAP.
+
+### 1. Rastreabilidade de Requisitos de Segurança para Testes
+
+| ID | Requisito de Segurança | Componente do Sistema | Caso de Teste | Estado |
+|----|------------------------|----------------------|---------------|--------|
+| SR-001 | Hash PBKDF2 para senhas | AccountController, ASP.NET Identity | Teste 3.2 | ✅ |
+| SR-002 | Validação por role | AuthorizationMiddleware, Controllers | Teste 1.3, 1.4 | ✅ |
+| SR-003 | Transações UnitOfWork | Repository, Controllers | Teste 5.3 | ✅ |
+| SR-004 | TLS 1.2+ obrigatório | Program.cs, Middleware | Teste 3.1, 4.1 | ✅ |
+| SR-005 | Gestão segura de sessões | Program.cs, Cookie Middleware | Teste 1.5, 3.5 | ✅ |
+| SR-006 | Validação de entrada | Controllers, ModelState | Teste 2.1, 2.2, 2.3 | ✅ |
+| SR-007 | CORS restritivo | Program.cs, Middleware | Teste 4.1 | ✅ |
+| SR-008 | Proteção contra XSS | Output Encoding, Middleware | Teste 2.2 | ✅ |
+| SR-009 | Prevenção de CSRF | Antiforgery Tokens | Teste 2.5 | ✅ |
+| SR-010 | Registo de auditoria | AuditService, Controllers | Teste 3.1, 3.3 | ✅ |
+| SR-011 | Rate limiting | Program.cs, Middleware | Teste 5.1, 5.2 | ⚠️ |
+| SR-012 | Verificação de propriedade | AuthorizationHandlers | Teste 1.3, 6.1 | ✅ |
+| SR-013 | Políticas de palavra-passe | ASP.NET Identity Config | Teste 1.1, 3.2 | ✅ |
+| SR-014 | Sanitização de uploads | ProductController | Teste 2.4 | ✅ |
+| SR-015 | Autenticação multi-fator | ASP.NET Identity | Teste 1.2 | ⚠️ |
+
+### 2. Mapeamento STRIDE para Testes de Segurança
+
+| Ameaça STRIDE | Requisito de Segurança | Controlo Implementado | Caso de Teste | Resultado Esperado |
+|---------------|------------------------|----------------------|---------------|-------------------|
+| **Spoofing** | SR-001, SR-002, SR-005, SR-013, SR-015 | Autenticação robusta, JWT seguro | Teste 1.1, 1.2, 1.3 | Prevenção de falsificação de identidade |
+| **Tampering** | SR-003, SR-006, SR-009, SR-014 | Validação e integridade de dados | Teste 2.1, 2.3, 2.4, 5.1, 5.3 | Proteção contra manipulação de dados |
+| **Repudiation** | SR-010 | Registo imutável, trilha de auditoria | Teste 3.1, 3.3 | Não-repúdio de ações críticas |
+| **Information Disclosure** | SR-001, SR-004, SR-007, SR-012 | Encriptação, controlo de acesso | Teste 3.2, 3.4, 3.5, 4.1 | Prevenção de vazamento de dados |
+| **Denial of Service** | SR-011 | Rate limiting, timeout, validação de recursos | Teste 5.1, 5.2 | Disponibilidade do sistema |
+| **Elevation of Privilege** | SR-002, SR-012 | Autorização granular, verificação de privilégios | Teste 1.3, 1.4, 6.1, 6.2 | Prevenção de acesso não autorizado |
+
+### 3. Rastreabilidade de Componentes Arquiteturais
+
+| Componente Arquitetural | Requisito de Segurança | Ameaça STRIDE | Caso de Teste |
+|-------------------------|------------------------|---------------|---------------|
+| **ASP.NET Identity** | SR-001, SR-002, SR-005, SR-013, SR-015 | S, I, E | Teste 1.1, 1.2, 1.3, 1.4, 3.2 |
+| **Entity Framework Core** | SR-003, SR-006 | T, I | Teste 2.1, 5.3 |
+| **Controllers** | SR-006, SR-009, SR-010, SR-012 | T, R, I, E | Teste 1.3, 2.1, 2.2, 2.3, 3.3, 6.1 |
+| **Middleware Pipeline** | SR-004, SR-005, SR-007, SR-008, SR-011 | S, T, I, D | Teste 3.1, 3.5, 4.1, 5.1, 5.2 |
+| **Repository Layer** | SR-003, SR-006, SR-012 | T, I, E | Teste 2.1, 5.3, 6.1 |
+| **Service Layer** | SR-010, SR-012, SR-014 | T, R, I, E | Teste 2.4, 3.1, 3.3, 6.1 |
+
+### 4. Rastreabilidade de Casos de Abuso para Testes
+
+| Abuse Case | Categoria STRIDE | Requisito de Segurança | Caso de Teste |
+|------------|-----------------|------------------------|---------------|
+| Modificação de token JWT | S, E | SR-002, SR-005 | Teste 1.3 |
+| Criação de oferta em nome de outro produtor | S, E | SR-002, SR-012 | Teste 1.3, 6.1 |
+| Alteração não autorizada de preços | T | SR-003, SR-006, SR-012 | Teste 2.1, 5.1, 6.1 |
+| SQL Injection em pagamentos | T, I | SR-006 | Teste 2.1 |
+| Negação de subscrição | R | SR-010 | Teste 3.1, 3.3 |
+| Acesso a dados de pagamento de outros utilizadores | I | SR-002, SR-012 | Teste 1.4, 3.4 |
+| Sobrecarga de API | D | SR-011 | Teste 5.1, 5.2 |
+| Co-produtor tenta aceder a recursos de Produtor | E | SR-002, SR-012 | Teste 1.3, 1.4, 6.1, 6.2 |
+
+### 5. Rastreabilidade de Requisitos ASVS para Testes
+
+| Categoria ASVS | Requisito ASVS | Requisito de Segurança | Caso de Teste |
+|----------------|---------------|------------------------|---------------|
+| V1 - Arquitetura | V1.4.1, V1.6.1, V1.10.1 | SR-004, SR-006, SR-009 | Teste 2.1, 2.2, 3.1, 4.1 |
+| V2 - Autenticação | V2.1.1, V2.2.1, V2.5.1 | SR-001, SR-005, SR-013, SR-015 | Teste 1.1, 1.2, 3.2 |
+| V3 - Gestão de Sessões | V3.2.1, V3.3.1 | SR-005 | Teste 1.5, 3.5 |
+| V4 - Controlo de Acesso | V4.1.1, V4.2.1 | SR-002, SR-012 | Teste 1.3, 1.4, 6.1, 6.2 |
+| V5 - Validação | V5.1.1, V5.2.1, V5.3.1 | SR-006, SR-008, SR-014 | Teste 2.1, 2.2, 2.3, 2.4 |
+| V7 - Manipulação de Erros | V7.1.1, V7.4.1 | SR-010 | Teste 3.1, 3.3 |
+| V9 - Comunicações | V9.1.1 | SR-004, SR-007 | Teste 3.1, 4.1 |
+| V13 - API e Web Services | V13.1.1, V13.2.1 | SR-006, SR-007, SR-011 | Teste 2.1, 4.1, 5.1 |
+
+### 6. Rastreabilidade de Mitigações para Testes
+
+| Mitigação | Ameaça STRIDE | Requisito de Segurança | Caso de Teste | Evidência |
+|-----------|---------------|------------------------|---------------|-----------|
+| Autenticação ASP.NET Identity | S | SR-001, SR-005, SR-013 | Teste 1.1, 1.2 | Configuração em Program.cs, implementação do AccountController |
+| Policy-based Authorization | E | SR-002, SR-012 | Teste 1.3, 1.4, 6.1, 6.2 | Políticas definidas em Program.cs, aplicadas nos controladores |
+| Transações Atómicas | T | SR-003 | Teste 5.3 | Implementação do padrão UnitOfWork |
+| HTTPS com HSTS | I | SR-004 | Teste 3.1, 4.1 | Configuração em Program.cs, cabeçalhos de resposta |
+| Cookie Secure Policy | I | SR-005 | Teste 1.5, 3.5 | Configuração em Program.cs |
+| Input Validation | T | SR-006 | Teste 2.1, 2.2, 2.3 | ModelState, validação personalizada em DTOs |
+| CORS Restritivo | I | SR-007 | Teste 4.1 | Configuração em Program.cs |
+| XSS Protection | I | SR-008 | Teste 2.2 | Middleware, configuração CSP |
+| AntiForegery Tokens | T | SR-009 | Teste 2.5 | Implementação em formulários, validação no backend |
+| Audit Logging | R | SR-010 | Teste 3.1, 3.3 | Serviço de registo, registos em base de dados |
+| Rate Limiting | D | SR-011 | Teste 5.1, 5.2 | Middleware de limitação de taxa |
+
+Esta matriz de rastreabilidade abrangente garante que todos os requisitos de segurança documentados sejam verificados através de testes específicos, estabelecendo ligações diretas entre requisitos, ameaças, mitigações e casos de teste. Essa abordagem sistematizada proporciona confiança na cobertura completa do processo de verificação de segurança do sistema AMAP.
+
+## Critérios de Aceitação
+
+1. **Conformidade com OWASP ASVS Nível 2** (mínimo)
+2. **Zero vulnerabilidades críticas ou altas** não mitigadas
+3. **Documentação de todos os riscos médios e baixos** com plano de mitigação
+4. **Proteção efetiva contra os riscos identificados** no documento de modelação de ameaças
+5. **Implementação bem-sucedida de mitigações** para as ameaças STRIDE identificadas
+6. **Implementação de controlos de segurança aprimorados** especificados no README
+
+## Relatórios e Documentação
+
+1. **Relatório de Vulnerabilidades**
+    - Descrição detalhada das vulnerabilidades encontradas
+    - Classificação de severidade (CVSS)
+    - Recomendações de mitigação
+
+2. **Relatório de Conformidade ASVS**
+    - Estado de conformidade com os requisitos ASVS
+    - Lacunas identificadas
+    - Próximos passos para conformidade total
+
+3. **Resultados dos Testes de Penetração**
+    - Metodologia utilizada
+    - Vulnerabilidades exploradas
+    - Provas de conceito
+
+4. **Plano de Remediação**
+    - Priorização de correções
+    - Cronograma de implementação
+    - Atribuição de responsabilidades
+
+## Procedimentos de Resposta a Incidentes
+
+1. **Documentação Imediata**
+    - Registo detalhado da vulnerabilidade
+    - Avaliação preliminar de impacto
+
+2. **Notificação**
+    - Informar gestor de segurança
+    - Comunicar partes interessadas conforme severidade
+
+3. **Contenção**
+    - Implementar medidas temporárias
+    - Limitar exposição
+
+4. **Remediação**
+    - Implementar mitigações conforme README
+    - Testar antes de produção
+
+5. **Verificação**
+    - Retestar vulnerabilidade
+    - Documentar solução implementada
+
+
 ---
 
 ## Conclusão
