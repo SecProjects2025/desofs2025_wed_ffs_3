@@ -28,7 +28,7 @@ Antes de começar, certifique-se de que tem os seguintes softwares instalados no
 
 1. **Visual Studio 2022** com os seguintes workloads:
    - ASP.NET and web development
-   - Data storage and processing
+   - .NET desktop development
 2. **SQL Server** e **SQL Server Management Studio (SSMS)**  
    - [Tutorial para instalação do SQL Server e SSMS](https://www.youtube.com/watch?v=8vTCyhDyRjg&list=PL82C6-O4XrHfZoh2ZH7-HCPyh9oHeYPnz)
 3. **.NET 6 SDK** (ou superior)
