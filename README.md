@@ -49,6 +49,7 @@ O sistema AMAP é uma plataforma de gestão que permite a coordenação entre ge
 - Gestão de pagamentos  
 - Organização das datas de entrega  
 - Gestão de utilizadores com diferentes níveis de acesso (Gestor, Produtor, Co‑produtor)
+- Gestão de arquivos
 
 A arquitetura do sistema baseia‑se numa API RESTful desenvolvida em ASP.NET Core, fornecendo endpoints seguros para todas as operações necessárias.
 
@@ -221,6 +222,12 @@ O modelo de domínio do AMAP descreve as entidades centrais do negócio e as sua
 8. **Controlo de acesso**  
    - Autenticação e autorização baseadas em perfis de utilizador.  
    - Restringir operações conforme o tipo de utilizador (Gestor, Produtor, Co‑produtor).  
+
+9. **Gestão de arquivos**  
+   - Implementa funcionalidades para importação e exportação de ficheiros.  
+   - Criar diretórios na raiz do projeto para armazenar ficheiros importados e exportados:  
+     - **ExportedProducts**: Pasta que contém ficheiros exportados com todos os produtos de um produtor.  
+     - **ProductsUpload**: Pasta onde os produtores podem importar ficheiros com novos produtos, os quais são armazenados na base de dados.  
 
 ### Requisitos Não Funcionais do Backend
 
