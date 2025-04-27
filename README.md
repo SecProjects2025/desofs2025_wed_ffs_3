@@ -1,6 +1,6 @@
 # AMAP - Backend Setup Guide
 
-Bem-vindo ao repositório do sistema AMAP! Este guia irá ajudá-lo a configurar o projeto localmente, incluindo a base de dados e o ambiente necessário para rodar a aplicação. Além disso, este arquivo contém a constituição do relatório e informações sobre a estrutura do repositório.
+Bem-vindo ao repositório do sistema AMAP! Este guia irá ajudá-lo a configurar o projeto localmente, incluindo a base de dados e o ambiente necessário para rodar a aplicação. Além disso, este arquivo contém a estrutura do repositório.
 
 ---
 
