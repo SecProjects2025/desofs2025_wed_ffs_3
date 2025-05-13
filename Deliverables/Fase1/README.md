@@ -1736,7 +1736,7 @@ Para avaliar o risco das ameaças identificadas no sistema AMAP, aplicamos a met
 - **Damage potential (Potencial de dano):** Quão significativo seria o dano se a ameaça fosse explorada?
 - **Reproducibility (Reprodutibilidade):** Quão fácil é reproduzir o ataque?
 - **Exploitability (Facilidade de exploração):** Quão fácil é executar o ataque?
-- **Affected users (Usuários afetados):** Que percentagem de utilizadores seria afetada?
+- **Affected users (Utilizadores afetados):** Que percentagem de utilizadores seria afetada?
 - **Discoverability (Facilidade de descoberta):** Quão fácil é descobrir esta vulnerabilidade?
 
 ---
@@ -1763,15 +1763,15 @@ Para cada fator, utilizaremos uma escala de 1-10, onde 1 representa o menor risc
 - **9-10:** Muito fácil de explorar, não requer conhecimento técnico especial
 
 #### Affected Users (A)
-- **1-3:** Afeta pouquíssimos usuários individuais
-- **4-6:** Afeta um grupo específico de usuários
-- **7-8:** Afeta a maioria dos usuários
-- **9-10:** Afeta todos os usuários do sistema
+- **1-3:** Afeta pouquíssimos utilizadores individuais
+- **4-6:** Afeta um grupo específico de utilizadores 
+- **7-8:** Afeta a maioria dos utilizadores 
+- **9-10:** Afeta todos os utilizadores do sistema
 
 #### Discoverability (D)
 - **1-3:** Extremamente difícil de descobrir
-- **4-6:** Descobrível apenas com análise direcionada
-- **7-8:** Facilmente descobrível com ferramentas comuns
+- **4-6:** Apenas pode ser descoberto com análise direcionada
+- **7-8:** Facilmente descoberto com ferramentas comuns
 - **9-10:** Óbvia de detectar, visível por qualquer pessoa
 
 ---
@@ -1786,7 +1786,7 @@ Para cada fator, utilizaremos uma escala de 1-10, onde 1 representa o menor risc
 | **Damage **          | 9         | Acesso administrativo completo ao sistema permite manipulação de períodos, visualização de dados financeiros e controlo de transações |
 | **Reproducibility ** | 7         | Requer obtenção de credenciais via phishing ou outros meios; após a obtenção, o acesso é totalmente reproduzível |
 | **Exploitability **  | 6         | Requer técnicas de engenharia social ou exploração de vulnerabilidades no processo de autenticação |
-| **Affected Users **  | 10        | Afecta todos os utilizadores do sistema, pois um Gestor comprometido pode impactar todas as operações |
+| **Affected Users **  | 10        | Afeta todos os utilizadores do sistema, pois um Gestor comprometido pode impactar todas as operações |
 | **Discoverability ** | 8         | Vulnerabilidades de autenticação são amplamente conhecidas e testadas |
 | **Pontuação DREAD**  | **8.0**   | **ALTO**                                                     |
 
@@ -2400,7 +2400,7 @@ A tabela abaixo apresenta todas as ameaças identificadas no sistema AMAP, orden
 | 2       | Falsificação de identidade para obter acesso não autorizado  | 1.1 S      | 8.0             | ALTO       |
 | 2       | Modificação das credenciais ou tokens durante a transmissão  | 2.1 T      | 8.0             | ALTO       |
 | 9       | Falsificação de identidade para contornar autenticação       | 5.2 S      | 7.8             | ALTO       |
-| 9       | Interceção de credenciais durante a transmissão              | 2.1 I      | 7.8             | ALTO       |
+| 9       | Interseção de credenciais durante a transmissão              | 2.1 I      | 7.8             | ALTO       |
 | 9       | Acesso a informações sensíveis do utilizador                 | 3.1 I      | 7.8             | ALTO       |
 | 12      | Modificação não autorizada de dados do utilizador            | 3.1 T      | 7.6             | ALTO       |
 | 12      | Manipulação não autorizada de dados entre aplicação e base de dados | 5.1 T      | 7.6             | ALTO       |
@@ -2429,7 +2429,7 @@ A tabela abaixo apresenta todas as ameaças identificadas no sistema AMAP, orden
 | 36      | Falsificação da identidade de um CoProdutor                  | 4.3 S      | 6.8             | ALTO       |
 | 37      | Alteração não autorizada de dados de subscrição              | 1.5 T      | 6.6             | ALTO       |
 | 37      | Acesso a informações de transações                           | 2.3 I      | 6.6             | ALTO       |
-| 37      | Interceção de notificações                                   | 4.4 I      | 6.6             | ALTO       |
+| 37      | Interseção de notificações                                   | 4.4 I      | 6.6             | ALTO       |
 | 37      | Manipulação do conteúdo das mensagens                        | 5.4 T      | 6.6             | ALTO       |
 | 37      | Acesso indevido às funcionalidades de gestão de períodos     | 1.2 E      | 6.6             | ALTO       |
 | 42      | Divulgação não autorizada de informações de produtos         | 1.3 I      | 6.4             | ALTO       |
