@@ -26,13 +26,13 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore AMAP/AMAP.sln
 
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build AMAP/AMAP.sln --no-restore
 
     - name: Run tests
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
 
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
@@ -59,7 +59,7 @@ jobs:
       shell: powershell
       run: |
         .\.sonar\scanner\dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-        dotnet build
+        dotnet build AMAP/AMAP.sln
         .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Run SCA (OWASP Dependency Check)
