@@ -67,5 +67,66 @@ namespace AMAP.Api.Controllers
             await _signInManager.SignOutAsync();
             return Ok(new { message = "Logged off successfully" });
         }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                // Don't reveal that the user doesn't exist
+                return Ok(new { message = "If your email is registered, you will receive a password reset token." });
+            }
+
+            // Generate password reset token only for existing users
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            return Ok(new
+            {
+                message = "Password reset token generated successfully",
+                token = token,
+                email = model.Email
+            });
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                // Don't reveal that the user doesn't exist
+                return Ok(new { message = "If your email is registered, your password has been reset." });
+            }
+
+            // Verify the token is valid for this user
+            var isValid = await _userManager.VerifyUserTokenAsync(
+                user,
+                _userManager.Options.Tokens.PasswordResetTokenProvider,
+                UserManager<AppUser>.ResetPasswordTokenPurpose,
+                model.Token
+            );
+
+            if (!isValid)
+            {
+                return BadRequest(new { message = "Invalid token." });
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+            if (result.Succeeded)
+            {
+                return Ok(new { message = "Your password has been reset successfully." });
+            }
+
+            return BadRequest(new { message = "Password reset failed. Please ensure your new password meets the requirements." });
+        }
     }
 }

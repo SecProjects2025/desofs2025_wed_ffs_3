@@ -29,9 +29,26 @@ builder.Services.AddScoped<IUnitOfWork, UnityOfWork>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
+{
+    // Password settings
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
+
+// Configure password hasher with explicit salt size and security parameters
+builder.Services.Configure<PasswordHasherOptions>(options =>
+{
+    // Salt size is 128 bits (16 bytes) - exceeds OWASP requirement of minimum 32 bits
+    // Each user gets a unique random salt to prevent salt collisions
+    options.IterationCount = 100000; // OWASP C6: PBKDF2 iteration count set to 100,000 as recommended
+    options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3; // Uses PBKDF2 with HMAC-SHA256
+});
 
 //builder.Services.AddAuthentication(options =>
 //{
@@ -57,7 +74,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>()
 //    };
 //});
 
-// Configuração do cookie de autenticação
+// Configuraï¿½ï¿½o do cookie de autenticaï¿½ï¿½o
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/api/account/login";
@@ -84,7 +101,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 
 
-// Configuração das roles de autorização
+// Configuraï¿½ï¿½o das roles de autorizaï¿½ï¿½o
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
@@ -96,7 +113,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expiração da sessão
+    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expiraï¿½ï¿½o da sessï¿½o
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir envio em HTTP
@@ -112,7 +129,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Inicializar roles e usuários
+// Inicializar roles e usuï¿½rios
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
