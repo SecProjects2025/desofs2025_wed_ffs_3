@@ -21,11 +21,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3 - Shared", "3 - Shared", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1 - Services", "1 - Services", "{6D2177AA-86BE-4FB0-83B3-058CC5279472}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Itens de Solução", "Itens de Solução", "{89621CBB-EF6C-4703-908C-22CACD869A78}"
-	ProjectSection(SolutionItems) = preProject
-		XMLSchema1.xsd = XMLSchema1.xsd
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
