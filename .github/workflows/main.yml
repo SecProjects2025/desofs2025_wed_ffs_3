@@ -1,0 +1,83 @@
+name: .NET Core CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore AMAP/AMAP.sln
+
+    - name: Build
+      run: dotnet build AMAP/AMAP.sln --no-restore
+
+    - name: Run tests
+      run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
+
+    - name: Cache SonarQube Cloud packages
+      uses: actions/cache@v4
+      with:
+        path: ~\sonar\cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    - name: Cache SonarQube Cloud scanner
+      id: cache-sonar-scanner
+      uses: actions/cache@v4
+      with:
+        path: .\.sonar\scanner
+        key: ${{ runner.os }}-sonar-scanner
+        restore-keys: ${{ runner.os }}-sonar-scanner
+    - name: Install SonarQube Cloud scanner
+      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ./.sonar/scanner
+        dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
+
+    - name: Build and analyze
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        ./.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+        dotnet build AMAP/AMAP.sln
+        ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+    - name: Run SCA (OWASP Dependency Check)
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'diogoc0307_desofs'
+        path: '.'
+        format: 'HTML'
+        out: 'reports'
+
+    - name: Upload SCA Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-check-report
+        path: reports
+
+    - name: Deploy to Staging
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "Deploying to staging environment"
+        # Add your deployment commands here
+        # For example:
+        # dotnet publish -c Release
+        # Copy files to staging server 
