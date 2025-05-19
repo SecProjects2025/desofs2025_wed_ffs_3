@@ -26,8 +26,7 @@ namespace AMAP.DataAccess.DbInitializer
 
         public void Initialize()
         {
-
-            // Aplicar migrations se não tiverem sido aplicadas
+            // Apply migrations if not applied
             try
             {
                 if (_db.Database.GetPendingMigrations().Count() > 0)
@@ -37,22 +36,16 @@ namespace AMAP.DataAccess.DbInitializer
             }
             catch (Exception ex)
             {
-                // Logar ou tratar o erro conforme necessário
+                // Log or handle the error as needed
             }
 
-            // Criar roles se não existirem
+            // Create roles if they don't exist
             CreateRoleIfNotExists(nameof(UserType.Manager));
             CreateRoleIfNotExists(nameof(UserType.Producer));
             CreateRoleIfNotExists(nameof(UserType.CoProducer));
 
-            //Criar os utilizadores
-            CreateUserIfNotExists("manager@amap.com", UserType.Manager, "Manager User", "Manager123!");
-            CreateUserIfNotExists("producer@amap.com", UserType.Producer, "Producer User", "Producer123!");
-            CreateUserIfNotExists("producer2@amap.com", UserType.Producer, "Producer2 User", "Producer123!");
-            CreateUserIfNotExists("coproducer@amap.com", UserType.CoProducer, "CoProducer User", "CoProducer123!");
-            CreateUserIfNotExists("coproducer2@amap.com", UserType.CoProducer, "CoProducer2 User", "CoProducer123!");
-            CreateUserIfNotExists("manager2@amap.com", UserType.Manager, "Manager User2", "Manager123!");
-
+            // No default accounts are created
+            // Users must be created through the proper registration process
         }
 
         // Função para criar a role se não existir
