@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AMAP.Data\AMAP.DataAccess.csproj" />
+    <ProjectReference Include="..\AMAP.Business\AMAP.Business.csproj" />
     <ProjectReference Include="..\AMAP.Models\AMAP.Entities.csproj" />
   </ItemGroup>
 

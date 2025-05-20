@@ -1,0 +1,24 @@
+Name;Description;Photo;ReferencePrice;DeliveryUnits
+Maçãs Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+batatas;string;string;0.01;string
+Uvas Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Maracujas Rocha;Peras Rocha de alta qualidade;https://exemplo.com/peras.jpg;3.25;kg
+Vinho Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Cerejas Rocha;Peras Rocha de alta qualidade;https://exemplo.com/peras.jpg;3.25;kg
+Teste1 Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Teste2 Rocha;Peras Rocha de alta qualidade;https://exemplo.com/peras.jpg;3.25;kg
+Teste3 Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Teste4 Rocha;Peras Rocha de alta qualidade;https://exemplo.com/peras.jpg;3.25;kg
+Teste4 Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Teste5 Rocha;Peras Rocha de alta qualidade;https://exemplo.com/peras.jpg;3.25;kg
+Teste6 Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Teste7 Rocha;Peras Rocha de alta qualidade;https://exemplo.com/peras.jpg;3.25;kg
+Teste8 Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Teste9 Rocha;Peras Rocha de alta qualidade;https://exemplo.com/peras.jpg;3.25;kg
+Teste10 Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Teste11 Rocha;Peras Rocha de alta qualidade;https://exemplo.com/peras.jpg;3.25;kg
+Teste12 Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Teste13 Bio;Maçãs biológicas da região norte;https://exemplo.com/macas.jpg;2.5;kg
+Apple;Fresh red apple;apple.jpg;1.5;kg
+Orange;Juicy orange;orange.jpg;2;unit
+Carrot;Organic carrot;carrot.jpg;0.75;kg

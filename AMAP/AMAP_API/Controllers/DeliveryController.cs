@@ -1,5 +1,4 @@
-﻿using AMAP.DataAccess.Repository.IRepository;
-using AMAP.Entities;
+﻿using AMAP.Business.Interfaces;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,53 +11,39 @@ namespace AMAP.Api.Controllers
     [Authorize(Roles = nameof(UserType.Producer))]
     public class DeliveryController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IDeliveryBc _deliveryBc;
 
-        public DeliveryController(IUnitOfWork unitOfWork)
+        public DeliveryController(IDeliveryBc deliveryBc)
         {
-            _unitOfWork = unitOfWork;
+            _deliveryBc = deliveryBc;
         }
 
         [HttpPut("UpdateDeliveredQuantity/{subscriptionId}")]
         public IActionResult UpdateDeliveredQuantity(int subscriptionId, [FromBody] int deliveredQuantity)
         {
-            if (deliveredQuantity < 0)
+            try
             {
-                return BadRequest("Delivered quantity cannot be negative.");
+                var producerId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                _deliveryBc.UpdateDeliveredQuantity(subscriptionId, deliveredQuantity, producerId);
+                return Ok("Delivered quantity updated successfully.");
             }
-
-            var subscription = _unitOfWork.Subscription.Get(s => s.Id == subscriptionId, includeProperties: "ProductOffer.Product");
-            if (subscription == null)
+            catch (ArgumentException ex)
             {
-                return NotFound("Subscription not found.");
+                return BadRequest(ex.Message);
             }
-
-            var producerId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-            if (subscription.ProductOffer == null || subscription.ProductOffer.Product.ProducerId != producerId)
+            catch (KeyNotFoundException ex)
             {
-                return Forbid("You are not allowed to update this subscription.");
+                return NotFound(ex.Message);
             }
-
-            var existingDelivery = _unitOfWork.Delivery.Get(d => d.SubscriptionId == subscriptionId);
-            if (existingDelivery == null)
+            catch (UnauthorizedAccessException ex)
             {
-                var newDelivery = new Delivery
-                {
-                    SubscriptionId = subscriptionId,
-                    DeliveredQuantity = deliveredQuantity
-                };
-                _unitOfWork.Delivery.Add(newDelivery);
+                return Forbid(ex.Message);
             }
-            else
+            catch (Exception ex)
             {
-                existingDelivery.DeliveredQuantity = deliveredQuantity;
-                _unitOfWork.Delivery.Update(existingDelivery);
+                return StatusCode(500, $"An error occurred: {ex.Message}");
             }
-
-            _unitOfWork.Save();
-
-            return Ok("Delivered quantity updated successfully.");
         }
     }
 }
+

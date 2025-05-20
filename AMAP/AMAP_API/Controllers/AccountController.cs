@@ -1,5 +1,5 @@
 ﻿using AMAP.Entities;
-using AMAP.Entities.ViewModel;
+using AMAP.Entities.Models.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -38,14 +38,14 @@ namespace AMAP.Api.Controllers
                         return Unauthorized(new { message = "User not found" });
                     }
 
-                    // Obter os papéis do usuário
+                    // Obtem as roles dos users
                     var roles = await _userManager.GetRolesAsync(user);
 
                     return Ok(new
                     {
                         message = "Login successful",
                         userId = user.Id,
-                        role = roles.FirstOrDefault() // Retorna o primeiro papel, caso o usuário tenha múltiplos
+                        role = roles.FirstOrDefault()
                     });
                 }
                 if (result.IsLockedOut)
@@ -59,7 +59,6 @@ namespace AMAP.Api.Controllers
             }
             return BadRequest(ModelState);
         }
-
 
         [HttpPost("logout")]
         public async Task<IActionResult> LogOff()

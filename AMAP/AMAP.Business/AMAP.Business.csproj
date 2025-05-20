@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AMAP.Data\AMAP.DataAccess.csproj" />
+    <ProjectReference Include="..\AMAP.Models\AMAP.Entities.csproj" />
+  </ItemGroup>
+
+</Project>
