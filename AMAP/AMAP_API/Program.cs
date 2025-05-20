@@ -5,9 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using AMAP.Entities;
 using AMAP.DataAccess.DbInitializer;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using AMAP.Entities.Utilities;
+using AMAP.Business.Interfaces;
+using AMAP.Business;
+using AMAP.Business.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,10 +26,16 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnityOfWork>();
-
+builder.Services.AddScoped<IProductBc, ProductBc>();
+builder.Services.AddScoped<ISubscriptionPeriodBc, SubscriptionPeriodBc>();
+builder.Services.AddScoped<IProductOfferBc, ProductOfferBc>();
+builder.Services.AddScoped<ISubscriptionBc, SubscriptionBc>();
+builder.Services.AddScoped<IPaymentBc, PaymentBc>();
+builder.Services.AddScoped<ICatalogBc, CatalogBc>();
+builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
+builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();

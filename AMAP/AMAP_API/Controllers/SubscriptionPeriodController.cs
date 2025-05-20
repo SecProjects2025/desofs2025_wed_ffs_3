@@ -1,4 +1,4 @@
-using AMAP.DataAccess.Repository.IRepository;
+using AMAP.Business.Interfaces;
 using AMAP.Entities;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
@@ -12,193 +12,101 @@ namespace AMAP.Api.Controllers
     public class SubscriptionPeriodController : Controller
     {
 
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly EmailSender _emailSender;
+        private readonly ISubscriptionPeriodBc _subscriptionPeriodBc;
 
-        public SubscriptionPeriodController(IUnitOfWork unitOfWork, EmailSender emailSender)
+        public SubscriptionPeriodController(ISubscriptionPeriodBc subscriptionPeriodBc)
         {
-            _unitOfWork = unitOfWork;
-            _emailSender = emailSender;
+            _subscriptionPeriodBc = subscriptionPeriodBc;
         }
 
-        [HttpGet("SubscriptionPeriod/{id}")]
+        [HttpGet("{id}")]
         public IActionResult GetSubscriptionPeriodById(int id)
         {
-            var subscriptionPeriod = _unitOfWork.SubscriptionPeriod.Get(p => p.Id == id, includeProperties: "DeliveryDates");
-            if (subscriptionPeriod == null)
+            try
             {
-                return NotFound(new { message = "This Subscription Period does not exist" });
+                var subscriptionPeriod = _subscriptionPeriodBc.GetSubscriptionPeriodById(id);
+                if (subscriptionPeriod == null)
+                    return NotFound(new { message = "This Subscription Period does not exist" });
+
+                var dto = new SubscriptionPeriodDto
+                {
+                    Duration = subscriptionPeriod.Duration,
+                    StartDate = subscriptionPeriod.StartDate,
+                    EndDate = subscriptionPeriod.EndDate,
+                    DeliveryDates = subscriptionPeriod.DeliveryDates?.Select(dd => new DeliveryDateDto
+                    {
+                        Date = dd.Date
+                    })
+                };
+
+                return Ok(dto);
             }
-            return Ok(subscriptionPeriod);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpGet("DeliveryDate/{id}")]
         public IActionResult GetDeliveryDateById(int id)
         {
-            var deliveryDate = _unitOfWork.DeliveryDate.Get(p => p.Id == id);
-            if (deliveryDate == null)
+            try
             {
-                return NotFound(new { message = "This Delivery Date does not exist" });
+                var deliveryDate = _subscriptionPeriodBc.GetDeliveryDateById(id);
+                if (deliveryDate == null)
+                    return NotFound(new { message = "This Delivery Date does not exist" });
+
+                var dto = new DeliveryDateDto
+                {
+                    Date = deliveryDate.Date
+                };
+
+                return Ok(dto);
             }
-            return Ok(deliveryDate);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
+
         [Authorize(Roles = nameof(UserType.Manager))]
-        [HttpPost("SubscriptionPeriod")]
+        [HttpPost()]
         public async Task<IActionResult> CreateSubscriptionPeriodAndDeliveryDate([FromBody] SubscriptionPeriod subscriptionPeriod)
         {
-            if (subscriptionPeriod == null)
+            try
             {
-                return BadRequest(new { message = "Invalid subscription period data" });
+                var created = await _subscriptionPeriodBc.CreateSubscriptionPeriodAndDeliveryDateAsync(subscriptionPeriod);
+                return CreatedAtAction(nameof(GetSubscriptionPeriodById), new { id = created.Id }, created);
             }
-
-            if (subscriptionPeriod.StartDate > subscriptionPeriod.EndDate)
+            catch (ArgumentException ex)
             {
-                return BadRequest(new { message = "Invalid subscription period dates" });
+                return BadRequest(new { message = ex.Message });
             }
-
-            var existingPeriod = _unitOfWork.SubscriptionPeriod
-                .GetAll(sp => sp.StartDate == subscriptionPeriod.StartDate && sp.EndDate == subscriptionPeriod.EndDate)
-                .FirstOrDefault();
-
-            if (existingPeriod != null)
+            catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = "A subscription period with the same start and end date already exists" });
+                return BadRequest(new { message = ex.Message });
             }
-
-            if (subscriptionPeriod.DeliveryDates == null || subscriptionPeriod.DeliveryDates.Count() == 0)
-            {
-                return BadRequest(new { message = "Delivery dates are required" });
-            }
-
-            // Verificar duplicados no modelo recebido
-            var duplicateDates = subscriptionPeriod.DeliveryDates
-                .GroupBy(d => d.Date)
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key)
-                .ToList();
-
-            if (duplicateDates.Count != 0)
-            {
-                return BadRequest(new { message = $"Duplicate delivery dates found: {string.Join(", ", duplicateDates)}" });
-            }
-
-            foreach (var deliveryDate in subscriptionPeriod.DeliveryDates)
-            {
-                if (deliveryDate.Date < subscriptionPeriod.StartDate || deliveryDate.Date > subscriptionPeriod.EndDate)
-                {
-                    return BadRequest(new { message = $"Delivery date {deliveryDate.Date} is not within the subscription period" });
-                }
-
-                deliveryDate.SubscriptionPeriod = subscriptionPeriod;
-            }
-
-            _unitOfWork.SubscriptionPeriod.Add(subscriptionPeriod);
-            _unitOfWork.Save();
-
-            // Obter todos os utilizadores com a role Producer
-            var producers = _unitOfWork.AppUser.GetAll(u => u.UserType == UserType.Producer).ToList();
-
-            if (producers.Count != 0)
-            {
-                var tasks = producers.Select(producer =>
-                {
-                    if (string.IsNullOrEmpty(producer.Email))
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    var subject = "New Subscription Period Created";
-                    var body = $@"
-                        <p>Dear {producer.Name},</p>
-                        <p>A new subscription period has been created with the following details</p>
-                        <ul>
-                            <li>Duration: {subscriptionPeriod.Duration} </li>
-                            <li>Start Date: {subscriptionPeriod.StartDate:yyyy-MM-dd HH:mm:ss}</li>
-                            <li>End Date: {subscriptionPeriod.EndDate:yyyy-MM-dd HH:mm:ss}</li>
-                        </ul>
-                        <p>Here are the new delivery dates:</p>
-                        <ul>
-                    ";
-
-                    foreach (var deliveryDate in subscriptionPeriod.DeliveryDates)
-                    {
-                        body += $@"
-                            <li>{deliveryDate.Date:yyyy-MM-dd HH:mm:ss}</li>
-                        ";
-                    }
-
-                    body += @"
-                        </ul>
-                        <p>Please review the updated delivery dates in your dashboard.</p>
-                    ";
-
-                    return _emailSender.SendEmailAsync(producer.Email, subject, body);
-                });
-
-                try
-                {
-                    await Task.WhenAll(tasks);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Email notification failed: {ex.Message}");
-                }
-            }
-
-            return CreatedAtAction(nameof(GetSubscriptionPeriodById), new { id = subscriptionPeriod.Id }, subscriptionPeriod);
         }
 
         [Authorize(Roles = nameof(UserType.Manager))]
-        [HttpDelete("SubscriptionPeriod/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSubscriptionPeriod(int id)
         {
-            var subscriptionPeriod = _unitOfWork.SubscriptionPeriod.Get(p => p.Id == id);
-            if (subscriptionPeriod == null)
+            try
             {
-                return NotFound(new { message = "This Subscription Period does not exist" });
+                await _subscriptionPeriodBc.DeleteSubscriptionPeriodAsync(id);
+                return Ok(new { message = "Subscription Period successfully deleted" });
             }
-
-            _unitOfWork.SubscriptionPeriod.Remove(subscriptionPeriod);
-            _unitOfWork.Save();
-
-            // Enviar notificação
-            var producers = _unitOfWork.AppUser.GetAll(u => u.UserType == UserType.Producer).ToList();
-            if (producers.Count != 0)
+            catch (ArgumentException ex)
             {
-                var tasks = producers.Select(producer =>
-                {
-                    if (string.IsNullOrEmpty(producer.Email))
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    var subject = "Subscription Period Deleted";
-                    var body = $@"
-                        <p>Dear {producer.Name},</p>
-                        <p>A subscription period has been deleted with the following details:</p>
-                        <ul>
-                            <li>Duration: {subscriptionPeriod.Duration} </li>
-                        </ul>
-                        <p>Please review your dashboard for updated information.</p>
-                    ";
-
-                    return _emailSender.SendEmailAsync(producer.Email, subject, body);
-                });
-
-                try
-                {
-                    await Task.WhenAll(tasks);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Email notification failed: {ex.Message}");
-                }
+                return BadRequest(new { message = ex.Message });
             }
-
-            return Ok(new { message = "Subscription Period successfully deleted" });
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
-
     }
 }
 
