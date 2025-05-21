@@ -9,8 +9,24 @@ using AMAP.Entities.Utilities;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
 using AMAP.Business.Components;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.AddEventSourceLogger();
+
+// Add file logging for security events
+builder.Logging.AddFile("Logs/security-{Date}.txt");
+
+// Configure logging levels
+builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
+builder.Logging.AddFilter("System", LogLevel.Warning);
+builder.Logging.AddFilter("AMAP.Api.Controllers.AccountController", LogLevel.Information);
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -36,35 +52,29 @@ builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
 
-//builder.Services.AddAuthentication(options =>
-//{
-//    options.DefaultAuthenticateScheme =
-//    options.DefaultChallengeScheme =
-//    options.DefaultForbidScheme =
-//    options.DefaultScheme =
-//    options.DefaultSignInScheme =
-//    options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
+// Configure Identity with password requirements
+builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
+{
+    options.Password.RequiredLength = 12; // Min length 12 chars
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+    
+    // User settings
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders()
+.AddPasswordValidator<CustomPasswordValidator<AppUser>>(); // Custom validator
 
-//}).AddJwtBearer(options =>
-//{
-//    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-//    {
-//        ValidateIssuer = true,
-//        ValidIssuer = builder.Configuration["JWT:Issuer"],
-//        ValidateAudience = true,
-//        ValidAudience = builder.Configuration["JWT:Audience"],
-//        ValidateIssuerSigningKey = true,
-//        IssuerSigningKey = new SymmetricSecurityKey(
-//            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
-//        )
-//    };
-//});
-
-// Configuração do cookie de autenticação
+// Configurao do cookie de autenticao
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/api/account/login";
@@ -89,9 +99,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-
-
-// Configuração das roles de autorização
+// Configurao das roles de autorizao
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
@@ -103,7 +111,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expiração da sessão
+    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expirao da sesso
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir envio em HTTP
@@ -119,7 +127,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Inicializar roles e usuários
+// Inicializar roles e utilizadores
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -142,8 +150,37 @@ app.UseAuthentication();
 app.UseSession();
 app.UseAuthorization();
 
-
-
 app.MapControllers();
 
 app.Run();
+
+// Custom password validator
+public class CustomPasswordValidator<TUser> : IPasswordValidator<TUser> where TUser : class
+{
+    public Task<IdentityResult> ValidateAsync(UserManager<TUser> manager, TUser user, string password)
+    {
+        var errors = new List<IdentityError>();
+
+        if (password.Length > 128)
+        {
+            errors.Add(new IdentityError
+            {
+                Code = "PasswordTooLong",
+                Description = "Password must not exceed 128 characters."
+            });
+        }
+
+
+        var normalizedPassword = Regex.Replace(password, @"\s+", " ");
+        if (normalizedPassword.Length < 12)
+        {
+            errors.Add(new IdentityError
+            {
+                Code = "PasswordTooShort",
+                Description = "Password must be at least 12 characters long after normalizing spaces."
+            });
+        }
+
+        return Task.FromResult(errors.Count == 0 ? IdentityResult.Success : IdentityResult.Failed(errors.ToArray()));
+    }
+}
