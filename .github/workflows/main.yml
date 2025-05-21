@@ -35,12 +35,12 @@ jobs:
     - name: Install ReportGenerator tool
       run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-    - name: Convert coverage report to opencover format
+    - name: Convert coverage report to cobertura format
       run: |
         reportgenerator \
           -reports:**/coverage.cobertura.xml \
           -targetdir:coverage-report \
-          -reporttypes:opencover;html
+          -reporttypes:cobertura;html
 
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
@@ -65,7 +65,7 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
-        ./.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.opencover.reportsPaths="**/coverage-report/opencover.xml" /d:sonar.coverage.exclusions="**/*.csproj,**/*.Designer.cs,**/Program.cs,**/Startup.cs" /d:sonar.cs.vstest.reportsPaths="**/*.trx"
+        ./.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.cobertura.reportsPaths="**/coverage-report/cobertura.xml" /d:sonar.coverage.exclusions="**/*.csproj,**/*.Designer.cs,**/Program.cs,**/Startup.cs" /d:sonar.cs.vstest.reportsPaths="**/*.trx"
         dotnet build AMAP/AMAP.sln
         ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
