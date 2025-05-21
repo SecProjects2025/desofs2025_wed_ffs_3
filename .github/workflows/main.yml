@@ -40,7 +40,7 @@ jobs:
         reportgenerator \
           -reports:**/coverage.cobertura.xml \
           -targetdir:coverage-report \
-          -reporttypes:cobertura;html
+          -reporttypes:"cobertura;html"
 
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
