@@ -29,7 +29,7 @@ namespace AMAP.Entities.Utilities
             _fromName = mailSettings["FromName"];
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string body)
+        public virtual async Task SendEmailAsync(string toEmail, string subject, string body)
         {
             using var client = new SmtpClient(_host, _port)
             {
