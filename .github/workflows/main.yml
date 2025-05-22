@@ -94,3 +94,16 @@ jobs:
         # For example:
         # dotnet publish -c Release
         # Copy files to staging server 
+
+    - name: Generate HTML coverage report
+      run: |
+        reportgenerator 
+          -reports:coverage-report/opencover.xml 
+          -targetdir:html-coverage-report 
+          -reporttypes:Html
+
+    - name: Upload HTML coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: html-coverage-report
+        path: html-coverage-report 
