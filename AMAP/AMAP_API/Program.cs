@@ -20,8 +20,9 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.AddEventSourceLogger();
 
-// Add file logging for security events
-builder.Logging.AddFile("Logs/security-{Date}.txt");
+// Note: File logging was removed to avoid dependency issues in CI/CD pipeline
+// To enable file logging, uncomment the line below and ensure Serilog.Extensions.Logging.File package is installed
+//builder.Logging.AddFile("Logs/security-{Date}.txt");
 
 // Configure logging levels
 builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
@@ -111,7 +112,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expirao da sesso
+    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expirao da sessao
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir envio em HTTP
@@ -127,14 +128,25 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Inicializar roles e utilizadores
+// Inicializar roles e utilizadores apenas se necessário
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
-    dbInitializer.Initialize();
+    
+    // Verifica se há alguma migração pendente antes de inicializar
+    if (dbContext.Database.GetPendingMigrations().Any())
+    {
+        var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
+        dbInitializer.Initialize();
+    }
+    // Verifica se existem roles
+    else if (!roleManager.Roles.Any())
+    {
+        var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
+        dbInitializer.Initialize();
+    }
 }
 
 // Configure the HTTP request pipeline.
