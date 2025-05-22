@@ -1,6 +1,7 @@
 ﻿using AMAP.Api.Controllers;
 using AMAP.Business.Interfaces;
 using AMAP.Entities;
+using AMAP.Entities.Models.DTO.Subscription;
 using AMAP.Entities.Utilities;
 using AMAP.UnitTests.Business.Mock;
 using Microsoft.AspNetCore.Http;

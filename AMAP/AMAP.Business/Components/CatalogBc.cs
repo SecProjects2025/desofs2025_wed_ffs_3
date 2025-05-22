@@ -1,13 +1,10 @@
-﻿// AMAP.Business/Components/CatalogBc.cs
-using AMAP.Business.Interfaces;
+﻿using AMAP.Business.Interfaces;
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.Entities.Models.DTO.Catalog;
+using AMAP.Entities.Models.DTO.Product;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Identity;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace AMAP.Business.Components
 {

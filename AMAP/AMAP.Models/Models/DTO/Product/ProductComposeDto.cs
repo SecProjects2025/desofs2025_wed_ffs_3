@@ -1,6 +1,10 @@
-﻿public class ProductComposeDto
+﻿namespace AMAP.Entities.Models.DTO.Product 
 {
-    public string? SubProductName { get; set; }
+    public class ProductComposeDto
 
-    public int Quantity { get; set; }
+    {
+        public string? SubProductName { get; set; }
+
+        public int Quantity { get; set; }
+    }
 }

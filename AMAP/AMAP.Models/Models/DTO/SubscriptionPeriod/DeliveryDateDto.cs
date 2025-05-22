@@ -1,4 +1,7 @@
-﻿public class DeliveryDateDto
+﻿namespace AMAP.Entities.Models.DTO.SubscriptionPeriod
 {
-    public DateTime Date { get; set; }
+    public class DeliveryDateDto
+    {
+        public DateTime Date { get; set; }
+    }
 }

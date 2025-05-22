@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using AMAP.Business.Interfaces;
 using AMAP.Entities;
+using AMAP.Entities.Models.DTO.Subscription;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

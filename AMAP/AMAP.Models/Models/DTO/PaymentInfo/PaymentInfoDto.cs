@@ -1,4 +1,6 @@
-﻿namespace AMAP.Entities.Models.DTO.PaymentInfo
+﻿using AMAP.Entities.Models.DTO.Subscription;
+
+namespace AMAP.Entities.Models.DTO.PaymentInfo
 {
     public class PaymentInfoDto
     {

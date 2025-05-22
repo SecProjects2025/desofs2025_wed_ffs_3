@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AMAP.Business.Interfaces;
 using AMAP.Entities.Models.DTO.PaymentInfo;
+using AMAP.Entities.Models.DTO.Subscription;
 
 namespace AMAP.Api.Controllers
 {

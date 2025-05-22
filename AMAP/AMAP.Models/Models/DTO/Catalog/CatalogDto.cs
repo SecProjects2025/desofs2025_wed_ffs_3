@@ -1,4 +1,6 @@
-﻿namespace AMAP.Entities.Models.DTO.Catalog
+﻿using AMAP.Entities.Models.DTO.Product;
+
+namespace AMAP.Entities.Models.DTO.Catalog
 {
     public class CatalogDto
     {
