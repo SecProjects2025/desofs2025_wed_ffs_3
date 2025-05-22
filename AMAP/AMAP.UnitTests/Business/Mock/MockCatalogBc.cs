@@ -1,5 +1,6 @@
 ﻿using AMAP.Business.Interfaces;
 using AMAP.Entities.Models.DTO.Catalog;
+using AMAP.Entities.Models.DTO.Product;
 using NSubstitute;
 
 namespace AMAP.UnitTests.Business.Mock

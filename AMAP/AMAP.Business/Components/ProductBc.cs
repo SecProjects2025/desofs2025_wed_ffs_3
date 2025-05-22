@@ -2,6 +2,7 @@
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using System.Globalization;
+using System.Security;
 using System.Text;
 
 namespace AMAP.Business
@@ -171,6 +172,7 @@ namespace AMAP.Business
             var importedProducts = new List<Product>();
             var errors = new List<string>();
             var duplicateProductFound = false;
+            const int MaxLinesToProcess = 10000; // Define a reasonable maximum limit
 
             // First, validate the file content without saving
             using (var reader = new StreamReader(fileStream, leaveOpen: true))
@@ -178,7 +180,7 @@ namespace AMAP.Business
                 string? line;
                 int lineNumber = 0;
 
-                while ((line = reader.ReadLine()) != null)
+                while (lineNumber < MaxLinesToProcess && (line = reader.ReadLine()) != null)
                 {
                     lineNumber++;
 
@@ -220,27 +222,49 @@ namespace AMAP.Business
                         duplicateProductFound = true;
                     }
                 }
+
+                // Check if we hit the limit
+                if (lineNumber >= MaxLinesToProcess && reader.ReadLine() != null)
+                {
+                    throw new InvalidOperationException($"File exceeds the maximum allowed lines ({MaxLinesToProcess}).");
+                }
             }
 
             if (duplicateProductFound)
                 throw new InvalidOperationException("Import failed. Found duplicate product names.") { Data = { { "Errors", errors } } };
 
-            fileStream.Position = 0;
+            // Prepare a safe file path first
             var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "ProductsUpload");
             Directory.CreateDirectory(uploadsPath);
-            var filePath = Path.Combine(uploadsPath, fileName);
+            string canonicalUploadsPath = Path.GetFullPath(uploadsPath);
 
-            using (var file = new FileStream(filePath, FileMode.Create))
+            // Sanitize the filename to prevent path traversal attacks
+            string safeFileName = Path.GetFileName(fileName);
+            if (string.IsNullOrEmpty(safeFileName))
+                safeFileName = $"import_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+
+            // Generate a unique filename to prevent overwriting
+            string uniqueFileName = $"{Guid.NewGuid()}_{safeFileName}";
+
+            // Create the safe validated path
+            string validatedFilePath = Path.Combine(canonicalUploadsPath, uniqueFileName);
+
+            // We're sure this path is safe now because we constructed it from controlled input
+            // and it's within our uploads directory
+
+            fileStream.Position = 0;
+            using (var file = new FileStream(validatedFilePath, FileMode.Create))
             {
                 fileStream.CopyTo(file);
             }
 
-            using (var reader = new StreamReader(filePath))
+            // Process the saved file with the validated path
+            using (var reader = new StreamReader(validatedFilePath))
             {
                 string? line;
                 int lineNumber = 0;
 
-                while ((line = reader.ReadLine()) != null)
+                while (lineNumber < MaxLinesToProcess && (line = reader.ReadLine()) != null)
                 {
                     lineNumber++;
 

@@ -1,5 +1,6 @@
 ﻿using AMAP.Business.Interfaces;
 using AMAP.Entities;
+using AMAP.Entities.Models.DTO.Product;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
