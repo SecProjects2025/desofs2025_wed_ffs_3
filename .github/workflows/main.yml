@@ -24,22 +24,23 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore AMAP/AMAP.sln
+      run: dotnet restore AMAP.sln
 
     - name: Build
-      run: dotnet build AMAP/AMAP.sln --no-restore
+      run: dotnet build AMAP.sln --no-restore
 
     - name: Install coverlet
       run: dotnet tool install --global coverlet.console
 
     - name: Run tests with coverage
       run: |
-        dotnet test AMAP/AMAP.sln --collect:"XPlat Code Coverage" --results-directory ./coverage --logger "trx;LogFileName=test-results.trx"
+        dotnet test AMAP.sln --collect:"XPlat Code Coverage" --results-directory ./coverage
+        dotnet tool run coverlet ./AMAP.UnitTests/AMAP.UnitTests.csproj --target "dotnet" --targetargs "test AMAP.UnitTests/AMAP.UnitTests.csproj --no-build" --format cobertura --output ./coverage/coverage.xml
 
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
       with:
-        path: ~/.sonar/cache
+        path: ~\sonar\cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
 
@@ -47,7 +48,7 @@ jobs:
       id: cache-sonar-scanner
       uses: actions/cache@v4
       with:
-        path: ./.sonar/scanner
+        path: .\.sonar\scanner
         key: ${{ runner.os }}-sonar-scanner
         restore-keys: ${{ runner.os }}-sonar-scanner
 
@@ -61,15 +62,15 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
-        ./.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.opencover.reportsPaths="coverage/**/coverage.cobertura.xml" /d:sonar.coverage.exclusions="**/*.cs,**/*.cshtml,**/*.razor" /d:sonar.projectBaseDir="AMAP" /d:sonar.cs.vstest.reportsPaths="coverage/test-results.trx"
-        dotnet build AMAP/AMAP.sln
+        ./.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.opencover.reportsPaths="*/coverage.xml" /d:sonar.coverage.exclusions="/.cs,*/.cshtml,*/.razor"
+        dotnet build AMAP.sln
         ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Run SCA (OWASP Dependency Check)
       uses: dependency-check/Dependency-Check_Action@main
       with:
         project: 'diogoc0307_desofs'
-        path: 'AMAP'
+        path: '.'
         format: 'HTML'
         out: 'reports'
 
@@ -92,4 +93,4 @@ jobs:
         # Add your deployment commands here
         # For example:
         # dotnet publish -c Release
-        # Copy files to staging server 
+        # Copy files to staging server
