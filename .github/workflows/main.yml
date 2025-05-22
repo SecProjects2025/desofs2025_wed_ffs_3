@@ -55,7 +55,7 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
-        ./.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.vstest.reportsPaths="**/*.trx"
+        ./.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.vstest.reportsPaths="**/*.trx" /d:sonar.projectBaseDir="AMAP"
         dotnet build AMAP/AMAP.sln
         ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
@@ -63,7 +63,7 @@ jobs:
       uses: dependency-check/Dependency-Check_Action@main
       with:
         project: 'diogoc0307_desofs'
-        path: '.'
+        path: 'AMAP'
         format: 'HTML'
         out: 'reports'
 
