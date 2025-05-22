@@ -52,11 +52,12 @@ jobs:
         dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
 
     - name: Build and analyze
+      working-directory: AMAP
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
         ./.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.vstest.reportsPaths="**/*.trx" /d:sonar.projectBaseDir="AMAP"
-        dotnet build AMAP/AMAP.sln
+        dotnet build AMAP.sln
         ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Run SCA (OWASP Dependency Check)
