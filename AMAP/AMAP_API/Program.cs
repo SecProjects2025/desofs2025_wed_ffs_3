@@ -157,6 +157,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
+app.UseHsts();
 
 app.UseAuthentication();
 app.UseSession();

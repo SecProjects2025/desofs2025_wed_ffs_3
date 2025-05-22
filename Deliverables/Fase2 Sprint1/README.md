@@ -41,6 +41,52 @@ Tiago Tavares 1240494
 
 ### 2.1 Funcionalidade Desenvolvida
 
+Na fase 1 foram identificadas varias ameacas em que selecionamos 15 prioritarias para desenvolcer codigo de forma a mitigar essas amecas.
+
+**8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO**
+
+**Mitigação Implementada:** **HTTPS obrigatório**
+
+Esta mitigação visa garantir que todas as comunicações entre o cliente (navegador, aplicação frontend) e a API sejam encriptadas. Ao forçar o uso de HTTPS, evita-se que dados sensíveis, como credenciais e tokens de autenticação, sejam intercetados por atacantes durante a sua transmissão na rede.
+
+**Implementação:** Inicialmente, a aplicação **AMAP** não possuía qualquer mecanismo para forçar o uso de HTTPS, deixando as comunicações vulneráveis a ataques de interceção e modificação.  
+
+**Situação Inicial** 
+Inicialmente, a aplicação **AMAP** já utilizava o middleware `UseHttpsRedirection()` para redirecionar requisições HTTP para HTTPS. No entanto, faltava uma política mais robusta para garantir que as conexões futuras fossem sempre seguras e prevenir ataques de *downgrade* de protocolo.
+
+**Ações Realizadas** 
+Para reforçar a mitigação da ameaça de modificação durante a transmissão e assegurar que os clientes priorizam sempre conexões seguras, foi adicionado o middleware `UseHsts()` (*HTTP Strict Transport Security*) ao pipeline de requisições. 
+Este middleware instrui os navegadores compatíveis a estabelecerem sempre ligações seguras com a aplicação no futuro, mesmo quando o utilizador tenta aceder via HTTP ou através de um link não seguro.
+
+**Exemplo de Código (`AMAP_API/Program.cs`)**
+A configuração dos middlewares no pipeline de requisição foi atualizada da seguinte forma:
+
+```c#
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+app.UseCors("AllowFrontend");
+app.UseHttpsRedirection();
+app.UseHsts(); // <-- Linha adicionada
+
+app.UseAuthentication();
+```
+
+HTTPS obrigatório. 
+
+Configuração segura de TLS. 
+
+Assinatura robusta de JWT (RS256). 
+
+Validação completa dos tokens. 
+
+Renovação segura de tokens. 
+
+Justificação: Reforça a segurança já presente com JWT no AMAP.
+
 - Descrição detalhada das funcionalidades implementadas com foco em segurança  
 - Diagrama de arquitetura atualizado com componentes de segurança  
 - Demonstração da automação implementada (capturas de ecrã, fluxos)  
