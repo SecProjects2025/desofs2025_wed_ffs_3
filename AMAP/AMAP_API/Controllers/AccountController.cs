@@ -112,6 +112,40 @@ namespace AMAP.Api.Controllers
 
                     // Get user roles
                     var roles = await _userManager.GetRolesAsync(user);
+                    
+                    // Check if user is a Manager and requires MFA
+                    if (roles.Contains("Manager"))
+                    {
+                        // If MFA is enabled, require verification
+                        if (user.TwoFactorEnabled)
+                        {
+                            // Sign out the user since MFA is required
+                            await _signInManager.SignOutAsync();
+                            
+                            return Ok(new
+                            {
+                                requiresMfa = true,
+                                userId = user.Id,
+                                message = "MFA verification required"
+                            });
+                        }
+                        // If MFA setup is required but not yet completed
+                        else if (user.TwoFactorSetupRequired)
+                        {
+                            return Ok(new
+                            {
+                                requiresMfaSetup = true,
+                                userId = user.Id,
+                                message = "MFA setup required"
+                            });
+                        }
+                        // If MFA is not set up for this manager, mark it as required for next login
+                        else
+                        {
+                            user.TwoFactorSetupRequired = true;
+                            await _userManager.UpdateAsync(user);
+                        }
+                    }
 
                     // Send login notification email
                     await SendLoginNotificationAsync(user);

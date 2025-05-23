@@ -11,6 +11,7 @@ using AMAP.Business;
 using AMAP.Business.Components;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using AMAP.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -162,6 +163,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseSession();
+app.UseMfaMiddleware();
 app.UseAuthorization();
 
 app.MapControllers();
