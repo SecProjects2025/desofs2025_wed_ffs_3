@@ -82,6 +82,11 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/api/account/logout";
     options.SlidingExpiration = true;
 
+    // Settings that apply to ALL environments
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+
+    // Environment-specific settings
     if (builder.Environment.IsDevelopment())
     {
         options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir HTTP

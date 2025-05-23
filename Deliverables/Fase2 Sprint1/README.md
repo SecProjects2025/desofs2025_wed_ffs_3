@@ -43,7 +43,7 @@ Tiago Tavares 1240494
 
 Na fase 1 foram identificadas varias ameacas em que selecionamos 15 prioritarias para desenvolcer codigo de forma a mitigar essas amecas.
 
-**8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO**
+#### 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
 
 **Mitigação Implementada:** **HTTPS obrigatório**
 
@@ -75,8 +75,56 @@ app.UseHsts(); // <-- Linha adicionada
 app.UseAuthentication();
 ```
 
-HTTPS obrigatório. 
+**Mitigação Implementada: Configuração segura de cookies de autenticação**
 
+Esta mitigação centra-se na proteção do cookie de sessão, que atua como o token de autenticação na abordagem baseada em cookies utilizada pela aplicação **AMAP**. 
+Proteger o cookie durante a transmissão e contra acessos não autorizados no cliente é essencial para prevenir o roubo de sessão e outros ataques.
+
+**Situação em ASP.NET Core (Autenticação por Cookies) **
+A aplicação **AMAP** utiliza autenticação baseada em cookies provida pelo **ASP.NET Core Identity**. 
+A segurança do cookie de sessão é configurada através do serviço `ConfigureApplicationCookie`.
+
+**Ações Realizadas**
+A configuração existente na aplicação já inclui medidas importantes para proteger o cookie de autenticação, especialmente em ambientes de produção:
+
+- `HttpOnly = true`: O cookie é configurado com a flag `HttpOnly`, prevenindo que scripts no lado do cliente (como JavaScript) acedam ao valor do cookie. Esta é uma defesa eficaz contra ataques de *Cross-Site Scripting* (XSS) que visam roubar cookies de sessão.
+
+- `SecurePolicy = CookieSecurePolicy.Always` (em produção): Em ambientes de produção, o cookie é configurado com `SecurePolicy.Always`, garantindo que seja enviado pelo navegador apenas através de conexões HTTPS. Combinado com o redirecionamento obrigatório para HTTPS, assegura-se que o cookie nunca seja transmitido em texto claro.
+
+- `SameSite = SameSiteMode.Strict` (em produção): Em ambientes de produção, o atributo `SameSite` é definido como `Strict`. Isto instrui o navegador a enviar o cookie apenas em requisições originadas do mesmo site, fornecendo uma forte mitigação contra ataques de *Cross-Site Request Forgery* (CSRF).
+
+**Exemplo de Código (`AMAP_API/Program.cs`) **
+As configurações de segurança para o cookie de autenticação estão presentes no ficheiro `Program.cs`:
+
+```c#
+// Configurao do cookie de autenticao
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/api/account/login";
+    options.LogoutPath = "/api/account/logout";
+    options.SlidingExpiration = true;
+    
+    options.Cookie.HttpOnly = true; // <-- Configurado 
+    options.Cookie.IsEssential = true;
+    
+	if (builder.Environment.IsDevelopment())
+	{
+    	options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir HTTP
+    	options.Cookie.SameSite = SameSiteMode.None; // Permitir cross-origin
+	}
+	else
+	{
+    	options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Apenas HTTPS // <-- Configurado para produção
+    	options.Cookie.SameSite = SameSiteMode.Strict; // Mais seguro // <-- Configurado para produção
+	}
+
+	options.Events.OnRedirectToLogin = context =>
+	{
+    	context.Response.StatusCode = 401;
+    	return Task.CompletedTask;
+	};
+});
+```
 Configuração segura de TLS. 
 
 Assinatura robusta de JWT (RS256). 
