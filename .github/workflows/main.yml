@@ -10,8 +10,6 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  security-events: write
-  actions: write
 
 env:
   DOTNET_VERSION: '8.0.x'
@@ -25,13 +23,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: csharp
-        queries: security-extended
-        tools: latest
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -43,12 +34,6 @@ jobs:
     - name: Build
       run: dotnet build AMAP/AMAP.sln --no-restore
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:csharp"
-        upload: true
-
     - name: Run tests
       run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
 
@@ -58,6 +43,7 @@ jobs:
         path: ~\sonar\cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
+
     - name: Cache SonarQube Cloud scanner
       id: cache-sonar-scanner
       uses: actions/cache@v4
@@ -65,6 +51,7 @@ jobs:
         path: .\.sonar\scanner
         key: ${{ runner.os }}-sonar-scanner
         restore-keys: ${{ runner.os }}-sonar-scanner
+
     - name: Install SonarQube Cloud scanner
       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
       run: |
@@ -75,7 +62,7 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
-        ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/coverage-report/opencover.xml" /d:sonar.cs.vstest.reportsPaths="${{ github.workspace }}/**/*.trx" /d:sonar.cs.vstest.coverage.enabled=true
+        ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/coverage-report/opencover.xml" /d:sonar.cs.vstest.reportsPaths="${{ github.workspace }}/**/*.trx" /d:sonar.cs.vstest.coverage.enabled=true /d:sonar.security.enabled=true /d:sonar.security.sources.javasecurity=true /d:sonar.security.sources.pythonsecurity=true /d:sonar.security.sources.phpsecurity=true /d:sonar.security.sources.roslynsecurity=true
         dotnet build AMAP.sln
         ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
@@ -86,14 +73,6 @@ jobs:
         path: '.'
         format: 'HTML'
         out: 'reports'
-
-    - name: Run Security Scan
-      if: github.ref == 'refs/heads/main'
-      uses: snyk/actions/dotnet@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        args: --severity-threshold=high
 
     - name: Upload SCA Report
       uses: actions/upload-artifact@v4
@@ -113,14 +92,15 @@ jobs:
 
     - name: Deploy to Staging
       if: github.ref == 'refs/heads/main'
+      id: deploy
       run: |
         echo "Deploying to staging environment"
         # Add your deployment commands here
         # For example:
         # dotnet publish -c Release
         # Copy files to staging server
-        echo "::set-output name=deployment_url::https://staging.AMAP.com"
-        echo "::set-output name=deployment_status::success"
+        echo "deployment_url=https://staging.AMAP.com" >> $GITHUB_OUTPUT
+        echo "deployment_status=success" >> $GITHUB_OUTPUT
 
     - name: Output Deployment Information
       if: github.ref == 'refs/heads/main'
