@@ -6,12 +6,12 @@ on:
   pull_request:
     branches: [ main ]
 
-# Add permissions block
 permissions:
   contents: read
   pull-requests: write
   issues: write
   security-events: write
+  actions: write
 
 env:
   DOTNET_VERSION: '8.0.x'
@@ -26,10 +26,11 @@ jobs:
         fetch-depth: 0
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: csharp
         queries: security-extended
+        tools: latest
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
@@ -43,9 +44,10 @@ jobs:
       run: dotnet build AMAP/AMAP.sln --no-restore
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         category: "/language:csharp"
+        upload: true
 
     - name: Run tests
       run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
@@ -84,6 +86,14 @@ jobs:
         path: '.'
         format: 'HTML'
         out: 'reports'
+
+    - name: Run Security Scan
+      if: github.ref == 'refs/heads/main'
+      uses: snyk/actions/dotnet@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
 
     - name: Upload SCA Report
       uses: actions/upload-artifact@v4
@@ -128,11 +138,3 @@ jobs:
         # curl -f https://staging.your-app.com/health
         # Run smoke tests
         # Check application logs
-
-    - name: Run Security Scan
-      if: github.ref == 'refs/heads/main'
-      uses: snyk/actions/dotnet@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        args: --severity-threshold=high
