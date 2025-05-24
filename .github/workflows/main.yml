@@ -18,8 +18,15 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Install ReportGenerator
-      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+    - name: Install ReportGenerator tool
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+  
+    - name: Convert coverage report to opencover format
+      run: |
+          reportgenerator \
+            -reports:**/coverage.cobertura.xml \
+            -targetdir:coverage-report \
+            -reporttypes:opencover
 
   build-and-test:
     needs: setup
@@ -40,6 +47,9 @@ jobs:
 
     - name: Build
       run: dotnet build AMAP/AMAP.sln --no-restore
+
+    - name: Run tests with coverage
+      run: dotnet test AMAP/AMAP.sln --no-build --collect:"XPlat Code Coverage"
 
     - name: Run tests
       run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
@@ -98,12 +108,12 @@ jobs:
     - name: Generate HTML coverage report
       working-directory: AMAP/AMAP.UnitTests
       run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:html-coverage-report -reporttypes:Html
-
+  
     - name: Upload HTML coverage report
       uses: actions/upload-artifact@v4
       with:
-        name: html-coverage-report
-        path: AMAP/AMAP.UnitTests/html-coverage-report
+          name: html-coverage-report
+          path: AMAP/AMAP.UnitTests/html-coverage-report
 
     - name: Deploy to Staging
       if: github.ref == 'refs/heads/main'
