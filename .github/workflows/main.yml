@@ -11,6 +11,10 @@ env:
   DOCKER_IMAGE_NAME: 'amap-api'
   DOCKER_REGISTRY: 'diogocosta0307/desofs'
   DOCKER_TAG: v1.0.0-${{ github.sha }}
+  VM_HOST: 'vs381.dei.isep.ipp.pt'
+  VM_USER: 'root'
+  VM_PORT: '22'
+  VM_DEPLOY_PATH: '/root/desofs-app'
 
 jobs:
   build-and-test:
@@ -114,23 +118,27 @@ jobs:
         docker tag ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
         docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
 
-    - name: Deploy to Staging
+    - name: Set up SSH agent
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Create deploy directory on VM
+      run: ssh ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
+      
+    - name: Copy docker-compose file to VM
+      run: scp -P ${{ env.VM_PORT }} docker-compose-staging.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/
+
+    - name: Deploy to VM via Docker Compose
       id: deploy
       env:
         IMAGE_TAG: ${{ env.DOCKER_TAG }}
       run: |
-        echo "Deploying Docker image locally"
+        echo "Deploying Docker image to VM"
         
-        # Pull the latest image
-        docker pull ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+        ssh ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "cd ${{ env.VM_DEPLOY_PATH }} && docker compose -f docker-compose-staging.yml down && docker compose -f docker-compose-staging.yml up -d"
         
-        # Stop and remove existing containers
-        docker compose -f docker-compose-staging.yml down
-        
-        # Start the new container
-        docker compose -f docker-compose-staging.yml up -d
-        
-        echo "deployment_url=http://localhost:8080" >> $GITHUB_OUTPUT
+        echo "deployment_url=http://${{ env.VM_HOST }}:8080" >> $GITHUB_OUTPUT
         echo "deployment_status=success" >> $GITHUB_OUTPUT
 
     - name: Output Deployment Information
