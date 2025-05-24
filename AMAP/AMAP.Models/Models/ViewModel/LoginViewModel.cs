@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AMAP.Entities.ViewModel
+namespace AMAP.Entities.Models.ViewModel
 {
     public class LoginViewModel
     {

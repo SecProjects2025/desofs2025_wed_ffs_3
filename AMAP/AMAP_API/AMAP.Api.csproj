@@ -22,11 +22,12 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AMAP.Data\AMAP.DataAccess.csproj" />
+    <ProjectReference Include="..\AMAP.Business\AMAP.Business.csproj" />
     <ProjectReference Include="..\AMAP.Models\AMAP.Entities.csproj" />
   </ItemGroup>
 
