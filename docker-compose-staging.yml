@@ -2,14 +2,13 @@ version: '3.8'
 
 services:
   amap-api:
-    image: diogoc0307/odsoft:amap-api
+    image: diogocosta0307/desofs:v1.0.0-${{ github.sha }}
     container_name: amap-api
     restart: unless-stopped
     ports:
       - "8080:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80
+      ASPNETCORE_ENVIRONMENT: Development
     networks:
       - amap-network
 
