@@ -18,9 +18,6 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Install ReportGenerator tool
-      run: dotnet tool install -g dotnet-reportgenerator-globaltool
-
   build-and-test:
     needs: setup
     runs-on: ubuntu-latest
@@ -43,6 +40,9 @@ jobs:
 
     - name: Run tests with coverage
       run: dotnet test AMAP/AMAP.sln --no-build --collect:"XPlat Code Coverage"
+
+    - name: Install ReportGenerator tool
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
     - name: Convert coverage report to opencover format
       run: |
