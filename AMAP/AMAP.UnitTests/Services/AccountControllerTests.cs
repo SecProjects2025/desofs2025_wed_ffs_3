@@ -21,7 +21,10 @@ namespace AMAP.UnitTests.Services
         private readonly SignInManager<AppUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AccountController> _logger;
+        private readonly EmailSender _emailSender;
+        private readonly AccountLockoutService _lockoutService;
         private readonly AccountController _accountController;
+        private readonly ISession _session;
 
         public AccountControllerTests()
         {
@@ -57,33 +60,40 @@ namespace AMAP.UnitTests.Services
             mailSettingsSection["FromEmail"].Returns("noreply@example.com");
             mailSettingsSection["FromName"].Returns("AMAP Test");
             
-            // Mock EmailSender
-            var emailSender = Substitute.For<EmailSender>(configuration);
-            
-            // Mock AccountLockoutService
-            var lockoutService = Substitute.For<AccountLockoutService>(
-                _userManager, 
-                Substitute.For<ILogger<AccountLockoutService>>());
-
-            _accountController = new AccountController(_userManager, _signInManager, _roleManager, _logger, emailSender, lockoutService);
-
-            // Setup controller context
-            var httpContext = new DefaultHttpContext();
+            // Mock EmailSender with proper configuration
+            _emailSender = Substitute.For<EmailSender>(configuration);
             
             // Mock Session
-            var session = Substitute.For<ISession>();
-            httpContext.Session = session;
+            _session = Substitute.For<ISession>();
+            
+            // Mock AccountLockoutService
+            _lockoutService = Substitute.For<AccountLockoutService>(
+                _userManager, 
+                Substitute.For<ILogger<AccountLockoutService>>());
+                
+            // Configure common behavior - use type-safe method with strongly typed values
+            _lockoutService.HandleFailedLoginAttemptAsync(default)
+                .ReturnsForAnyArgs((true, TimeSpan.FromMinutes(15), 5));
+                
+            _lockoutService.ResetFailedLoginAttemptsAsync(default)
+                .ReturnsForAnyArgs(Task.CompletedTask);
+
+            _accountController = new AccountController(
+                _userManager, 
+                _signInManager, 
+                _roleManager, 
+                _logger, 
+                _emailSender, 
+                _lockoutService);
+
+            // Setup controller context with session
+            var httpContext = new DefaultHttpContext();
+            httpContext.Session = _session;
             
             _accountController.ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext
             };
-            
-            // Configure lockoutService to return non-null values to avoid NullReferenceException
-            lockoutService.HandleFailedLoginAttemptAsync(Arg.Any<AppUser>())
-                .Returns(callInfo => (true, TimeSpan.FromMinutes(15), 5));
-            lockoutService.ResetFailedLoginAttemptsAsync(Arg.Any<AppUser>())
-                .Returns(Task.CompletedTask);
         }
 
         [Fact]
@@ -286,7 +296,7 @@ namespace AMAP.UnitTests.Services
             var claimsPrincipal = new ClaimsPrincipal(identity);
             _accountController.ControllerContext = new ControllerContext
             {
-                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+                HttpContext = new DefaultHttpContext { User = claimsPrincipal, Session = _session }
             };
             
             // Return null to simulate user not found
@@ -317,7 +327,7 @@ namespace AMAP.UnitTests.Services
             var claimsPrincipal = new ClaimsPrincipal(identity);
             _accountController.ControllerContext = new ControllerContext
             {
-                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+                HttpContext = new DefaultHttpContext { User = claimsPrincipal, Session = _session }
             };
             
             // Setup user
@@ -361,7 +371,7 @@ namespace AMAP.UnitTests.Services
             var claimsPrincipal = new ClaimsPrincipal(identity);
             _accountController.ControllerContext = new ControllerContext
             {
-                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+                HttpContext = new DefaultHttpContext { User = claimsPrincipal, Session = _session }
             };
             
             // Setup user
