@@ -20,13 +20,6 @@ jobs:
 
     - name: Install ReportGenerator tool
       run: dotnet tool install -g dotnet-reportgenerator-globaltool
-  
-    - name: Convert coverage report to opencover format
-      run: |
-          reportgenerator \
-            -reports:**/coverage.cobertura.xml \
-            -targetdir:coverage-report \
-            -reporttypes:opencover
 
   build-and-test:
     needs: setup
@@ -50,6 +43,13 @@ jobs:
 
     - name: Run tests with coverage
       run: dotnet test AMAP/AMAP.sln --no-build --collect:"XPlat Code Coverage"
+
+    - name: Convert coverage report to opencover format
+      run: |
+        reportgenerator \
+          -reports:**/coverage.cobertura.xml \
+          -targetdir:coverage-report \
+          -reporttypes:opencover
 
     - name: Run tests
       run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
