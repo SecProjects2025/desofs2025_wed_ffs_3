@@ -10,16 +10,7 @@ env:
   DOTNET_VERSION: '8.0.x'
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
   build-and-test:
-    needs: setup
     runs-on: ubuntu-latest
     
     steps:
@@ -84,7 +75,6 @@ jobs:
         ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Run Security Scan
-      if: github.ref == 'refs/heads/main'
       uses: snyk/actions/dotnet@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
