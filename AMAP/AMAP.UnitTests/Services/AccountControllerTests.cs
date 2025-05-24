@@ -68,10 +68,22 @@ namespace AMAP.UnitTests.Services
             _accountController = new AccountController(_userManager, _signInManager, _roleManager, _logger, emailSender, lockoutService);
 
             // Setup controller context
+            var httpContext = new DefaultHttpContext();
+            
+            // Mock Session
+            var session = Substitute.For<ISession>();
+            httpContext.Session = session;
+            
             _accountController.ControllerContext = new ControllerContext
             {
-                HttpContext = new DefaultHttpContext()
+                HttpContext = httpContext
             };
+            
+            // Configure lockoutService to return non-null values to avoid NullReferenceException
+            lockoutService.HandleFailedLoginAttemptAsync(Arg.Any<AppUser>())
+                .Returns(callInfo => (true, TimeSpan.FromMinutes(15), 5));
+            lockoutService.ResetFailedLoginAttemptsAsync(Arg.Any<AppUser>())
+                .Returns(Task.CompletedTask);
         }
 
         [Fact]
@@ -90,7 +102,7 @@ namespace AMAP.UnitTests.Services
                 loginViewModel.Email,
                 loginViewModel.Password,
                 loginViewModel.RememberMe,
-                true)
+                false)
                 .Returns(signInResult);
 
             var user = new AppUser
@@ -149,12 +161,20 @@ namespace AMAP.UnitTests.Services
                 RememberMe = false
             };
 
+            var user = new AppUser
+            {
+                Id = "user-id-123",
+                Email = loginViewModel.Email,
+                UserName = loginViewModel.Email
+            };
+            _userManager.FindByEmailAsync(loginViewModel.Email).Returns(user);
+
             var signInResult = SignInResult.Failed;
             _signInManager.PasswordSignInAsync(
                 loginViewModel.Email,
                 loginViewModel.Password,
                 loginViewModel.RememberMe,
-                true)
+                false)
                 .Returns(signInResult);
 
             // Act
@@ -176,20 +196,26 @@ namespace AMAP.UnitTests.Services
                 RememberMe = false
             };
 
-            var signInResult = SignInResult.LockedOut;
-            _signInManager.PasswordSignInAsync(
-                loginViewModel.Email,
-                loginViewModel.Password,
-                loginViewModel.RememberMe,
-                true)
-                .Returns(signInResult);
+            // This is different from the older tests - we now need to set up the user and lockout status
+            var user = new AppUser
+            {
+                Id = "locked-user-id",
+                Email = loginViewModel.Email,
+                UserName = loginViewModel.Email
+            };
+            
+            _userManager.FindByEmailAsync(loginViewModel.Email).Returns(user);
+            
+            // Set up that the user is locked out
+            var lockoutDate = DateTimeOffset.UtcNow.AddMinutes(15);
+            _userManager.GetLockoutEndDateAsync(user).Returns(lockoutDate);
 
             // Act
             var result = await _accountController.Login(loginViewModel);
 
             // Assert
-            var lockedResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(423, lockedResult.StatusCode);
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(423, statusCodeResult.StatusCode);
         }
 
         [Fact]
@@ -202,14 +228,6 @@ namespace AMAP.UnitTests.Services
                 Password = "Password123!",
                 RememberMe = false
             };
-
-            var signInResult = Microsoft.AspNetCore.Identity.SignInResult.Success;
-            _signInManager.PasswordSignInAsync(
-                loginViewModel.Email,
-                loginViewModel.Password,
-                loginViewModel.RememberMe,
-                true)
-                .Returns(signInResult);
 
             // Return null to simulate user not found
             _userManager.FindByEmailAsync(loginViewModel.Email).ReturnsNull();
