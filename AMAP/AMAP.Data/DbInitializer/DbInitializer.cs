@@ -26,7 +26,8 @@ namespace AMAP.DataAccess.DbInitializer
 
         public void Initialize()
         {
-            // Apply migrations if not applied
+
+            // Aplicar migrations se não tiverem sido aplicadas
             try
             {
                 if (_db.Database.GetPendingMigrations().Count() > 0)
@@ -36,16 +37,22 @@ namespace AMAP.DataAccess.DbInitializer
             }
             catch (Exception ex)
             {
-                // Log or handle the error as needed
+                // Logar ou tratar o erro conforme necessário
             }
 
-            // Create roles if they don't exist
+            // Criar roles se não existirem
             CreateRoleIfNotExists(nameof(UserType.Manager));
             CreateRoleIfNotExists(nameof(UserType.Producer));
             CreateRoleIfNotExists(nameof(UserType.CoProducer));
 
-            // No default accounts are created
-            // Users must be created through the proper registration process
+            //Criar os utilizadores
+            CreateUserIfNotExists("manager@amap.com", UserType.Manager, "Manager User", "Manager123!");
+            CreateUserIfNotExists("producer@amap.com", UserType.Producer, "Producer User", "Producer123!");
+            CreateUserIfNotExists("producer2@amap.com", UserType.Producer, "Producer2 User", "Producer123!");
+            CreateUserIfNotExists("coproducer@amap.com", UserType.CoProducer, "CoProducer User", "CoProducer123!");
+            CreateUserIfNotExists("coproducer2@amap.com", UserType.CoProducer, "CoProducer2 User", "CoProducer123!");
+            CreateUserIfNotExists("manager2@amap.com", UserType.Manager, "Manager User2", "Manager123!");
+
         }
 
         // Função para criar a role se não existir
@@ -60,9 +67,12 @@ namespace AMAP.DataAccess.DbInitializer
         // Função para criar o utilizador se não existir
         private string CreateUserIfNotExists(string email, UserType role, string name, string password)
         {
-            var user = _db.Users.FirstOrDefault(u => u.Email == email);
+            // Verifica se o utilizador já existe pelo email
+            var user = _userManager.FindByEmailAsync(email).GetAwaiter().GetResult();
+            
             if (user == null)
             {
+                // utilizador não existe, então cria um novo
                 user = new AppUser
                 {
                     UserName = email,
@@ -70,12 +80,16 @@ namespace AMAP.DataAccess.DbInitializer
                     Name = name,
                     UserType = role,
                 };
+                
                 var result = _userManager.CreateAsync(user, password).GetAwaiter().GetResult();
+                
                 if (result.Succeeded)
                 {
                     _userManager.AddToRoleAsync(user, role.ToString()).GetAwaiter().GetResult();
                 }
             }
+            // Não faz nada se o utilizador já existir - mantém a password atual
+
             return user.Id;
         }
     }
