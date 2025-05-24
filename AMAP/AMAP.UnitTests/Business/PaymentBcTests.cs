@@ -2,6 +2,7 @@
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.UnitTests.Repository.Mock;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 namespace AMAP.UnitTests.Business
 {
@@ -9,12 +10,14 @@ namespace AMAP.UnitTests.Business
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly PaymentBc _paymentBc;
+        private readonly ILogger<PaymentBc> _logger;
 
         public PaymentBcTests()
         {
             // Arrange - Setup mock repository
             _unitOfWork = MockPaymentRepository.GetMockUnitOfWork();
-            _paymentBc = new PaymentBc(_unitOfWork);
+            _logger = Substitute.For<ILogger<PaymentBc>>();
+            _paymentBc = new PaymentBc(_unitOfWork, _logger);
         }
 
         [Fact]
