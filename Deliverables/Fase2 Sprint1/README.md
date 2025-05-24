@@ -41,6 +41,134 @@ Tiago Tavares 1240494
 
 ### 2.1 Funcionalidade Desenvolvida
 
+Na fase 1 foram identificadas varias ameacas em que selecionamos 15 prioritarias para desenvolcer codigo de forma a mitigar essas amecas.
+
+#### 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
+
+**Mitigação Implementada:** **HTTPS obrigatório**
+
+Esta mitigação visa garantir que todas as comunicações entre o cliente (navegador, aplicação frontend) e a API sejam encriptadas. Ao forçar o uso de HTTPS, evita-se que dados sensíveis, como credenciais e tokens de autenticação, sejam intercetados por atacantes durante a sua transmissão na rede.
+
+**Implementação:** Inicialmente, a aplicação **AMAP** não possuía qualquer mecanismo para forçar o uso de HTTPS, deixando as comunicações vulneráveis a ataques de interceção e modificação.  
+
+**Situação Inicial** 
+Inicialmente, a aplicação **AMAP** já utilizava o middleware `UseHttpsRedirection()` para redirecionar requisições HTTP para HTTPS. No entanto, faltava uma política mais robusta para garantir que as conexões futuras fossem sempre seguras e prevenir ataques de *downgrade* de protocolo.
+
+**Ações Realizadas** 
+Para reforçar a mitigação da ameaça de modificação durante a transmissão e assegurar que os clientes priorizam sempre conexões seguras, foi adicionado o middleware `UseHsts()` (*HTTP Strict Transport Security*) ao pipeline de requisições. 
+Este middleware instrui os navegadores compatíveis a estabelecerem sempre ligações seguras com a aplicação no futuro, mesmo quando o utilizador tenta aceder via HTTP ou através de um link não seguro.
+
+**Exemplo de Código (`AMAP_API/Program.cs`)**
+A configuração dos middlewares no pipeline de requisição foi atualizada da seguinte forma:
+
+```c#
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+app.UseCors("AllowFrontend");
+app.UseHttpsRedirection();
+app.UseHsts(); // <-- Linha adicionada
+
+app.UseAuthentication();
+```
+
+**Mitigação Implementada: Configuração segura de cookies de autenticação**
+
+Esta mitigação centra-se na proteção do cookie de sessão, que atua como o token de autenticação na abordagem baseada em cookies utilizada pela aplicação **AMAP**. 
+Proteger o cookie durante a transmissão e contra acessos não autorizados no cliente é essencial para prevenir o roubo de sessão e outros ataques.
+
+**Situação em ASP.NET Core (Autenticação por Cookies) **
+A aplicação **AMAP** utiliza autenticação baseada em cookies provida pelo **ASP.NET Core Identity**. 
+A segurança do cookie de sessão é configurada através do serviço `ConfigureApplicationCookie`.
+
+**Ações Realizadas**
+A configuração existente na aplicação já inclui medidas importantes para proteger o cookie de autenticação, especialmente em ambientes de produção:
+
+- `HttpOnly = true`: O cookie é configurado com a flag `HttpOnly`, prevenindo que scripts no lado do cliente (como JavaScript) acedam ao valor do cookie. Esta é uma defesa eficaz contra ataques de *Cross-Site Scripting* (XSS) que visam roubar cookies de sessão.
+
+- `SecurePolicy = CookieSecurePolicy.Always` (em produção): Em ambientes de produção, o cookie é configurado com `SecurePolicy.Always`, garantindo que seja enviado pelo navegador apenas através de conexões HTTPS. Combinado com o redirecionamento obrigatório para HTTPS, assegura-se que o cookie nunca seja transmitido em texto claro.
+
+- `SameSite = SameSiteMode.Strict` (em produção): Em ambientes de produção, o atributo `SameSite` é definido como `Strict`. Isto instrui o navegador a enviar o cookie apenas em requisições originadas do mesmo site, fornecendo uma forte mitigação contra ataques de *Cross-Site Request Forgery* (CSRF).
+
+**Exemplo de Código (`AMAP_API/Program.cs`) **
+As configurações de segurança para o cookie de autenticação estão presentes no ficheiro `Program.cs`:
+
+```c#
+// Configurao do cookie de autenticao
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/api/account/login";
+    options.LogoutPath = "/api/account/logout";
+    options.SlidingExpiration = true;
+    
+    options.Cookie.HttpOnly = true; // <-- Configurado 
+    options.Cookie.IsEssential = true;
+    
+	if (builder.Environment.IsDevelopment())
+	{
+    	options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir HTTP
+    	options.Cookie.SameSite = SameSiteMode.None; // Permitir cross-origin
+	}
+	else
+	{
+    	options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Apenas HTTPS // <-- Configurado para produção
+    	options.Cookie.SameSite = SameSiteMode.Strict; // Mais seguro // <-- Configurado para produção
+	}
+
+	options.Events.OnRedirectToLogin = context =>
+	{
+    	context.Response.StatusCode = 401;
+    	return Task.CompletedTask;
+	};
+});
+```
+#### 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
+
+**Mitigação Implementada: Expiração rápida de credenciais temporárias**
+
+Esta mitigação tem como objetivo **limitar a validade temporal de credenciais temporárias** geradas para usos pontuais e específicos, como:
+
+- Redefinição de palavra-passe;
+- Confirmação de endereço de e-mail;
+- Outros tipos de **tokens temporários** emitidos pela aplicação.
+
+Ao definir um tempo de expiração curto para estas credenciais, **reduz-se significativamente a janela de oportunidade** para que um atacante as intercepte durante a transmissão (mesmo em comunicações HTTPS) ou as utilize caso as obtenha por outros meios.
+
+**Implementação**
+
+A aplicação AMAP, por utilizar o ASP.NET Core Identity para a gestão de identidades e autenticação, beneficia-se dos provedores de tokens padrão (DefaultTokenProviders) incluídos no framework. Estes provedores são responsáveis por gerar os tokens utilizados em funcionalidades como redefinição de senha ou confirmação de e-mail. Por defeito, o ASP.NET Core Identity configura um tempo de vida para estes tokens (geralmente 24 horas).
+
+A implementação desta mitigação no AMAP consiste em utilizar este mecanismo padrão do framework. Atualmente, a aplicação utiliza a configuração padrão de tempo de vida fornecida pelo AddDefaultTokenProviders().
+
+Caso seja identificado um requisito de segurança que exija um tempo de vida ainda mais curto para estes tokens temporários, o ASP.NET Core Identity permite configurar essa validade explicitamente.
+
+**Exemplo de Código (Configuração - Opcional):**
+A configuração para ajustar o tempo de vida dos tokens temporários seria adicionada na inicialização dos serviços no Program.cs. O exemplo abaixo define a expiração para 1 hora:
+
+```c#
+// ... existing code ...
+
+// Configurao do cookie de autenticao
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    // ... configurações do cookie ...
+});
+
+// Configuração do tempo de vida para tokens temporários do Identity
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(1); // Define o tempo de vida para 1 hora
+});
+
+
+// Configurao das roles de autorizao
+// ... existing code ...
+```
+});
+
 - Descrição detalhada das funcionalidades implementadas com foco em segurança  
 - Diagrama de arquitetura atualizado com componentes de segurança  
 - Demonstração da automação implementada (capturas de ecrã, fluxos)  
