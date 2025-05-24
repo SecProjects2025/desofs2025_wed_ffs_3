@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Monitorar dependências NuGet na pasta AMAP
+  - package-ecosystem: "nuget"
+    # O diretório a ser monitorado, relativo à raiz do repositório
+    directory: "/AMAP"
+    # Agendamento para verificar atualizações
+    schedule:
+      interval: "weekly" # Verifica por atualizações semanalmente
