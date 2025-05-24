@@ -49,8 +49,8 @@ Na fase 1 foram identificadas varias ameacas em que selecionamos 15 prioritarias
 Esta mitigação visa criar um registo detalhado e inalterável de todas as ações administrativas realizadas no sistema, permitindo verificar quem fez o quê e quando, evitando assim a negação de responsabilidade por ações realizadas.
 
 *Situação Inicial*
-
 Inicialmente, a aplicação AMAP não possuía um sistema robusto para rastrear ações realizadas por utilizadores, especialmente utilizadores administrativos. Os logs eram básicos e não capturavam detalhes suficientes sobre as operações, dificultando a atribuição de responsabilidade por ações realizadas no sistema.
+
 *Ações Realizadas* 
 Foi implementado um sistema abrangente de logging utilizando o mecanismo ILogger da Microsoft, que regista detalhadamente todas as ações administrativas em todos os componentes de negócio. O sistema atual captura:
 1.	Quem realizou a ação (ID e tipo do utilizador)
@@ -828,7 +828,63 @@ Para uma implementação completa seria necessário:
 A implementação parcial atual já oferece proteção significativa contra exposição não autorizada de dados sensíveis, mas uma abordagem mais sistemática seria benéfica para mitigar completamente esta ameaça.
 
 - Descrição detalhada das funcionalidades implementadas com foco em segurança  
-- Diagrama de arquitetura atualizado com componentes de segurança  
+
+#### Nova arquitetura em camadas
+
+![Diagrama de Componentes do AMAP](../../Imagens/ComponentDiagram.png)
+
+A implementação da nova camada Business na arquitetura do sistema AMAP representa uma evolução significativa no design do software. Esta reestruturação arquitetural traz benefícios substanciais em termos de organização, manutenibilidade e escalabilidade.
+
+*O Que Mudou na Arquitetura*
+
+Anteriormente, a arquitetura tinha uma estrutura mais tradicional de três camadas (API, Dados e Partilhada). A nova arquitetura introduz uma camada Business dedicada, criando um sistema de quatro camadas bem definidas:
+1.	Camada API (Controllers): Controladores mais leves e focados em tratamento de requisições HTTP e respostas com DTOs
+2.	Camada Business: Nova camada com toda a lógica de negócio
+3.	Camada de Dados: Repositórios e acesso ao banco de dados
+4.	Camada Partilhada: Entidades, DTOs e utilitários
+
+*Camada de Negócio (Business)*
+
+•	Responsabilidade: implementar toda a lógica de negócio e validações da aplicação
+•	Componentes principais:
+•	Components (BC): implementações concretas dos serviços de negócio (ProductBc, PaymentBc, etc.)
+•	Interfaces: contratos que definem os serviços de negócio (IProductBc, IPaymentBc, etc.)
+•	Validação: regras de validação de dados e operações comerciais antes do acesso à camada de dados
+•	Logging: registo detalhado de operações críticas e monitorização de segurança
+•	Tratamento de Exceções: encapsulamento de exceções específicas de domínio
+
+*DTOs na Camada Shared*
+
+Uma das principais melhorias foi a adição de uma estrutura organizada de DTOs (Data Transfer Objects) na pasta Models da camada Shared. Estes DTOs:
+•	Fornecem uma separação clara entre entidades de domínio e objetos de transferência de dados
+•	São especializados para diferentes contextos de API (PaymentInfoDto, ProductDto, etc.)
+•	Melhoram a segurança ao expor apenas os dados necessários para cada operação
+•	Facilitam a evolução da API sem impactar o modelo de domínio
+•	Simplificam a serialização/deserialização de dados nas respostas HTTP
+
+*Principais Benefícios da Nova Arquitetura*
+
+•	Separação clara de responsabilidades: Os controladores agora apenas gerem requisições HTTP e utilizam DTOs para respostas, enquanto a lógica de negócio fica isolada na camada Business
+•	Código mais organizado: Cada componente de negócio é especializado em um domínio específico
+•	Testabilidade aprimorada: As interfaces facilitam a criação de testes unitários com mock objects
+•	Manutenção simplificada: Alterações de regras de negócio ficam isoladas em componentes específicos
+•	Reutilização de código: Componentes de negócio podem ser compartilhados entre diferentes controladores
+•	Tratamento robusto de exceções: Implementação de try-catch nos controladores para garantir respostas adequadas aos clientes
+
+*Como Funciona na Prática*
+
+Quando um utilizador faz uma requisição, o fluxo agora é:
+1.	O cliente envia uma requisição HTTP para um endpoint da API
+2.	O controlador correspondente processa a requisição e delega a lógica de negócio para a camada Business
+3.	A camada Business executa validações e regras de negócio, utilizando serviços adequados
+4.	A camada Business requisita operações de dados à camada Data através da interface IUnitOfWork
+5.	O Unit of Work coordena, se necessário, transações atómicas entre múltiplas alterações
+6.	Os serviços auxiliares (por exemplo, EmailSender) executam tarefas complementares
+7.	A camada Business devolve resultados para o controlador
+8.	O controlador transforma os dados em DTOs apropriados e devolve uma resposta HTTP padronizada
+
+Esta abordagem em camadas claramente definidas, com responsabilidades bem segregadas e uso adequado de DTOs, torna o sistema mais resiliente, adaptável e mais fácil de manter ao longo do tempo.
+
 - Demonstração da automação implementada (capturas de ecrã, fluxos)  
 - Relação entre as funcionalidades desenvolvidas e os requisitos de segurança identificados na Fase 1  
 
