@@ -9,7 +9,7 @@ on:
 env:
   DOTNET_VERSION: '9.0.x'
   DOCKER_IMAGE_NAME: 'amap-api'
-  DOCKER_REGISTRY: 'diogoc0307/desofs'
+  DOCKER_REGISTRY: 'diogocosta0307/desofs'
   DOCKER_TAG: v1.0.0-${{ github.sha }}
 
 jobs:
@@ -101,7 +101,7 @@ jobs:
         out: 'reports'
 
     - name: Build Docker Image
-      run: docker build . -t ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+      run: docker build . -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
@@ -111,8 +111,8 @@ jobs:
 
     - name: Tag and Push Docker Image
       run: |
-        docker tag ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
-        docker push ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+        docker tag ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+        docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
 
     - name: Deploy to Staging
       id: deploy
@@ -120,7 +120,7 @@ jobs:
         echo "Deploying Docker image locally"
         
         # Pull the latest image
-        docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+        docker pull ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
         
         # Stop and remove existing containers
         docker compose -f docker-compose-staging.yml down
