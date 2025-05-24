@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
-
 env:
   DOTNET_VERSION: '8.0.x'
 
@@ -30,6 +25,7 @@ jobs:
       run: |
         mkdir -p ./.sonar/scanner
         dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
+        chmod +x ./.sonar/scanner/dotnet-sonarscanner
 
     - name: Upload SonarQube Scanner
       uses: actions/upload-artifact@v4
