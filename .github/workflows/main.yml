@@ -8,6 +8,9 @@ on:
 
 env:
   DOTNET_VERSION: '9.0.x'
+  DOCKER_IMAGE_NAME: 'amap-api'
+  DOCKER_REGISTRY: 'diogoc0307/desofs'
+  DOCKER_TAG: v1.0.0-${{ github.sha }}
 
 jobs:
   build-and-test:
@@ -44,6 +47,23 @@ jobs:
 
     - name: Run tests
       run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
+
+    - name: Build Docker Image
+      if: github.ref == 'refs/heads/main'
+      run: docker build . -t ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+
+    - name: Log in to Docker Hub
+      if: github.ref == 'refs/heads/main'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Tag and Push Docker Image
+      if: github.ref == 'refs/heads/main'
+      run: |
+        docker tag ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+        docker push ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
 
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
@@ -110,19 +130,25 @@ jobs:
     - name: Upload HTML coverage report
       uses: actions/upload-artifact@v4
       with:
-          name: html-coverage-report
-          path: AMAP/AMAP.UnitTests/html-coverage-report
+        name: html-coverage-report
+        path: AMAP/AMAP.UnitTests/html-coverage-report
 
     - name: Deploy to Staging
       if: github.ref == 'refs/heads/main'
       id: deploy
       run: |
-        echo "Deploying to staging environment"
-        # Add your deployment commands here
-        # For example:
-        # dotnet publish -c Release
-        # Copy files to staging server
-        echo "deployment_url=https://staging.AMAP.com" >> $GITHUB_OUTPUT
+        echo "Deploying Docker image locally"
+        
+        # Pull the latest image
+        docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+        
+        # Stop and remove existing containers
+        docker compose -f docker-compose-staging.yml down
+        
+        # Start the new container
+        docker compose -f docker-compose-staging.yml up -d
+        
+        echo "deployment_url=http://localhost:8080" >> $GITHUB_OUTPUT
         echo "deployment_status=success" >> $GITHUB_OUTPUT
 
     - name: Output Deployment Information
@@ -131,13 +157,3 @@ jobs:
         echo "Application deployed successfully!"
         echo "Deployment URL: ${{ steps.deploy.outputs.deployment_url }}"
         echo "Deployment Status: ${{ steps.deploy.outputs.deployment_status }}"
-
-    - name: Verify Deployment
-      if: github.ref == 'refs/heads/main'
-      run: |
-        echo "Verifying deployment..."
-        # Add deployment verification steps
-        # For example:
-        # curl -f https://staging.your-app.com/health
-        # Run smoke tests
-        # Check application logs
