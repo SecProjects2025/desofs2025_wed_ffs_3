@@ -28,6 +28,7 @@ builder.Logging.AddEventSourceLogger();
 builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
 builder.Logging.AddFilter("System", LogLevel.Warning);
 builder.Logging.AddFilter("AMAP.Api.Controllers.AccountController", LogLevel.Information);
+builder.Logging.AddFilter("AMAP.Business.Components", LogLevel.Information);
 
 // Add services to the container.
 builder.Services.AddCors(options =>

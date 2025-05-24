@@ -1,8 +1,8 @@
 ﻿using AMAP.Business.Interfaces;
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
-using System.Security;
 using System.Text;
 
 namespace AMAP.Business
@@ -10,10 +10,12 @@ namespace AMAP.Business
     public class ProductBc : IProductBc
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<ProductBc> _logger;
 
-        public ProductBc(IUnitOfWork unitOfWork)
+        public ProductBc(IUnitOfWork unitOfWork, ILogger<ProductBc> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public Product? GetProduct(int id)
@@ -25,6 +27,13 @@ namespace AMAP.Business
                 p => p.Id == id && !p.IsDeleted,
                 "Composites.SubProduct"
             );
+
+            // Log de acesso a dados de produto
+            if (product != null)
+            {
+                _logger.LogInformation("Product data accessed - ID: {ProductId}, Name: {ProductName}, ProducerId: {ProducerId} at {Time}",
+                    product.Id, product.Name, product.ProducerId, DateTime.UtcNow);
+            }
 
             return product;
         }
@@ -48,6 +57,10 @@ namespace AMAP.Business
 
             _unitOfWork.Product.Add(product);
             _unitOfWork.Save();
+
+            // Log de criação de produto sensível
+            _logger.LogInformation("Product created - ID: {ProductId}, Name: {ProductName}, Producer: {ProducerId} at {Time}",
+                product.Id, product.Name, producerId, DateTime.UtcNow);
 
             foreach (var composite in composites)
             {
@@ -94,6 +107,10 @@ namespace AMAP.Business
             if (producerProduct != null)
                 throw new InvalidOperationException("You already have a product with the same name.");
 
+            // Log de atualização de produto sensível - registo antes da modificação
+            _logger.LogInformation("Product update initiated - ID: {ProductId}, OldName: {OldName}, NewName: {NewName}, Producer: {ProducerId} at {Time}",
+                existingProduct.Id, existingProduct.Name, product.Name, producerId, DateTime.UtcNow);
+
             existingProduct.Name = product.Name;
             existingProduct.Description = product.Description;
             existingProduct.Photo = product.Photo;
@@ -131,6 +148,10 @@ namespace AMAP.Business
 
             _unitOfWork.Product.Update(existingProduct);
             _unitOfWork.Save();
+
+            // Log de atualização de produto sensível - após sucesso da operação
+            _logger.LogInformation("Product updated successfully - ID: {ProductId}, Name: {ProductName}, Producer: {ProducerId} at {Time}",
+                existingProduct.Id, existingProduct.Name, producerId, DateTime.UtcNow);
         }
 
         public void DeleteProduct(int id, string producerId)
@@ -146,6 +167,10 @@ namespace AMAP.Business
             if (product == null)
                 throw new KeyNotFoundException("Product not found or you are not authorized to delete it.");
 
+            // Log de deleção de produto sensível
+            _logger.LogInformation("Product deletion initiated - ID: {ProductId}, Name: {ProductName}, Producer: {ProducerId} at {Time}",
+                product.Id, product.Name, producerId, DateTime.UtcNow);
+
             var compositesToDelete = _unitOfWork.Composite.GetAll(c => c.ProductId == id);
             if (compositesToDelete.Any())
             {
@@ -156,6 +181,10 @@ namespace AMAP.Business
             product.IsDeleted = true;
             _unitOfWork.Product.Update(product);
             _unitOfWork.Save();
+
+            // Log após deleção concluída
+            _logger.LogInformation("Product marked as deleted - ID: {ProductId}, Producer: {ProducerId} at {Time}",
+                id, producerId, DateTime.UtcNow);
         }
 
         public (List<Product> ImportedProducts, List<string> Errors) ImportProductsFromFile(Stream fileStream, string fileName, string producerId)
@@ -169,20 +198,27 @@ namespace AMAP.Business
             if (string.IsNullOrEmpty(producerId))
                 throw new ArgumentException("Producer not authenticated.", nameof(producerId));
 
+            // Log tentativa de importação
+            _logger.LogInformation("Product import initiated - File: {FileName}, Producer: {ProducerId} at {Time}",
+                fileName, producerId, DateTime.UtcNow);
+
             var importedProducts = new List<Product>();
             var errors = new List<string>();
             var duplicateProductFound = false;
             const int MaxLinesToProcess = 10000; // Define a reasonable maximum limit
+            int safeMaxLines = Math.Min(MaxLinesToProcess, 10000); // Ensuring we never exceed the maximum limit
 
             // First, validate the file content without saving
             using (var reader = new StreamReader(fileStream, leaveOpen: true))
             {
                 string? line;
                 int lineNumber = 0;
+                int processedLines = 0;
 
-                while (lineNumber < MaxLinesToProcess && (line = reader.ReadLine()) != null)
+                while (processedLines < safeMaxLines && (line = reader.ReadLine()) != null)
                 {
                     lineNumber++;
+                    processedLines++;
 
                     // Skip empty lines
                     if (string.IsNullOrWhiteSpace(line))
@@ -224,14 +260,22 @@ namespace AMAP.Business
                 }
 
                 // Check if we hit the limit
-                if (lineNumber >= MaxLinesToProcess && reader.ReadLine() != null)
+                if (lineNumber >= safeMaxLines && reader.ReadLine() != null)
                 {
-                    throw new InvalidOperationException($"File exceeds the maximum allowed lines ({MaxLinesToProcess}).");
+                    var message = $"File exceeds the maximum allowed lines ({safeMaxLines}).";
+                    _logger.LogWarning("Product import failed - {Message}, Producer: {ProducerId} at {Time}",
+                        message, producerId, DateTime.UtcNow);
+                    throw new InvalidOperationException(message);
                 }
             }
 
             if (duplicateProductFound)
-                throw new InvalidOperationException("Import failed. Found duplicate product names.") { Data = { { "Errors", errors } } };
+            {
+                var message = "Import failed. Found duplicate product names.";
+                _logger.LogWarning("Product import failed - {Message}, Producer: {ProducerId} at {Time}",
+                    message, producerId, DateTime.UtcNow);
+                throw new InvalidOperationException(message) { Data = { { "Errors", errors } } };
+            }
 
             // Prepare a safe file path first
             var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "ProductsUpload");
@@ -263,10 +307,12 @@ namespace AMAP.Business
             {
                 string? line;
                 int lineNumber = 0;
+                int processedLines = 0;
 
-                while (lineNumber < MaxLinesToProcess && (line = reader.ReadLine()) != null)
+                while (processedLines < safeMaxLines && (line = reader.ReadLine()) != null)
                 {
                     lineNumber++;
+                    processedLines++;
 
                     if (string.IsNullOrWhiteSpace(line))
                         continue;
@@ -298,13 +344,23 @@ namespace AMAP.Business
                         _unitOfWork.Product.Add(product);
                         _unitOfWork.Save();
                         importedProducts.Add(product);
+
+                        // Log de produto importado
+                        _logger.LogInformation("Product imported - ID: {ProductId}, Name: {ProductName}, Producer: {ProducerId} at {Time}",
+                            product.Id, product.Name, producerId, DateTime.UtcNow);
                     }
                     catch (Exception ex)
                     {
                         errors.Add($"Line {lineNumber}: Processing error - {ex.Message}");
+                        _logger.LogError(ex, "Error importing product at line {Line}, Producer: {ProducerId}",
+                            lineNumber, producerId);
                     }
                 }
             }
+
+            // Log resultado final da importação
+            _logger.LogInformation("Product import completed - Imported: {Count}, Errors: {ErrorCount}, Producer: {ProducerId} at {Time}",
+                importedProducts.Count, errors.Count, producerId, DateTime.UtcNow);
 
             return (importedProducts, errors);
         }
@@ -317,6 +373,10 @@ namespace AMAP.Business
             var producer = _unitOfWork.AppUser.Get(p => p.Id == producerId);
             if (producer == null)
                 throw new KeyNotFoundException("Producer not found.");
+
+            // Log tentativa de exportação
+            _logger.LogInformation("Product export initiated - Producer: {ProducerId}, ProducerName: {ProducerName} at {Time}",
+                producerId, producer.Name, DateTime.UtcNow);
 
             var products = _unitOfWork.Product.GetAll(p => p.ProducerId == producerId && !p.IsDeleted).ToList();
 
@@ -346,6 +406,10 @@ namespace AMAP.Business
             var fullPath = Path.Combine(exportPath, fileName);
             File.WriteAllBytes(fullPath, fileBytes);
 
+            // Log sucesso na exportação
+            _logger.LogInformation("Product export completed - Producer: {ProducerId}, ProductCount: {Count}, FileName: {FileName} at {Time}",
+                producerId, products.Count, fileName, DateTime.UtcNow);
+
             return (fileBytes, fileName, contentType);
         }
 
@@ -363,4 +427,3 @@ namespace AMAP.Business
         }
     }
 }
-

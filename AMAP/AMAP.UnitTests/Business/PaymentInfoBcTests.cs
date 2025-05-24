@@ -2,6 +2,7 @@
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.UnitTests.Repository.Mock;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 namespace AMAP.UnitTests.Business
 {
@@ -9,12 +10,14 @@ namespace AMAP.UnitTests.Business
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly PaymentsInfoBc _paymentsInfoBc;
+        private readonly ILogger<PaymentsInfoBc> _logger;
 
         public PaymentsInfoBcTests()
         {
             // Arrange - Setup mock repository
             _unitOfWork = MockPaymentsInfoRepository.GetMockUnitOfWork();
-            _paymentsInfoBc = new PaymentsInfoBc(_unitOfWork);
+            _logger = Substitute.For<ILogger<PaymentsInfoBc>>(); 
+            _paymentsInfoBc = new PaymentsInfoBc(_unitOfWork, _logger);
         }
 
         [Fact]
@@ -288,8 +291,9 @@ namespace AMAP.UnitTests.Business
             emptyAppUserRepo.GetAll(Arg.Any<System.Linq.Expressions.Expression<Func<AppUser, bool>>>(), Arg.Any<string>())
                 .Returns(new List<AppUser>());
             emptyUnitOfWork.AppUser.Returns(emptyAppUserRepo);
+            var mockLogger = _logger;
 
-            var paymentsInfoBc = new PaymentsInfoBc(emptyUnitOfWork);
+            var paymentsInfoBc = new PaymentsInfoBc(emptyUnitOfWork, mockLogger);
 
             // Act
             var result = paymentsInfoBc.GetProducerPayments();
@@ -308,8 +312,9 @@ namespace AMAP.UnitTests.Business
             emptyAppUserRepo.GetAll(Arg.Any<System.Linq.Expressions.Expression<Func<AppUser, bool>>>(), Arg.Any<string>())
                 .Returns(new List<AppUser>());
             emptyUnitOfWork.AppUser.Returns(emptyAppUserRepo);
+            var mockLogger = _logger;
 
-            var paymentsInfoBc = new PaymentsInfoBc(emptyUnitOfWork);
+            var paymentsInfoBc = new PaymentsInfoBc(emptyUnitOfWork, mockLogger);
 
             // Act
             var result = paymentsInfoBc.GetCoProducerPayments();
@@ -327,6 +332,7 @@ namespace AMAP.UnitTests.Business
 
             // Set up AppUser repository
             var mockAppUserRepo = Substitute.For<IAppUserRepository>();
+            var mockLogger = _logger;
             var users = new List<AppUser>
             {
                 new AppUser { Id = "producer-3", Name = "Producer With No Subscriptions", UserType = Entities.Utilities.UserType.Producer }
@@ -347,7 +353,7 @@ namespace AMAP.UnitTests.Business
             mockUnitOfWork.Payment.Returns(Substitute.For<IPaymentRepository>());
             mockUnitOfWork.Delivery.Returns(Substitute.For<IDeliveryRepository>());
 
-            var paymentsInfoBc = new PaymentsInfoBc(mockUnitOfWork);
+            var paymentsInfoBc = new PaymentsInfoBc(mockUnitOfWork, mockLogger);
 
             // Act
             var result = paymentsInfoBc.GetProducerTotals();
@@ -365,6 +371,7 @@ namespace AMAP.UnitTests.Business
 
             // Set up AppUser repository
             var mockAppUserRepo = Substitute.For<IAppUserRepository>();
+            var mockLogger = _logger;
             var users = new List<AppUser>
             {
                 new AppUser { Id = "coproducer-3", Name = "CoProducer With No Subscriptions", UserType = Entities.Utilities.UserType.CoProducer }
@@ -384,7 +391,7 @@ namespace AMAP.UnitTests.Business
             mockUnitOfWork.Delivery.Returns(Substitute.For<IDeliveryRepository>());
             mockUnitOfWork.ProductOffer.Returns(Substitute.For<IProductOfferRepository>());
 
-            var paymentsInfoBc = new PaymentsInfoBc(mockUnitOfWork);
+            var paymentsInfoBc = new PaymentsInfoBc(mockUnitOfWork, mockLogger);
 
             // Act
             var result = paymentsInfoBc.GetCoProducerTotals();

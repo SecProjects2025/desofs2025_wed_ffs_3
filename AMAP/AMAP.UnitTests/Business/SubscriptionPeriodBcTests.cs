@@ -2,6 +2,7 @@
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.UnitTests.Repository.Mock;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace AMAP.UnitTests.Business
@@ -11,13 +12,15 @@ namespace AMAP.UnitTests.Business
         private readonly IUnitOfWork _unitOfWork;
         private readonly TestEmailSender _emailSender;
         private readonly SubscriptionPeriodBc _subscriptionPeriodBc;
+        private readonly ILogger<SubscriptionPeriodBc> _logger;
 
         public SubscriptionPeriodBcTests()
         {
             // Arrange - Setup mock repository
             _unitOfWork = MockSubscriptionPeriodRepository.GetMockUnitOfWork();
             _emailSender = (TestEmailSender)MockSubscriptionPeriodRepository.GetMockEmailSender();
-            _subscriptionPeriodBc = new SubscriptionPeriodBc(_unitOfWork, _emailSender);
+            _logger = Substitute.For<ILogger<SubscriptionPeriodBc>>();
+            _subscriptionPeriodBc = new SubscriptionPeriodBc(_unitOfWork, _emailSender, _logger);
         }
 
         [Fact]

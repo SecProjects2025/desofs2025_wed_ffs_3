@@ -3,6 +3,7 @@ using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.UnitTests.Repository.Mock;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace AMAP.UnitTests.Business
@@ -11,6 +12,7 @@ namespace AMAP.UnitTests.Business
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<AppUser> _userManager;
+        private readonly ILogger<CatalogBc> _logger;
         private readonly CatalogBc _catalogBc;
 
         public CatalogBcTests()
@@ -19,7 +21,8 @@ namespace AMAP.UnitTests.Business
             var (unitOfWork, userManager) = MockCatalogRepository.GetMockDependencies();
             _unitOfWork = unitOfWork;
             _userManager = userManager;
-            _catalogBc = new CatalogBc(_unitOfWork, _userManager);
+            _logger = Substitute.For<ILogger<CatalogBc>>(); 
+            _catalogBc = new CatalogBc(_unitOfWork, _userManager, _logger);
         }
 
         [Fact]
@@ -70,8 +73,9 @@ namespace AMAP.UnitTests.Business
             var emptyUserManager = Substitute.For<UserManager<AppUser>>(
                 Substitute.For<IUserStore<AppUser>>(), null, null, null, null, null, null, null, null);
             emptyUserManager.Users.Returns(new List<AppUser>().AsQueryable());
+            var mockLogger = _logger;
 
-            var catalogBcWithNoProducers = new CatalogBc(_unitOfWork, emptyUserManager);
+            var catalogBcWithNoProducers = new CatalogBc(_unitOfWork, emptyUserManager, mockLogger);
 
             // Act
             var result = await catalogBcWithNoProducers.GetAllCatalogs();
@@ -88,6 +92,7 @@ namespace AMAP.UnitTests.Business
             // Mock a producer with no products
             var mockUserManager = Substitute.For<UserManager<AppUser>>(
                 Substitute.For<IUserStore<AppUser>>(), null, null, null, null, null, null, null, null);
+            var mockLogger = _logger;
 
             var users = new List<AppUser>
             {
@@ -108,7 +113,7 @@ namespace AMAP.UnitTests.Business
                 .Returns(new List<Product>());
             mockUnitOfWork.Product.Returns(mockProductRepo);
 
-            var catalogBcWithEmptyProducts = new CatalogBc(mockUnitOfWork, mockUserManager);
+            var catalogBcWithEmptyProducts = new CatalogBc(mockUnitOfWork, mockUserManager, _logger);
 
             // Act
             var result = await catalogBcWithEmptyProducts.GetAllCatalogs();
@@ -169,6 +174,7 @@ namespace AMAP.UnitTests.Business
 
             // Mock a producer with no products
             var mockUserManager = _userManager;
+            var mockLogger = _logger;
 
             var mockUnitOfWork = Substitute.For<IUnitOfWork>();
             var mockProductRepo = Substitute.For<IProductRepository>();
@@ -176,7 +182,7 @@ namespace AMAP.UnitTests.Business
                 .Returns(new List<Product>());
             mockUnitOfWork.Product.Returns(mockProductRepo);
 
-            var catalogBcWithEmptyProducts = new CatalogBc(mockUnitOfWork, mockUserManager);
+            var catalogBcWithEmptyProducts = new CatalogBc(mockUnitOfWork, mockUserManager, mockLogger);
 
             // Act
             var result = await catalogBcWithEmptyProducts.GetCatalogByProducer(producerId);
