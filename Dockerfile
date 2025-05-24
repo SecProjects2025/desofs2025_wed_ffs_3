@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 WORKDIR /src
 
-COPY AMAP.sln .
+COPY AMAP/AMAP.sln .
 COPY AMAP/AMAP.Business/*.csproj AMAP/AMAP.Business/
 COPY AMAP/AMAP.Data/*.csproj AMAP/AMAP.Data/
 COPY AMAP/AMAP.Models/*.csproj AMAP/AMAP.Models/
