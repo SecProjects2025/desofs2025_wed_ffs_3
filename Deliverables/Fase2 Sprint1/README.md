@@ -125,15 +125,49 @@ builder.Services.ConfigureApplicationCookie(options =>
 	};
 });
 ```
-Configuração segura de TLS. 
+#### 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
 
-Assinatura robusta de JWT (RS256). 
+**Mitigação Implementada: Expiração rápida de credenciais temporárias**
 
-Validação completa dos tokens. 
+Esta mitigação tem como objetivo **limitar a validade temporal de credenciais temporárias** geradas para usos pontuais e específicos, como:
 
-Renovação segura de tokens. 
+- Redefinição de palavra-passe;
+- Confirmação de endereço de e-mail;
+- Outros tipos de **tokens temporários** emitidos pela aplicação.
 
-Justificação: Reforça a segurança já presente com JWT no AMAP.
+Ao definir um tempo de expiração curto para estas credenciais, **reduz-se significativamente a janela de oportunidade** para que um atacante as intercepte durante a transmissão (mesmo em comunicações HTTPS) ou as utilize caso as obtenha por outros meios.
+
+**Implementação**
+
+A aplicação AMAP, por utilizar o ASP.NET Core Identity para a gestão de identidades e autenticação, beneficia-se dos provedores de tokens padrão (DefaultTokenProviders) incluídos no framework. Estes provedores são responsáveis por gerar os tokens utilizados em funcionalidades como redefinição de senha ou confirmação de e-mail. Por defeito, o ASP.NET Core Identity configura um tempo de vida para estes tokens (geralmente 24 horas).
+
+A implementação desta mitigação no AMAP consiste em utilizar este mecanismo padrão do framework. Atualmente, a aplicação utiliza a configuração padrão de tempo de vida fornecida pelo AddDefaultTokenProviders().
+
+Caso seja identificado um requisito de segurança que exija um tempo de vida ainda mais curto para estes tokens temporários, o ASP.NET Core Identity permite configurar essa validade explicitamente.
+
+**Exemplo de Código (Configuração - Opcional):**
+A configuração para ajustar o tempo de vida dos tokens temporários seria adicionada na inicialização dos serviços no Program.cs. O exemplo abaixo define a expiração para 1 hora:
+
+```c#
+// ... existing code ...
+
+// Configurao do cookie de autenticao
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    // ... configurações do cookie ...
+});
+
+// Configuração do tempo de vida para tokens temporários do Identity
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(1); // Define o tempo de vida para 1 hora
+});
+
+
+// Configurao das roles de autorizao
+// ... existing code ...
+```
+});
 
 - Descrição detalhada das funcionalidades implementadas com foco em segurança  
 - Diagrama de arquitetura atualizado com componentes de segurança  
