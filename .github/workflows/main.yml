@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+# Add permissions block
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  security-events: write
+
 env:
   DOTNET_VERSION: '8.0.x'
 
@@ -18,13 +25,11 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Run Secret Scanning
+    - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
         languages: csharp
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+        queries: security-extended
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
@@ -36,6 +41,11 @@ jobs:
 
     - name: Build
       run: dotnet build AMAP/AMAP.sln --no-restore
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:csharp"
 
     - name: Run tests
       run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
@@ -126,16 +136,3 @@ jobs:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         args: --severity-threshold=high
-
-    - name: Notify Deployment Status
-      if: always()
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const status = process.env.DEPLOYMENT_STATUS || 'unknown';
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `Deployment Status: ${status}`
-          });  
