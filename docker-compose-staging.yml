@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   amap-api:
-    image: diogocosta0307/desofs:v1.0.0-${{ github.sha }}
+    image: diogocosta0307/desofs:${IMAGE_TAG}
     container_name: amap-api
     restart: unless-stopped
     ports:

@@ -116,6 +116,8 @@ jobs:
 
     - name: Deploy to Staging
       id: deploy
+      env:
+        IMAGE_TAG: ${{ env.DOCKER_TAG }}
       run: |
         echo "Deploying Docker image locally"
         
