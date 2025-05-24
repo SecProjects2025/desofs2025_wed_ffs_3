@@ -45,8 +45,20 @@ namespace AMAP.UnitTests.Services
             // Mock Logger
             _logger = Substitute.For<ILogger<AccountController>>();
             
+            // Mock IConfiguration for EmailSender
+            var configuration = Substitute.For<IConfiguration>();
+            var mailSettingsSection = Substitute.For<IConfigurationSection>();
+            
+            configuration.GetSection("MailSettings").Returns(mailSettingsSection);
+            mailSettingsSection["Host"].Returns("smtp.example.com");
+            mailSettingsSection["Port"].Returns("587");
+            mailSettingsSection["Username"].Returns("test@example.com");
+            mailSettingsSection["Password"].Returns("password123");
+            mailSettingsSection["FromEmail"].Returns("noreply@example.com");
+            mailSettingsSection["FromName"].Returns("AMAP Test");
+            
             // Mock EmailSender
-            var emailSender = Substitute.For<EmailSender>(Substitute.For<IConfiguration>());
+            var emailSender = Substitute.For<EmailSender>(configuration);
             
             // Mock AccountLockoutService
             var lockoutService = Substitute.For<AccountLockoutService>(
