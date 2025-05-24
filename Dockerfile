@@ -18,7 +18,7 @@ COPY AMAP/AMAP.UnitTests/ AMAP.UnitTests/
 COPY AMAP/AMAP_API/ AMAP_API/
 
 WORKDIR /src/AMAP_API
-RUN dotnet publish "AMAP.Api.csproj" -c Release -o /app/publish --no-restore
+RUN dotnet publish "AMAP.Api.csproj" -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 
