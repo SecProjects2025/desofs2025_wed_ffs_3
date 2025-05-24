@@ -43,8 +43,16 @@ namespace AMAP.UnitTests.Services
                 
             // Mock Logger
             _logger = Substitute.For<ILogger<AccountController>>();
+            
+            // Mock EmailSender
+            var emailSender = Substitute.For<EmailSender>(Substitute.For<IConfiguration>());
+            
+            // Mock AccountLockoutService
+            var lockoutService = Substitute.For<AccountLockoutService>(
+                _userManager, 
+                Substitute.For<ILogger<AccountLockoutService>>());
 
-            _accountController = new AccountController(_userManager, _signInManager, _roleManager, _logger);
+            _accountController = new AccountController(_userManager, _signInManager, _roleManager, _logger, emailSender, lockoutService);
 
             // Setup controller context
             _accountController.ControllerContext = new ControllerContext
