@@ -5,11 +5,29 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using AMAP.Entities;
 using AMAP.DataAccess.DbInitializer;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using AMAP.Entities.Utilities;
+using AMAP.Business.Interfaces;
+using AMAP.Business;
+using AMAP.Business.Components;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.AddEventSourceLogger();
+
+// Note: File logging was removed to avoid dependency issues in CI/CD pipeline
+// To enable file logging, uncomment the line below and ensure Serilog.Extensions.Logging.File package is installed
+//builder.Logging.AddFile("Logs/security-{Date}.txt");
+
+// Configure logging levels
+builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
+builder.Logging.AddFilter("System", LogLevel.Warning);
+builder.Logging.AddFilter("AMAP.Api.Controllers.AccountController", LogLevel.Information);
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -25,39 +43,39 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnityOfWork>();
-
+builder.Services.AddScoped<IProductBc, ProductBc>();
+builder.Services.AddScoped<ISubscriptionPeriodBc, SubscriptionPeriodBc>();
+builder.Services.AddScoped<IProductOfferBc, ProductOfferBc>();
+builder.Services.AddScoped<ISubscriptionBc, SubscriptionBc>();
+builder.Services.AddScoped<IPaymentBc, PaymentBc>();
+builder.Services.AddScoped<ICatalogBc, CatalogBc>();
+builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
+builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
+// Configure Identity with password requirements
+builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
+{
+    options.Password.RequiredLength = 12; // Min length 12 chars
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+    
+    // User settings
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders()
+.AddPasswordValidator<CustomPasswordValidator<AppUser>>(); // Custom validator
 
-//builder.Services.AddAuthentication(options =>
-//{
-//    options.DefaultAuthenticateScheme =
-//    options.DefaultChallengeScheme =
-//    options.DefaultForbidScheme =
-//    options.DefaultScheme =
-//    options.DefaultSignInScheme =
-//    options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
-
-//}).AddJwtBearer(options =>
-//{
-//    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-//    {
-//        ValidateIssuer = true,
-//        ValidIssuer = builder.Configuration["JWT:Issuer"],
-//        ValidateAudience = true,
-//        ValidAudience = builder.Configuration["JWT:Audience"],
-//        ValidateIssuerSigningKey = true,
-//        IssuerSigningKey = new SymmetricSecurityKey(
-//            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
-//        )
-//    };
-//});
-
-// ConfiguraÁ„o do cookie de autenticaÁ„o
+// Configurao do cookie de autenticao
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/api/account/login";
@@ -82,9 +100,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-
-
-// ConfiguraÁ„o das roles de autorizaÁ„o
+// Configurao das roles de autorizao
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
@@ -96,7 +112,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expiraÁ„o da sess„o
+    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expirao da sessao
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir envio em HTTP
@@ -112,14 +128,25 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Inicializar roles e usu·rios
+// Inicializar roles e utilizadores apenas se necess√°rio
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
-    dbInitializer.Initialize();
+    
+    // Verifica se h√° alguma migra√ß√£o pendente antes de inicializar
+    if (dbContext.Database.GetPendingMigrations().Any())
+    {
+        var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
+        dbInitializer.Initialize();
+    }
+    // Verifica se existem roles
+    else if (!roleManager.Roles.Any())
+    {
+        var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
+        dbInitializer.Initialize();
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -135,8 +162,37 @@ app.UseAuthentication();
 app.UseSession();
 app.UseAuthorization();
 
-
-
 app.MapControllers();
 
 app.Run();
+
+// Custom password validator
+public class CustomPasswordValidator<TUser> : IPasswordValidator<TUser> where TUser : class
+{
+    public Task<IdentityResult> ValidateAsync(UserManager<TUser> manager, TUser user, string password)
+    {
+        var errors = new List<IdentityError>();
+
+        if (password.Length > 128)
+        {
+            errors.Add(new IdentityError
+            {
+                Code = "PasswordTooLong",
+                Description = "Password must not exceed 128 characters."
+            });
+        }
+
+
+        var normalizedPassword = Regex.Replace(password, @"\s+", " ");
+        if (normalizedPassword.Length < 12)
+        {
+            errors.Add(new IdentityError
+            {
+                Code = "PasswordTooShort",
+                Description = "Password must be at least 12 characters long after normalizing spaces."
+            });
+        }
+
+        return Task.FromResult(errors.Count == 0 ? IdentityResult.Success : IdentityResult.Failed(errors.ToArray()));
+    }
+}

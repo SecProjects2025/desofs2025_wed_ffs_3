@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
-using AMAP.DataAccess.Repository.IRepository;
+using AMAP.Business.Interfaces;
 using AMAP.Entities;
+using AMAP.Entities.Models.DTO.Subscription;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,97 +13,102 @@ namespace AMAP.Api.Controllers
     [Authorize(Roles = nameof(UserType.CoProducer))]
     public class SubscriptionController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ISubscriptionBc _subscriptionBc;
 
-        public SubscriptionController(IUnitOfWork unitOfWork)
+        public SubscriptionController(ISubscriptionBc subscriptionBc)
         {
-            _unitOfWork = unitOfWork;
+            _subscriptionBc = subscriptionBc;
         }
 
-        // POST: api/Subscription
         [HttpPost]
         public IActionResult CreateSubscription([FromBody] Subscription subscription)
         {
-            if (subscription == null)
+            try
             {
-                return BadRequest("Invalid data.");
+                var coProducerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
+                var createdSubscription = _subscriptionBc.CreateSubscription(subscription, coProducerId);
+                return CreatedAtAction(nameof(GetSubscriptionById), new { id = createdSubscription.Id }, createdSubscription);
             }
-
-            // Obter o CoProducer autenticado
-            subscription.CoProducerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
-            if (subscription.CoProducerId == null)
+            catch (ArgumentException ex)
             {
-                return Unauthorized("Invalid CoProducer.");
+                return BadRequest(ex.Message);
             }
-
-            // Obter a oferta de produto
-            var productOffer = _unitOfWork.ProductOffer.Get(po => po.Id == subscription.ProductOfferId);
-            if (productOffer == null)
+            catch (KeyNotFoundException ex)
             {
-                return NotFound("Product offer not found.");
+                return NotFound(ex.Message);
             }
-
-            // Validar quantidade
-            if (subscription.ExpectedQuantity <= 0)
+            catch (UnauthorizedAccessException ex)
             {
-                return BadRequest("Quantity must be greater than zero.");
+                return Unauthorized(ex.Message);
             }
-
-            var orderedQuantity = _unitOfWork.Subscription.GetAll(s => s.ProductOfferId == productOffer.Id).Sum(s => s.ExpectedQuantity);
-
-            if (subscription.ExpectedQuantity + orderedQuantity > productOffer.Quantity)
+            catch (InvalidOperationException ex)
             {
-                return BadRequest("Requested quantity exceeds available stock.");
+                return BadRequest(ex.Message);
             }
-
-            // Validar se o PaymentType contém apenas bits válidos
-            if (subscription.PaymentType == 0 || !Enum.IsDefined(typeof(PaymentType), subscription.PaymentType))
+            catch (Exception ex)
             {
-                return BadRequest("Invalid payment type.");
+                return StatusCode(500, ex.Message);
             }
-
-            if (!productOffer.PaymentType.HasFlag(subscription.PaymentType))
-            {
-                return BadRequest("Selected payment type is not supported by the product offer.");
-            }
-
-            // Criar subscrição
-            _unitOfWork.Subscription.Add(subscription);
-            _unitOfWork.Save();
-
-            return CreatedAtAction(nameof(GetSubscriptionById), new { id = subscription.Id }, subscription);
         }
 
-        // GET: api/Subscription/{id}
         [HttpGet("{id}")]
         public IActionResult GetSubscriptionById(int id)
         {
-            var subscription = _unitOfWork.Subscription.Get(s => s.Id == id);
-            if (subscription == null)
+            try
             {
-                return NotFound("Subscription not found.");
+                var subscription = _subscriptionBc.GetSubscriptionById(id);
+                if (subscription == null)
+                    return NotFound("Subscription not found.");
+
+                var dto = new SubscriptionDto
+                {
+                    ProductOfferId = subscription.ProductOfferId,
+                    ExpectedQuantity = subscription.ExpectedQuantity,
+                    PaymentType = subscription.PaymentType
+                };
+
+                return Ok(dto);
             }
-            return Ok(subscription);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        // GET: api/Subscription
         [HttpGet]
         public IActionResult GetSubscriptionsByCoProducer()
         {
-            // Obter o CoProducer autenticado
-            var coProducerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
-            if (coProducerId == null)
+            try
             {
-                return Unauthorized("Invalid CoProducer.");
-            }
+                var coProducerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
+                if (coProducerId == null)
+                {
+                    return Unauthorized("Invalid CoProducer.");
+                }
 
-            var subscriptions = _unitOfWork.Subscription.GetAll(s => s.CoProducerId == coProducerId);
-            if (subscriptions == null || !subscriptions.Any())
+                var subscriptions = _subscriptionBc.GetSubscriptionsByCoProducer(coProducerId);
+                if (subscriptions == null || !subscriptions.Any())
+                {
+                    return NotFound("No subscriptions found.");
+                }
+
+                var dtos = subscriptions.Select(subscription => new SubscriptionDto
+                {
+                    ProductOfferId = subscription.ProductOfferId,
+                    ExpectedQuantity = subscription.ExpectedQuantity,
+                    PaymentType = subscription.PaymentType
+                }).ToList();
+
+                return Ok(dtos);
+            }
+            catch (ArgumentException ex)
             {
-                return NotFound("No subscriptions found.");
+                return BadRequest(ex.Message);
             }
-
-            return Ok(subscriptions);
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
     }
 }

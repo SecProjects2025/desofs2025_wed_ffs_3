@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
-using AMAP.DataAccess.Repository.IRepository;
+using AMAP.Business.Interfaces;
 using AMAP.Entities;
+using AMAP.Entities.Models.DTO.ProductOffer;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,125 +13,122 @@ namespace AMAP.Api.Controllers
     [Authorize(Roles = nameof(UserType.Producer))]
     public class ProductOfferController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IProductOfferBc _productOfferBc;
 
-        public ProductOfferController(IUnitOfWork unitOfWork)
+        public ProductOfferController(IProductOfferBc productOfferBc)
         {
-            _unitOfWork = unitOfWork;
+            _productOfferBc = productOfferBc;
         }
 
-        // POST: api/ProductOffer
         [HttpPost]
         public IActionResult CreateProductOffer([FromBody] ProductOffer productOffer)
         {
-            if (productOffer == null)
+            try
             {
-                return BadRequest("Invalid data.");
+                var producerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
+                var createdOffer = _productOfferBc.CreateProductOffer(productOffer, producerId);
+                return CreatedAtAction(nameof(GetProductOfferById), new { id = createdOffer.Id }, createdOffer);
             }
-
-            // Obter o produto
-            var product = _unitOfWork.Product.Get(p => p.Id == productOffer.ProductId);
-            if (product == null)
+            catch (ArgumentException ex)
             {
-                return NotFound("Product not found.");
+                return BadRequest(ex.Message);
             }
-
-            // Verificar se o produto pertence ao produtor autenticado 
-            var producerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
-            if (producerId is null || product.ProducerId != producerId)
+            catch (KeyNotFoundException ex)
             {
-                return BadRequest("You cannot create an offer for a product from another producer.");
+                return NotFound(ex.Message);
             }
-
-            // Validate SubscriptionPeriodId
-            var subscriptionPeriod = _unitOfWork.SubscriptionPeriod.Get(sp => sp.Id == productOffer.SubscriptionPeriodId);
-            if (subscriptionPeriod == null)
+            catch (InvalidOperationException ex)
             {
-                return NotFound("Subscription period not found.");
+                return BadRequest(ex.Message);
             }
-
-            // Validate DeliveryDate
-            if (productOffer.DeliveryDate < DateTime.Now)
+            catch (Exception ex)
             {
-                return BadRequest("Delivery date cannot be in the past.");
+                return StatusCode(500, ex.Message);
             }
-
-            // Verificar se já existe uma oferta para o mesmo produto e mesma data de entrega
-            var existingOffer = _unitOfWork.ProductOffer.GetAll(po => po.ProductId == productOffer.ProductId && po.DeliveryDate == productOffer.DeliveryDate).FirstOrDefault();
-            if (existingOffer != null)
-            {
-                return BadRequest("A product offer already exists for this product on the selected delivery date.");
-            }
-
-            subscriptionPeriod.DeliveryDates = _unitOfWork.DeliveryDate.GetAll(d => d.SubscriptionPeriodId == productOffer.SubscriptionPeriodId);
-
-            if (!subscriptionPeriod.DeliveryDates.Select(dd => dd.Date).Contains(productOffer.DeliveryDate))
-            {
-                return BadRequest("Delivery date outside subscription period.");
-            }
-
-            if (productOffer.Quantity <= 0)
-            {
-                return BadRequest("Product offer quantity must be greater than zero.");
-            }
-
-            if (productOffer.PaymentType <= 0 || (int)productOffer.PaymentType > Enum.GetValues<PaymentType>().Cast<int>().Sum())
-            {
-                return BadRequest("Invalid payment type.");
-            }
-
-            _unitOfWork.ProductOffer.Add(productOffer);
-            _unitOfWork.Save();
-
-            return CreatedAtAction(nameof(GetProductOfferById), new { id = productOffer.Id }, productOffer);
         }
 
-
-        // GET: api/ProductOffer/{id}
         [HttpGet("{id}")]
         public IActionResult GetProductOfferById(int id)
         {
-            var productOffer = _unitOfWork.ProductOffer.Get(po => po.Id == id);
-            if (productOffer == null)
+            try
             {
-                return NotFound("Product offer not found.");
+                var productOffer = _productOfferBc.GetProductOfferById(id);
+                if (productOffer == null)
+                {
+                    return NotFound("Product offer not found.");
+                }
+
+                var dto = new ProductOfferDto
+                {
+                    ProductId = productOffer.ProductId,
+                    SubscriptionPeriodId = productOffer.SubscriptionPeriodId,
+                    Price = productOffer.Price,
+                    Quantity = productOffer.Quantity,
+                    DeliveryDate = productOffer.DeliveryDate,
+                    PaymentType = productOffer.PaymentType
+                };
+
+                return Ok(dto);
             }
-            return Ok(productOffer);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        [HttpGet("{producerId}")]
-        public IActionResult GetProductOfferByProducer(int producerId)
+        [HttpGet("producer/{producerId}")]
+        public IActionResult GetProductOfferByProducer(string producerId)
         {
-            var productOffer = _unitOfWork.ProductOffer.Get(po => po.Product.Id == producerId);
-            if (productOffer == null)
+            try
             {
-                return NotFound("Product offer not found.");
+                var productOffer = _productOfferBc.GetProductOfferByProducer(producerId);
+                if (productOffer == null)
+                {
+                    return NotFound("Product offer not found.");
+                }
+
+                var dto = new ProductOfferDto
+                {
+                    ProductId = productOffer.ProductId,
+                    SubscriptionPeriodId = productOffer.SubscriptionPeriodId,
+                    Price = productOffer.Price,
+                    Quantity = productOffer.Quantity,
+                    DeliveryDate = productOffer.DeliveryDate,
+                    PaymentType = productOffer.PaymentType
+                };
+
+                return Ok(dto);
             }
-            return Ok(productOffer);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        // DELETE: api/ProductOffer/{id}
         [HttpDelete("{id}")]
         public IActionResult DeleteProductOffer(int id)
         {
-            var productOffer = _unitOfWork.ProductOffer.Get(po => po.Id == id);
-            if (productOffer == null)
+            try
             {
-                return NotFound("Product offer not found.");
+                _productOfferBc.DeleteProductOffer(id);
+                return Ok("Product offer deleted successfully.");
             }
-
-            // Verificar se existe uma Subscription associada
-            var hasSubscriptions = _unitOfWork.Subscription.GetAll(s => s.ProductOfferId == id).Any();
-            if (hasSubscriptions)
+            catch (ArgumentException ex)
             {
-                return BadRequest("Cannot delete product offer because it has associated subscriptions.");
+                return BadRequest(ex.Message);
             }
-
-            _unitOfWork.ProductOffer.Remove(productOffer);
-            _unitOfWork.Save();
-
-            return Ok("Product offer deleted successfully.");
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
-
     }
 }

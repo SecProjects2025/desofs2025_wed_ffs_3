@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace AMAP.Entities
 {
@@ -24,6 +17,6 @@ namespace AMAP.Entities
         [Required(ErrorMessage = "End date is required.")]
         public DateTime EndDate { get; set; }
 
-        public IEnumerable<DeliveryDate> DeliveryDates { get; set; } = [];
+        public IEnumerable<DeliveryDate> DeliveryDates { get; set; } = new List<DeliveryDate>();
     }
 }
