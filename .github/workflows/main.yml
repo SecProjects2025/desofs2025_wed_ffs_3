@@ -74,13 +74,14 @@ jobs:
         dotnet build AMAP/AMAP.sln
         ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
+    - name: Install Snyk CLI
+      uses: snyk/actions/setup@master
+
     - name: Run Security Scan (Snyk CLI)
       working-directory: AMAP/
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      run: |
-        dotnet tool install -g snyk
-        snyk test --severity-threshold=high --all-projects
+      run: snyk test --severity-threshold=high --all-projects
 
     - name: Run SCA (OWASP Dependency Check)
       uses: dependency-check/Dependency-Check_Action@main
