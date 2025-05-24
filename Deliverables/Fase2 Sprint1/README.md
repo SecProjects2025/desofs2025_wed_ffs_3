@@ -1063,8 +1063,216 @@ Este inventário será mantido ao longo do próximo sprint como parte do process
 - Resultados e feedback loop  
 
 #### Testes unitários com foco em segurança
-- Abordagem para testar características de segurança  
-- Exemplos de testes importantes  
+
+Os testes unitários desempenham um papel crucial no desenvolvimento de software ao garantir a qualidade, estabilidade e confiabilidade do código. Para a solução AMAP, foi desenvolvido um conjunto abrangente de testes unitários, organizados no projeto AMAP.UnitTests dentro da pasta "5 - Unit Tests". Este relatório detalha a abordagem e implementação destes testes.
+
+*Frameworks e Ferramentas Utilizados*
+
+xUnit
+O framework xUnit foi escolhido para implementar os testes unitários devido à sua simplicidade, extensibilidade e integração com o ecossistema .NET. O xUnit suporta a execução de testes em paralelo, facilitando o processo de desenvolvimento e integração contínua. No AMAP, os testes são identificados pelo atributo [Fact], que designa um método como sendo um teste unitário.
+
+NSubstitute
+Para o isolamento de componentes e criação de objetos simulados, foi utilizado o NSubstitute, uma biblioteca moderna de mocking para .NET. O NSubstitute permite simular interfaces e classes, facilitando a verificação de comportamentos sem depender de implementações reais. Esta abordagem foi crucial para testar a camada de negócios sem necessidade de acesso a bancos de dados reais ou serviços externos.
+
+*Estrutura dos Testes*
+
+Os testes unitários do AMAP foram organizados para cobrir duas camadas principais:
+1.	Camada de Business (Business Components): Testes voltados para a lógica de negócios, validando regras, comportamentos e fluxos de dados.
+2.	Camada de Services (Controllers): Testes focados na validação dos controllers, assegurando o correto processamento de requisições e respostas.
+
+*Mock de Camadas*
+
+Um elemento fundamental na abordagem de testes foi a simulação de todas as dependências das diferentes camadas do sistema, com o objetivo de garantir isolamento completo e testes mais fiáveis. As principais simulações realizadas incluem:
+
+• Business Components: Para testar os controladores de forma isolada, foram criadas versões simuladas dos componentes de negócio, como `MockProductBc`, `MockCatalogBc` e `MockPaymentBc`. Estas simulações permitiram validar a lógica da API sem dependência da implementação real da camada Business.
+• Repositórios de Dados: Todos os repositórios foram simulados, eliminando a necessidade de ligação a uma base de dados real durante os testes. Isto permitiu executar testes rápidos e previsíveis, sem efeitos colaterais.
+• Serviços Externos: Serviços auxiliares, como envio de e-mails ou notificações, foram substituídos por implementações simuladas, garantindo que os testes se focassem exclusivamente na lógica interna.
+• Logging: As funcionalidades de registo (log) também foram simuladas, evitando efeitos colaterais e garantindo o isolamento total dos componentes sob teste.
+
+Por exemplo, a classe `MockProductRepository` demonstra como os repositórios foram simulados, oferecendo dados e comportamentos predefinidos:
+
+```c#
+public static IUnitOfWork GetMockUnitOfWork()
+{
+    var mockUnitOfWork = Substitute.For<IUnitOfWork>();
+
+    // Set up Product repository
+    var mockProductRepo = Substitute.For<IProductRepository>();
+    SetupProductRepository(mockProductRepo);
+    mockUnitOfWork.Product.Returns(mockProductRepo);
+
+    // Set up Composite repository
+    var mockCompositeRepo = Substitute.For<ICompositeRepository>();
+    SetupCompositeRepository(mockCompositeRepo);
+    mockUnitOfWork.Composite.Returns(mockCompositeRepo);
+
+    // Set up AppUser repository
+    var mockAppUserRepo = Substitute.For<IAppUserRepository>();
+    SetupAppUserRepository(mockAppUserRepo);
+    mockUnitOfWork.AppUser.Returns(mockAppUserRepo);
+
+    return mockUnitOfWork;
+}
+```
+
+*Padrão AAA (Arrange-Act-Assert)*
+
+Todos os testes foram estruturados seguindo o padrão AAA, que proporciona clareza e consistência na organização dos testes:
+1.	Arrange: Preparação do ambiente e dados necessários para o teste.
+2.	Act: Execução da operação sendo testada.
+3.	Assert: Verificação dos resultados esperados.
+
+Exemplo do padrão AAA aplicado em um teste do ProductControllerTests:
+
+```c#
+[Fact]
+public void GetProduct_ValidId_ReturnsOk()
+{
+    // Arrange
+    var productId = 1;  
+
+    // Act
+    var result = _productController.GetProduct(productId);
+
+    // Assert
+    var actionResult = Assert.IsType<OkObjectResult>(result);
+    Assert.Equal(200, actionResult.StatusCode);  
+}
+```
+
+*Cobertura de Cenários*
+
+Os testes unitários foram projetados para cobrir diversos cenários, incluindo:
+1.	Casos positivos: Verificando o comportamento correto em situações esperadas.
+2.	Casos negativos: Testando como o sistema reage a entradas inválidas ou situações excepcionais.
+3.	Condições de borda: Testando o comportamento em situações limite.
+
+Por exemplo, para o método `GetProduct()` da classe ProductBc, foram implementados testes que verificam:
+
+•	Recuperação de produtos válidos
+
+```c#
+	[Fact]
+	public void GetProduct_ValidId_ReturnsProduct()
+	{
+		// Arrange
+		var productId = 1;
+
+		// Act
+		var result = _productBc.GetProduct(productId);
+
+		// Assert
+		Assert.NotNull(result);
+		Assert.Equal(productId, result.Id);
+		Assert.Equal("Carrots", result.Name);
+		Assert.Equal("producer-1", result.ProducerId);
+		Assert.Equal(2.50, result.ReferencePrice);
+		Assert.False(result.IsDeleted);
+	}
+```
+
+•	Tratamento de IDs inválidos
+
+```c#
+	[Fact]
+	public void GetProduct_InvalidId_ThrowsArgumentException()
+	{
+		// Arrange
+		var invalidId = 0;
+
+		// Act & Assert
+		var exception = Assert.Throws<ArgumentException>(() => _productBc.GetProduct(invalidId));
+		Assert.Equal("Product ID must be greater than zero. (Parameter 'id')", exception.Message);
+	}
+```
+
+•	Comportamento com produtos inexistentes
+
+```c#
+	[Fact]
+	public void GetProduct_NonExistingId_ReturnsNull()
+	{
+		// Arrange
+		var nonExistingId = 100;
+
+		// Act
+		var result = _productBc.GetProduct(nonExistingId);
+
+		// Assert
+		Assert.Null(result);
+	}
+```
+
+•	Tratamento de produtos marcados como excluídos
+
+```c#
+	[Fact]
+	public void GetProduct_DeletedProduct_ReturnsNull()
+	{
+		// Arrange
+		var deletedProductId = 4;
+
+		// Act
+		var result = _productBc.GetProduct(deletedProductId);
+
+		// Assert
+		Assert.Null(result);
+	}
+```
+
+•	Carregamento correto de produtos compostos
+
+```c#
+	[Fact]
+	public void GetProduct_CompositeProduct_ReturnsProductWithComposites()
+	{
+		// Arrange
+		var compositeProductId = 2;
+
+		// Act
+		var result = _productBc.GetProduct(compositeProductId);
+
+		// Assert
+		Assert.NotNull(result);
+		Assert.Equal(compositeProductId, result.Id);
+		Assert.Equal("Vegetable Box", result.Name);
+
+		// Check composites
+		Assert.NotNull(result.Composites);
+		Assert.Single(result.Composites);
+
+		var composite = result.Composites.First();
+		Assert.Equal(1, composite.SubProductId);
+		Assert.Equal(2, composite.Quantity);
+
+		// Check that SubProduct is included
+		Assert.NotNull(composite.SubProduct);
+		Assert.Equal("Carrots", composite.SubProduct.Name);
+	}
+```
+
+*Teste de Segurança e Permissões*
+
+Parte significativa dos testes unitários focou em validar aspectos de segurança e permissões, garantindo que:
+•	Utilizadores só possam aceder ou modificar os seus próprios recursos
+•	Operações sensíveis incluam validações adequadas
+•	Erros sejam tratados apropriadamente sem expor informações sensíveis
+
+*Conclusão*
+
+A implementação abrangente de testes unitários na solução AMAP, utilizando xUnit e NSubstitute, contribuiu significativamente para a qualidade e robustez do sistema. A cobertura extensiva de testes nas camadas de negócio e serviços, seguindo o padrão AAA e com simulação completa de dependências, proporcionou um alto nível de confiança no código desenvolvido e facilitará a manutenção e evolução futura do sistema.
+
+![Explorador dos Testes Unitários](../../Imagens/TestExplorer.png)
+
+Todos os testes implementados foram concluídos com sucesso, alcançando uma cobertura de código de 78.06%. Esta taxa de cobertura é particularmente significativa, pois abrange as funcionalidades críticas e os fluxos de negócios essenciais da aplicação. A estratégia de testes unitários implementada na solução AMAP proporcionou:
+•	Maior confiabilidade do código através de verificação automatizada
+•	Melhor documentação do comportamento esperado de cada componente
+•	Facilitação de refatorações e melhorias no código existente
+•	Redução de bugs através da detecção precoce de problemas
+
+![Cobertura dos Testes](../../Imagens/TestCoverage.png)
+
+A combinação do xUnit e NSubstitute, junto com a abordagem estruturada seguindo o padrão AAA, resultou em um conjunto de testes robustos e eficazes que contribuíram significativamente para a manutenção e evolução segura da solução AMAP.
 
 #### Fuzzing e testes de robustez
 - Implementação e configuração  
