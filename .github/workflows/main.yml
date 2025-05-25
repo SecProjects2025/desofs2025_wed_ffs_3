@@ -130,10 +130,16 @@ jobs:
       run: scp -O -P ${{ env.VM_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose-staging.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose-staging.yml
 
     - name: Run Docker Compose on VM via SSH
-      run: |
+      id: deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ env.VM_HOST }}
+        username: ${{ env.VM_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ env.VM_PORT }}
+        script: |
           cd ${{ env.VM_DEPLOY_PATH }}
           export IMAGE_TAG=${{ env.DOCKER_TAG }}
-          # Para e remove contêineres antigos e inicia novos
           docker compose -f docker-compose-staging.yml down
           docker compose -f docker-compose-staging.yml up -d
           
