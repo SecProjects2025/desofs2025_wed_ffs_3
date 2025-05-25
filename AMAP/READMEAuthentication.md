@@ -134,9 +134,45 @@ Permite a um Produtor validar um pagamento:
 - 401/403: Não autorizado
 - 400: Já validado
 
----
+### 2.3 Gestão de Pagamentos (Manager)
 
-### 2.3 Modelo de Dados: Payment
+**Endpoint de Atualização:**  
+`PUT /api/payment/{id}`
+
+**Descrição:**  
+Permite a um Manager atualizar um pagamento existente:
+- Só pode ser feito por utilizadores com role `Manager`
+- Atualiza método de pagamento, valor pago e estado de validação
+- Mantém o histórico de validações intacto
+
+**Payload de Atualização:**
+```json
+{
+    "paymentMethod": "MBway",
+    "amountPaid": 55.00,
+}
+```
+
+**Endpoint de Remoção:**  
+`DELETE /api/payment/{id}`
+
+**Descrição:**  
+Permite a um Manager remover um pagamento:
+- Só pode ser feito por utilizadores com role `Manager`
+- Remove permanentemente o pagamento do sistema
+
+**Como testar a gestão:**
+1. Autentique-se como Manager
+2. Para atualizar: PUT para `/api/payment/{id}` com o payload acima
+3. Para remover: DELETE para `/api/payment/{id}`
+
+**Respostas possíveis:**
+- 200 OK: Operação realizada com sucesso
+- 404 Not Found: Pagamento não encontrado ou permissões não são suficientes
+- 401/403: Não autorizado
+- 400: Não pode remover um pagamento que já foi validado
+
+### 2.4 Modelo de Dados: Payment
 
 ```csharp
 public class Payment

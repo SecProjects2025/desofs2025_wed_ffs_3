@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace AMAP.Api.Controllers
 {
@@ -90,6 +91,39 @@ namespace AMAP.Api.Controllers
             _unitOfWork.Save();
 
             return Ok(payment);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = nameof(UserType.Manager))]
+        public async Task<IActionResult> UpdatePayment(int id, [FromBody] Payment updatedPayment)
+        {
+            var existingPayment = await _unitOfWork.Payment.GetById(id);
+            if (existingPayment == null)
+                return NotFound("Payment not found");
+
+            // Atualiza apenas os campos necessários, mantendo o ID original
+            existingPayment.PaymentMethod = updatedPayment.PaymentMethod;
+            existingPayment.AmountPaid = updatedPayment.AmountPaid;
+            existingPayment.Validated = updatedPayment.Validated;
+            existingPayment.ValidationDate = updatedPayment.ValidationDate;
+            existingPayment.ValidatedByProducerId = updatedPayment.ValidatedByProducerId;
+
+            await _unitOfWork.Payment.Update(existingPayment);
+            _unitOfWork.Save();
+            return Ok("Payment updated successfully");
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = nameof(UserType.Manager))]
+        public async Task<IActionResult> DeletePayment(int id)
+        {
+            var payment = await _unitOfWork.Payment.GetById(id);
+            if (payment == null)
+                return NotFound("Payment not found");
+
+            await _unitOfWork.Payment.Delete(payment);
+            _unitOfWork.Save();
+            return Ok("Payment deleted successfully");
         }
     }
 }
