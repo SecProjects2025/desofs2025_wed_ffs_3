@@ -4,20 +4,21 @@ Este documento descreve as funcionalidades do sistema de repúdio implementado n
 
 ## Funcionalidades
 
-### 1. Criação de Assinatura
+### 1. Repúdio - Negação de ter realizado subscrição ou pagamento
+#### 1. Criação de Assinatura
 
-#### Endpoint
+##### Endpoint
 ```
 POST /api/subscription
 ```
 
-#### Descrição
+##### Descrição
 Cria uma nova assinatura com suporte ao sistema de repúdio. O sistema:
 - Gera um token único de confirmação
 - Envia email de confirmação ao co-produtor
 - Inicializa os campos de repúdio
 
-#### Parâmetros
+##### Parâmetros
 ```json
 {
     "productOfferId": 1,
@@ -26,7 +27,7 @@ Cria uma nova assinatura com suporte ao sistema de repúdio. O sistema:
 }
 ```
 
-#### Resposta
+##### Resposta
 ```json
 {
     "id": 2,
@@ -43,26 +44,26 @@ Cria uma nova assinatura com suporte ao sistema de repúdio. O sistema:
 }
 ```
 
-### 2. Confirmação de Email
+#### 2. Confirmação de Email
 
-#### Endpoint
+##### Endpoint
 ```
 POST https://localhost:7262/api/Subscription/confirm
 ```
 
-#### Descrição
+##### Descrição
 Confirma o email do co-produtor através de um token único gerado durante a criação da assinatura. O sistema:
 - Valida o token de confirmação
 - Marca o email como confirmado
 - Registra a data e hora da confirmação
 - Remove o token após uso
 
-#### Parâmetros
+##### Parâmetros
 ```json
 "vKeAQGXwMvpeim/crxxr5+oWy/Fl86BGETYfctNpLPQ="
 ```
 
-#### Teste
+##### Teste
 Para testar a confirmação:
 1. Copie o token de confirmação da resposta da criação da assinatura
 2. Faça uma requisição POST para `https://localhost:7262/api/Subscription/confirm`
@@ -72,30 +73,30 @@ Para testar a confirmação:
    - 404 Not Found: "Invalid confirmation token"
    - 500 Internal Server Error: "An error occurred while confirming the subscription"
 
-### 3. Aceitação de Termos e Condições
+#### 3. Aceitação de Termos e Condições
 
-#### Endpoint
+##### Endpoint
 ```
 POST /api/subscription/{id}/accept-terms
 ```
 
-#### Descrição
+##### Descrição
 Permite que um co-produtor aceite os termos e condições de uma assinatura. O sistema registra:
 - Data e hora da aceitação
 - Assinatura digital do co-produtor
 - Status de aceitação
 
-#### Parâmetros
+##### Parâmetros
 - `id`: ID da assinatura
 
-#### Resposta
+##### Resposta
 - 200 OK: "Terms accepted successfully"
 - 404 Not Found: "Subscription not found"
 - 500 Internal Server Error: "An error occurred while accepting the terms"
 
-## Modelo de Dados
+### Modelo de Dados
 
-### Subscription
+#### Subscription
 ```csharp
 public class Subscription
 {
@@ -122,7 +123,7 @@ public class Subscription
 }
 ```
 
-## Fluxo de Repúdio
+### Fluxo de Repúdio
 
 1. **Criação da Assinatura**
    - Sistema gera token único
@@ -139,7 +140,7 @@ public class Subscription
    - Sistema registra data/hora e assinatura digital
    - Assinatura é marcada como completa
 
-## Configuração de Email
+### Configuração de Email
 
 O sistema utiliza o Mailtrap para envio de emails em ambiente de desenvolvimento:
 
@@ -154,16 +155,55 @@ O sistema utiliza o Mailtrap para envio de emails em ambiente de desenvolvimento
 }
 ```
 
-## Segurança
+### Segurança
 
 - Tokens de confirmação são únicos e de uso único
 - Assinaturas digitais são geradas para cada aceitação de termos
 - Datas e horários são registrados em UTC
 - Campos sensíveis são validados e sanitizados
 
-## Notas de Implementação
+### Notas de Implementação
 
 - O sistema utiliza Entity Framework Core para persistência
 - Migrações automáticas para atualização da base de dados
 - Tratamento de exceções em todos os endpoints
 - Logs de auditoria para ações importantes 
+
+### 5. Negação de ter realizado um pagamento
+
+#### 1. Validação e Registo de Pagamento
+
+##### Endpoint de Criação (atualizado)
+```
+POST /api/payment
+```
+
+##### Descrição da Criação
+Atualização do endpoint de criação de pagamento para incluir o método de pagamento e inicializar o estado de validação.
+- Regista o método de pagamento escolhido (Money, MBway, BankTransfer).
+- Inicializa o campo `Validated` como `false`.
+
+##### Endpoint de Validação
+```
+PUT /api/payment/{id}/validate
+```
+
+##### Descrição da Validação
+Permite a um Produtor validar um pagamento específico.
+- Verifica se o pagamento existe e não foi previamente validado.
+- Marca o campo `Validated` como `true`.
+- Garante que apenas utilizadores com a role 'Producer' podem realizar esta operação (via autorização no endpoint).
+
+##### Teste de Validação
+Para testar a validação:
+1. Crie um pagamento usando o endpoint POST /api/payment (necessita de token de CoProducer).
+2. Obtenha o ID do pagamento criado.
+3. Obtenha um token de autenticação para um utilizador com a role 'Producer'.
+4. Faça uma requisição PUT para `/api/payment/{id}/validate`, substituindo `{id}` pelo ID do pagamento criado.
+5. O sistema retornará:
+   - 200 OK: Pagamento validado com sucesso.
+   - 404 Not Found: Pagamento não encontrado.
+   - 401 Unauthorized / 403 Forbidden: Utilizador não autorizado a validar pagamentos.
+   - 400 Bad Request: Pagamento já validado.
+
+
