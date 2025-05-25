@@ -7,6 +7,8 @@ namespace AMAP.Business.Interfaces
     {
         Subscription CreateSubscription(Subscription subscription, string coProducerId);
         Task<bool> ConfirmSubscriptionEmail(string token);
-        Task<bool> AcceptTerms(int subscriptionId);
+        Task<bool> AcceptTerms(int id);
+        Subscription GetSubscriptionById(int id);
+        IEnumerable<Subscription> GetSubscriptionsByCoProducer(string coProducerId);
     }
 }

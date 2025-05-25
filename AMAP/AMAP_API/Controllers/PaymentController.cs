@@ -7,7 +7,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace AMAP.Api.Controllers
+namespace AMAP_API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

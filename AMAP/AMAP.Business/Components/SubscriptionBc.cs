@@ -139,5 +139,15 @@ namespace AMAP.Business.Components
                 throw;
             }
         }
+
+        public Subscription GetSubscriptionById(int id)
+        {
+            return _unitOfWork.Subscription.Get(s => s.Id == id);
+        }
+
+        public IEnumerable<Subscription> GetSubscriptionsByCoProducer(string coProducerId)
+        {
+            return _unitOfWork.Subscription.GetAll(s => s.CoProducerId == coProducerId);
+        }
     }
 }

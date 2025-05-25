@@ -1,8 +1,12 @@
-using AMAP.Entities;
+﻿using AMAP.Entities;
 using AMAP.Entities.Models.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using System.Linq;
+using System;
+using AMAP.Entities.ViewModel;
 
 namespace AMAP.Api.Controllers
 {
@@ -169,7 +173,8 @@ namespace AMAP.Api.Controllers
             }
 
             return BadRequest(new { message = "Password reset failed. Please ensure your new password meets the requirements." });
-            
+        }
+
         [HttpPost("change-password")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordViewModel model)
@@ -191,21 +196,21 @@ namespace AMAP.Api.Controllers
 
             // Change the password
             var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
-            
+
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
-                    _logger.LogWarning("Password change failed for user {UserId}: {ErrorCode} - {ErrorDescription}", 
+                    _logger.LogWarning("Password change failed for user {UserId}: {ErrorCode} - {ErrorDescription}",
                         user.Id, error.Code, error.Description);
                 }
-                
+
                 // Log potential brute force attempts
                 var failedPasswordChangeAttempts = await _userManager.GetAccessFailedCountAsync(user);
-                _logger.LogWarning("User {UserId} has {FailedAttempts} failed password change attempts", 
+                _logger.LogWarning("User {UserId} has {FailedAttempts} failed password change attempts",
                     user.Id, failedPasswordChangeAttempts);
-                
+
                 return BadRequest(ModelState);
             }
 

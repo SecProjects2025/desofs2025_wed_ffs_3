@@ -1,4 +1,4 @@
-﻿using AMAP.Api.Controllers;
+﻿using AMAP_API.Controllers;
 using AMAP.Business.Interfaces;
 using AMAP.Entities;
 using AMAP.Entities.Models.DTO.Subscription;

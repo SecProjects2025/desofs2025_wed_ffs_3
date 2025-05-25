@@ -1,5 +1,5 @@
-﻿using AMAP.Api.Controllers;
-using AMAP.Business.Interfaces;
+﻿using AMAP_API.Controllers;
+using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.UnitTests.Business.Mock;
 using Microsoft.AspNetCore.Http;
@@ -7,18 +7,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using NSubstitute;
 using System.Security.Claims;
+using System.Linq.Expressions;
 
 namespace AMAP.UnitTests.Services
 {
     public class PaymentControllerTests
     {
-        private readonly IPaymentBc _paymentBc;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly PaymentController _paymentController;
 
         public PaymentControllerTests()
         {
-            _paymentBc = MockPaymentBc.GetMockPaymentBc();
-            _paymentController = new PaymentController(_paymentBc);
+            _unitOfWork = MockUnitOfWork.GetMockUnitOfWork();
+            _paymentController = new PaymentController(_unitOfWork);
 
             // Set up a ClaimsPrincipal for the controller to use
             var claims = new List<Claim>
@@ -165,11 +166,13 @@ namespace AMAP.UnitTests.Services
         public void CreatePayment_ServerError_ReturnsInternalServerError()
         {
             // Arrange - Create a substitute that will throw an unexpected exception
-            var errorPaymentBc = Substitute.For<IPaymentBc>();
-            errorPaymentBc
-                .CreatePayment(Arg.Any<Payment>(), Arg.Any<string>());
+            var errorUnitOfWork = Substitute.For<IUnitOfWork>();
+            var mockPaymentRepo = Substitute.For<IRepository<Payment>>();
+            mockPaymentRepo.Get(Arg.Any<Expression<Func<Payment, bool>>>())
+                .Returns(x => throw new Exception("Test exception"));
+            errorUnitOfWork.Payment.Returns(mockPaymentRepo);
 
-            var errorController = new PaymentController(errorPaymentBc);
+            var errorController = new PaymentController(errorUnitOfWork);
 
             // Set up claims
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "test-coproducer-id") };

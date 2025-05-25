@@ -1,25 +1,40 @@
 ﻿using AMAP.Business.Components;
+using AMAP.Business.Interfaces;
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.Entities.Utilities;
-using AMAP.UnitTests.Repository.Mock;
+using AMAP.UnitTests.Business.Mock;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NSubstitute;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace AMAP.UnitTests.Business
 {
     public class SubscriptionBcTests
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly SubscriptionBc _subscriptionBc;
+        private readonly EmailSender _emailSender;
         private readonly ILogger<SubscriptionBc> _logger;
+        private readonly SubscriptionBc _subscriptionBc;
 
         public SubscriptionBcTests()
         {
-            // Arrange - Setup mock repository
-            _unitOfWork = MockSubscriptionRepository.GetMockUnitOfWork();
+            _unitOfWork = MockUnitOfWork.GetMockUnitOfWork();
+
+            // Mock IConfiguration for EmailSender
+            var configuration = new Mock<IConfiguration>();
+            configuration.Setup(x => x["EmailSettings:From"]).Returns("test@example.com");
+            configuration.Setup(x => x["EmailSettings:Password"]).Returns("test-password");
+            configuration.Setup(x => x["EmailSettings:Host"]).Returns("smtp.example.com");
+            configuration.Setup(x => x["EmailSettings:Port"]).Returns("587");
+
+            _emailSender = new EmailSender(configuration.Object);
             _logger = Substitute.For<ILogger<SubscriptionBc>>();
-            _subscriptionBc = new SubscriptionBc(_unitOfWork, _logger);
+            _subscriptionBc = new SubscriptionBc(_unitOfWork, _emailSender, _logger);
         }
 
         [Fact]

@@ -1,8 +1,6 @@
 using AMAP.Business.Interfaces;
 using AMAP.Entities;
 using System.Security.Claims;
-using AMAP.Business.Interfaces;
-using AMAP.Entities;
 using AMAP.Entities.Models.DTO.Subscription;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
@@ -32,10 +30,6 @@ namespace AMAP_API.Controllers
 
                 var result = _subscriptionBc.CreateSubscription(subscription, coProducerId);
                 return Ok(result);
-                
-                var coProducerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
-                var createdSubscription = _subscriptionBc.CreateSubscription(subscription, coProducerId);
-                return CreatedAtAction(nameof(GetSubscriptionById), new { id = createdSubscription.Id }, createdSubscription);
             }
             catch (ArgumentException ex)
             {
@@ -44,10 +38,6 @@ namespace AMAP_API.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
             }
             catch (Exception)
             {
@@ -84,10 +74,6 @@ namespace AMAP_API.Controllers
 
                 return Ok("Terms accepted successfully.");
             }
-            catch (Exception)
-            {
-                return StatusCode(500, "An error occurred while accepting the terms.");
-
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(ex.Message);
