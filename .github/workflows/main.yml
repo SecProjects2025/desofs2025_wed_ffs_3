@@ -11,9 +11,9 @@ env:
   DOCKER_IMAGE_NAME: 'amap-api'
   DOCKER_REGISTRY: 'diogocosta0307/desofs'
   DOCKER_TAG: v1.0.0-${{ github.sha }}
-  VM_HOST: 'vs381.dei.isep.ipp.pt'
+  VM_HOST: 'vsgate-ssh.dei.isep.ipp.pt'
   VM_USER: 'root'
-  VM_PORT: '22'
+  VM_PORT: '10381'
   VM_DEPLOY_PATH: '/root/desofs-app'
 
 jobs:
@@ -119,9 +119,12 @@ jobs:
         docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
 
     - name: Set up SSH agent
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: appleboy/ssh-action@master
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        host: ${{ env.VM_HOST }}
+        username: ${{ env.VM_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ env.VM_PORT }}
 
     - name: Create deploy directory on VM
       run: ssh ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
@@ -144,8 +147,10 @@ jobs:
     - name: Output Deployment Information
       run: |
         echo "Application deployed successfully!"
-        echo "Deployment URL: ${{ steps.deploy.outputs.deployment_url }}"
-        echo "Deployment Status: ${{ steps.deploy.outputs.deployment_status }}"
+        echo "Deployment Gateway: ${{ env.VM_HOST }}:${{ env.VM_PORT }}"
+        echo "Application running on VM internal port: 8080"
+        echo "deployment_url=${{ env.VM_HOST }}:${{ env.VM_PORT }} (Gateway - Access app on VM port 8080)" >> $GITHUB_OUTPUT
+        echo "deployment_status=success" >> $GITHUB_OUTPUT
 
     - name: Upload SCA Report
       uses: actions/upload-artifact@v4
