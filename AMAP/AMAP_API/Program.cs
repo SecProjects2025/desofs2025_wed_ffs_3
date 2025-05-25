@@ -8,6 +8,8 @@ using AMAP.DataAccess.DbInitializer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using AMAP.Entities.Utilities;
+using AMAP.Business.Components;
+using AMAP.Business.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnityOfWork>();
+builder.Services.AddScoped<ISubscriptionBc, SubscriptionBc>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

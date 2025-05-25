@@ -1,108 +1,80 @@
-﻿using System.Security.Claims;
-using AMAP.DataAccess.Repository.IRepository;
+﻿using AMAP.Business.Interfaces;
 using AMAP.Entities;
-using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AMAP.Api.Controllers
+namespace AMAP_API.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = nameof(UserType.CoProducer))]
+    [ApiController]
     public class SubscriptionController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ISubscriptionBc _subscriptionBc;
 
-        public SubscriptionController(IUnitOfWork unitOfWork)
+        public SubscriptionController(ISubscriptionBc subscriptionBc)
         {
-            _unitOfWork = unitOfWork;
+            _subscriptionBc = subscriptionBc;
         }
 
-        // POST: api/Subscription
         [HttpPost]
-        public IActionResult CreateSubscription([FromBody] Subscription subscription)
+        // [Authorize(Roles = "CoProducer")] // Temporariamente removido para testes
+        public async Task<ActionResult<Subscription>> CreateSubscription(Subscription subscription)
         {
-            if (subscription == null)
+            try
             {
-                return BadRequest("Invalid data.");
-            }
+                // Temporariamente usando um ID fixo para testes
+                var coProducerId = "1cc4c021-19e7-49dd-aeb0-e31a8f382f66"; // Seu ID de co-produtor
 
-            // Obter o CoProducer autenticado
-            subscription.CoProducerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
-            if (subscription.CoProducerId == null)
+                var result = _subscriptionBc.CreateSubscription(subscription, coProducerId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
             {
-                return Unauthorized("Invalid CoProducer.");
+                return NotFound(ex.Message);
             }
-
-            // Obter a oferta de produto
-            var productOffer = _unitOfWork.ProductOffer.Get(po => po.Id == subscription.ProductOfferId);
-            if (productOffer == null)
+            catch (ArgumentException ex)
             {
-                return NotFound("Product offer not found.");
+                return BadRequest(ex.Message);
             }
-
-            // Validar quantidade
-            if (subscription.ExpectedQuantity <= 0)
+            catch (Exception)
             {
-                return BadRequest("Quantity must be greater than zero.");
+                return StatusCode(500, "An error occurred while creating the subscription.");
             }
-
-            var orderedQuantity = _unitOfWork.Subscription.GetAll(s => s.ProductOfferId == productOffer.Id).Sum(s => s.ExpectedQuantity);
-
-            if (subscription.ExpectedQuantity + orderedQuantity > productOffer.Quantity)
-            {
-                return BadRequest("Requested quantity exceeds available stock.");
-            }
-
-            // Validar se o PaymentType contém apenas bits válidos
-            if (subscription.PaymentType == 0 || !Enum.IsDefined(typeof(PaymentType), subscription.PaymentType))
-            {
-                return BadRequest("Invalid payment type.");
-            }
-
-            if (!productOffer.PaymentType.HasFlag(subscription.PaymentType))
-            {
-                return BadRequest("Selected payment type is not supported by the product offer.");
-            }
-
-            // Criar subscrição
-            _unitOfWork.Subscription.Add(subscription);
-            _unitOfWork.Save();
-
-            return CreatedAtAction(nameof(GetSubscriptionById), new { id = subscription.Id }, subscription);
         }
 
-        // GET: api/Subscription/{id}
-        [HttpGet("{id}")]
-        public IActionResult GetSubscriptionById(int id)
+        [HttpPost("confirm")]
+        public async Task<IActionResult> ConfirmSubscription([FromBody] string token)
         {
-            var subscription = _unitOfWork.Subscription.Get(s => s.Id == id);
-            if (subscription == null)
+            try
             {
-                return NotFound("Subscription not found.");
+                var result = await _subscriptionBc.ConfirmSubscriptionEmail(token);
+                if (!result)
+                    return NotFound("Invalid confirmation token.");
+
+                return Ok("Subscription confirmed successfully.");
             }
-            return Ok(subscription);
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while confirming the subscription.");
+            }
         }
 
-        // GET: api/Subscription
-        [HttpGet]
-        public IActionResult GetSubscriptionsByCoProducer()
+        [HttpPost("{id}/accept-terms")]
+        [Authorize(Roles = "CoProducer")]
+        public async Task<IActionResult> AcceptTerms(int id)
         {
-            // Obter o CoProducer autenticado
-            var coProducerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
-            if (coProducerId == null)
+            try
             {
-                return Unauthorized("Invalid CoProducer.");
-            }
+                var result = await _subscriptionBc.AcceptTerms(id);
+                if (!result)
+                    return NotFound("Subscription not found.");
 
-            var subscriptions = _unitOfWork.Subscription.GetAll(s => s.CoProducerId == coProducerId);
-            if (subscriptions == null || !subscriptions.Any())
+                return Ok("Terms accepted successfully.");
+            }
+            catch (Exception)
             {
-                return NotFound("No subscriptions found.");
+                return StatusCode(500, "An error occurred while accepting the terms.");
             }
-
-            return Ok(subscriptions);
         }
     }
 }
