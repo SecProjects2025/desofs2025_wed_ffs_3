@@ -20,13 +20,15 @@ namespace AMAP.Api.Controllers
         private readonly ILogger<AccountController> _logger;
         private readonly EmailSender _emailSender;
         private readonly AccountLockoutService _lockoutService;
+        private readonly SecurityMonitoringService _securityMonitoring;
 
         public AccountController(UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
             RoleManager<IdentityRole> roleManager,
             ILogger<AccountController> logger,
             EmailSender emailSender,
-            AccountLockoutService lockoutService)
+            AccountLockoutService lockoutService,
+            SecurityMonitoringService securityMonitoring)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -34,6 +36,7 @@ namespace AMAP.Api.Controllers
             _logger = logger;
             _emailSender = emailSender;
             _lockoutService = lockoutService;
+            _securityMonitoring = securityMonitoring;
         }
 
         [HttpPost("register")]
@@ -58,6 +61,9 @@ namespace AMAP.Api.Controllers
                 {
                     // Add role based on user type
                     await _userManager.AddToRoleAsync(user, model.UserType.ToString());
+
+                    // Send account creation notification email
+                    await SendCredentialsChangeNotificationAsync(user, "Account Creation");
 
                     // Sign in the user
                     await _signInManager.SignInAsync(user, isPersistent: false);
@@ -152,6 +158,11 @@ namespace AMAP.Api.Controllers
 
                     _logger.LogInformation("User {UserId} ({UserEmail}) logged in successfully", user.Id, user.Email);
 
+                    // Registrar atividade de login no serviço de monitoramento
+                    var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
+                    var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                    await _securityMonitoring.RecordAuthActivityAsync(user.Id, ipAddress, userAgent, AuthActivityType.Login);
+
                     return Ok(new
                     {
                         message = "Login successful",
@@ -163,6 +174,11 @@ namespace AMAP.Api.Controllers
                 {
                     // Manage progressive lockout
                     var (isLocked, lockoutDuration, failedAttempts) = await _lockoutService.HandleFailedLoginAttemptAsync(user);
+                    
+                    // Registrar tentativa de login falhada no serviço de monitoramento
+                    var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
+                    var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                    await _securityMonitoring.RecordAuthActivityAsync(user.Id, ipAddress, userAgent, AuthActivityType.FailedLogin);
                     
                     if (isLocked)
                     {
@@ -204,6 +220,11 @@ namespace AMAP.Api.Controllers
             if (user != null)
             {
                 _logger.LogInformation("User {UserId} ({UserEmail}) logged out", user.Id, user.Email);
+                
+                // Registrar atividade de logout no serviço de monitoramento
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                await _securityMonitoring.RecordAuthActivityAsync(user.Id, ipAddress, userAgent, AuthActivityType.Logout);
             }
             
             return Ok(new { message = "Logged off successfully" });
@@ -248,8 +269,16 @@ namespace AMAP.Api.Controllers
                 return BadRequest(ModelState);
             }
 
+            // Send password change notification email
+            await SendCredentialsChangeNotificationAsync(user, "Password Change");
+
             // Log successful password change
             _logger.LogInformation("Password changed successfully for user {UserId} ({UserEmail})", user.Id, user.Email);
+
+            // Registrar atividade de troca de senha no serviço de monitoramento
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+            await _securityMonitoring.RecordAuthActivityAsync(user.Id, ipAddress, userAgent, AuthActivityType.PasswordChange);
 
             // Sign in the user again to refresh the authentication cookie
             await _signInManager.SignInAsync(user, isPersistent: false);
@@ -289,6 +318,40 @@ namespace AMAP.Api.Controllers
             {
                 // Log the error but don't prevent login
                 _logger.LogError(ex, "Failed to send login notification email to {Email}", user.Email);
+            }
+        }
+
+        private async Task SendCredentialsChangeNotificationAsync(AppUser user, string action)
+        {
+            try
+            {
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
+                var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                var subject = $"AMAP Security Alert: {action}";
+                var body = $@"
+                    <h2>{action} Notification</h2>
+                    <p>Dear {user.Name},</p>
+                    <p>We are notifying you that a {action.ToLower()} event occurred on your AMAP account.</p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                        <li>Date and Time: {timestamp}</li>
+                        <li>IP Address: {ipAddress}</li>
+                        <li>Device: {userAgent}</li>
+                    </ul>
+                    <p>If you did not perform this action, please contact support immediately.</p>
+                    <p>Thank you for helping keep your account secure.</p>
+                    <p>AMAP Security Team</p>
+                ";
+
+                await _emailSender.SendEmailAsync(user.Email, subject, body);
+                _logger.LogInformation("{Action} notification email sent to {Email}", action, user.Email);
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't prevent the action
+                _logger.LogError(ex, "Failed to send {Action} notification email to {Email}", action, user.Email);
             }
         }
     }
