@@ -22,13 +22,13 @@ Tiago Tavares 1240494
 
 ---
 
-## 0. Índice
+# Índice
 
 [TOC]
 
 ---
 
-## 1. Introdução
+# Introdução
 
 - Contextualização do projeto no âmbito do desenvolvimento de software seguro  
 - Objetivos específicos do Sprint 1 e sua relação com a modelação de ameaças da Fase 1  
@@ -37,13 +37,13 @@ Tiago Tavares 1240494
 
 ---
 
-## 2. Desenvolvimento Seguro
+# Desenvolvimento Seguro
 
-### 2.1 Funcionalidade Desenvolvida
+## Funcionalidade Desenvolvida
 
 Na fase 1 foram identificadas varias ameacas em que selecionamos 15 prioritarias para desenvolcer codigo de forma a mitigar essas amecas.
 
-#### 3. Negação de ações administrativas realizadas (4.1 R) - 8.0 ALTO
+### 3. Negação de ações administrativas realizadas (4.1 R) - 8.0 ALTO
 
 *Mitigação Implementada:* *Rastreabilidade de Ações* 
 Esta mitigação visa criar um registo detalhado e inalterável de todas as ações administrativas realizadas no sistema, permitindo verificar quem fez o quê e quando, evitando assim a negação de responsabilidade por ações realizadas.
@@ -189,7 +189,7 @@ Os relatórios gerados capturam todas as ações administrativas importantes, in
 Estes relatórios fornecem uma trilha clara de auditoria que torna impossível a negação de ações administrativas realizadas, pois cada ação é documentada com detalhes suficientes para identificar quem a realizou, quando, e o que foi feito.
 A implementação destas mitigações garante que todas as ações administrativas realizadas no sistema AMAP são devidamente registadas e podem ser auditadas, reduzindo significativamente o risco de negação de responsabilidade por ações realizadas.
 
-#### 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
+### 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
 
 **Mitigação Implementada:** **HTTPS obrigatório**
 
@@ -271,7 +271,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 	};
 });
 ```
-#### 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
+### 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
 
 **Mitigação Implementada: Expiração rápida de credenciais temporárias**
 
@@ -315,7 +315,7 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 ```
 });
 
-#### 11. Acesso a informações sensíveis do utilizador (3.1 I) - 7.8 ALTO
+### 11. Acesso a informações sensíveis do utilizador (3.1 I) - 7.8 ALTO
 
 *Mitigação Implementada:* *Logs de acesso a dados sensíveis*
 Esta mitigação visa registar todas as operações realizadas sobre dados sensíveis dos utilizadores, possibilitando a deteção de acessos não autorizados e fornecendo uma trilha de auditoria para investigações de segurança. Os logs registam quem acedeu aos dados, quais dados foram acedidos, quando o acesso ocorreu e as ações realizadas.
@@ -449,7 +449,7 @@ modelBuilder.Entity<Product>()
 modelBuilder.Entity<Subscription>()
     .HasQueryFilter(s => s.ProductOffer == null || !s.ProductOffer.Product.IsDeleted);
 ```
-	
+
 Estes filtros garantem que, independentemente de como os dados são consultados, utilizadores só tenham acesso aos dados relevantes ao seu papel no sistema, reduzindo drasticamente o risco de exposição não intencional de informações sensíveis.
 
 *Mitigação Parcialmente Implementada:* *Mascaramento de dados nas interfaces*
@@ -495,7 +495,7 @@ Para uma implementação completa, seria necessário:
 
 A implementação parcial atual já oferece alguma proteção contra exposição desnecessária de dados sensíveis, mas uma abordagem mais abrangente e consistente é recomendada para mitigar completamente esta ameaça.
 
-#### 14. Exposição não autorizada de dados sensíveis (5.1 I) - 7.6 ALTO
+### 14. Exposição não autorizada de dados sensíveis (5.1 I) - 7.6 ALTO
 
 *Mitigação Parcialmente Implementada:* *Criptografia em trânsito e em repouso*
 Esta mitigação visa proteger os dados sensíveis através de criptografia, tanto quando estão sendo transmitidos pela rede (em trânsito) quanto quando estão armazenados em bases de dados (em repouso), evitando que possam ser interceptados ou acessados por terceiros não autorizados.
@@ -829,13 +829,13 @@ A implementação parcial atual já oferece proteção significativa contra expo
 
 - Descrição detalhada das funcionalidades implementadas com foco em segurança  
 
-#### Nova arquitetura em camadas
+## Nova arquitetura em camadas
 
 ![Diagrama de Componentes do AMAP](../../Imagens/ComponentDiagram.png)
 
 A implementação da nova camada Business na arquitetura do sistema AMAP representa uma evolução significativa no design do software. Esta reestruturação arquitetural traz benefícios substanciais em termos de organização, manutenibilidade e escalabilidade.
 
-*O Que Mudou na Arquitetura*
+### O Que Mudou na Arquitetura?
 
 Anteriormente, a arquitetura tinha uma estrutura mais tradicional de três camadas (API, Dados e Partilhada). A nova arquitetura introduz uma camada Business dedicada, criando um sistema de quatro camadas bem definidas:
 1.	Camada API (Controllers): Controladores mais leves e focados em tratamento de requisições HTTP e respostas com DTOs
@@ -843,7 +843,7 @@ Anteriormente, a arquitetura tinha uma estrutura mais tradicional de três camad
 3.	Camada de Dados: Repositórios e acesso ao banco de dados
 4.	Camada Partilhada: Entidades, DTOs e utilitários
 
-*Camada de Negócio (Business)*
+**Camada de Negócio (Business)**
 
 •	Responsabilidade: implementar toda a lógica de negócio e validações da aplicação
 •	Componentes principais:
@@ -853,7 +853,7 @@ Anteriormente, a arquitetura tinha uma estrutura mais tradicional de três camad
 •	Logging: registo detalhado de operações críticas e monitorização de segurança
 •	Tratamento de Exceções: encapsulamento de exceções específicas de domínio
 
-*DTOs na Camada Shared*
+**DTOs na Camada Shared**
 
 Uma das principais melhorias foi a adição de uma estrutura organizada de DTOs (Data Transfer Objects) na pasta Models da camada Shared. Estes DTOs:
 •	Fornecem uma separação clara entre entidades de domínio e objetos de transferência de dados
@@ -862,7 +862,7 @@ Uma das principais melhorias foi a adição de uma estrutura organizada de DTOs 
 •	Facilitam a evolução da API sem impactar o modelo de domínio
 •	Simplificam a serialização/deserialização de dados nas respostas HTTP
 
-*Principais Benefícios da Nova Arquitetura*
+### Principais Benefícios da Nova Arquitetura
 
 •	Separação clara de responsabilidades: Os controladores agora apenas gerem requisições HTTP e utilizam DTOs para respostas, enquanto a lógica de negócio fica isolada na camada Business
 •	Código mais organizado: Cada componente de negócio é especializado em um domínio específico
@@ -871,7 +871,7 @@ Uma das principais melhorias foi a adição de uma estrutura organizada de DTOs 
 •	Reutilização de código: Componentes de negócio podem ser compartilhados entre diferentes controladores
 •	Tratamento robusto de exceções: Implementação de try-catch nos controladores para garantir respostas adequadas aos clientes
 
-*Como Funciona na Prática*
+### Como Funciona na Prática
 
 Quando um utilizador faz uma requisição, o fluxo agora é:
 1.	O cliente envia uma requisição HTTP para um endpoint da API
@@ -888,33 +888,11 @@ Esta abordagem em camadas claramente definidas, com responsabilidades bem segreg
 - Demonstração da automação implementada (capturas de ecrã, fluxos)  
 - Relação entre as funcionalidades desenvolvidas e os requisitos de segurança identificados na Fase 1  
 
-### 2.2 Boas Práticas de Desenvolvimento Adotadas
+## Boas Práticas de Desenvolvimento Adotadas
 
-#### Validação de entradas
-- Estratégias implementadas (whitelisting, parametrização, etc.)  
-- Tecnologias/bibliotecas utilizadas  
-- Exemplos de código relevantes  
 
-#### Princípio do menor privilégio
-- Implementação ao nível do código e infraestrutura  
-- Segregação de funções e acessos  
-- Gestão de permissões  
 
-#### Tratamento de erros seguro
-- Política de mensagens de erro implementada  
-- Logging seguro  
-- Estratégia de fallback  
-
-#### Separação de responsabilidades
-- Implementação de padrões de design seguros  
-- Separação de lógica de negócio e validação  
-- Centralização de controles de segurança  
-
-#### Secure coding guidelines
-- Guidelines específicas adotadas para a linguagem utilizada  
-- Mecanismos de enforcement (linters, formatters)  
-
-### 2.3 Revisões e Auditorias de Segurança
+### Revisões e Auditorias de Segurança
 
 #### Revisões de código
 ##### Processos e workflows estabelecidos  
@@ -953,16 +931,128 @@ O revisor aprova o PR diretamente na plataforma, via comentário ou aprovação.
 
 Durante o desenvolvimento, foram realizadas várias revisões de código que resultaram na identificação e correção de issues relacionadas principalmente com validação de entrada e melhorias na legibilidade do código. A comunicação rápida e o processo simplificado permitiram uma resolução eficiente das questões encontradas, contribuindo para a melhoria contínua da qualidade do software.
 
-
-
-- Exemplos de vulnerabilidades identificadas e mitigadas  
-
 #### Análise Estática de Código (SAST)
-- Ferramentas implementadas (SonarQube, Checkmarx, etc.)  
-- Configuração e personalização das regras  
-- Integrações na pipeline  
-- Análise dos resultados com métricas  
-- Gestão de falsos positivos  
+A análise estática de código (SAST) é uma prática fundamental no nosso processo de Desenvolvimento de Software Seguro (SSDLC). Para este fim, utilizamos o **SonarQube Cloud**, que nos permite identificar e gerir de forma proativa:
+
+- Bugs e vulnerabilidades de segurança  
+- *Code smells* (problemas de manutenibilidade)  
+- Cobertura de código por testes  
+- Qualidade geral do código  
+- Consistência e conformidade com os padrões de codificação estabelecidos  
+
+##### Automação no Pipeline CI/CD
+
+A análise estática está totalmente automatizada como parte do pipeline de Integração Contínua e Entrega Contínua (CI/CD), implementado com **GitHub Actions** através do ficheiro `.github/workflows/main.yml`. Esta automação assegura que todas as alterações no código sejam automaticamente validadas quanto à sua segurança e qualidade antes de serem integradas ou implantadas.
+
+As principais etapas deste processo incluem:
+
+- **Checkout do Código**: Clonagem do repositório no ambiente de execução do pipeline.  
+
+- **Configuração do .NET**: Instalação do SDK do .NET necessário para o projeto.  
+
+- **Restauração de Dependências**: Obtenção das bibliotecas requeridas.  
+
+- **Compilação do Projeto**: Construção do código-fonte.  
+
+- **Execução de Testes com Cobertura**: Execução dos testes unitários e geração do relatório de cobertura de código no formato Cobertura.  
+
+- **Instalação e Configuração do SonarQube Scanner**: Gestão de cache e instalação do scanner do SonarQube.  
+
+  ```c#
+  - name: Cache SonarQube Cloud packages
+    uses: actions/cache@v4
+    with:
+      path: ~\sonar\cache
+      key: ${{ runner.os }}-sonar
+      restore-keys: ${{ runner.os }}-sonar
+  
+  - name: Cache SonarQube Cloud scanner
+    id: cache-sonar-scanner
+    uses: actions/cache@v4
+    with:
+      path: .\.sonar\scanner
+      key: ${{ runner.os }}-sonar-scanner
+      restore-keys: ${{ runner.os }}-sonar-scanner
+  
+  - name: Install SonarQube Cloud scanner
+    if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+    run: |
+      mkdir -p ./.sonar/scanner
+      dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
+  ```
+
+- **Preparação do Relatório de Cobertura para o SonarQube**: Apesar dos testes gerarem relatórios no formato *Cobertura*, o SonarQube interpreta melhor o formato **OpenCover** para projetos .NET. Para isso, utilizamos a ferramenta **reportgenerator** que converte os relatórios para o formato adequado.  
+
+  ```c#
+  - name: Install ReportGenerator tool
+    run: dotnet tool install -g dotnet-reportgenerator-globaltool
+  
+  - name: Convert coverage report to opencover format
+    run: |
+      reportgenerator \
+        -reports:**/coverage.cobertura.xml \
+        -targetdir:coverage-report \
+        -reporttypes:opencover
+  ```
+
+- **Execução da Análise SonarQube**: O scanner é utilizado para iniciar a análise (`begin`), o projeto é recompilado (`dotnet build`) para permitir a inspeção do código, e a análise é finalizada (`end`), com os resultados enviados para o SonarCloud.
+
+  ```c#
+  - name: Build and analyze
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Utiliza um segredo do GitHub para a autenticação
+    run: |
+      ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/coverage-report/opencover.xml" /d:sonar.cs.vstest.reportsPaths="${{ github.workspace }}/**/*.trx" /d:sonar.cs.vstest.coverage.enabled=true /d:sonar.security.enabled=true /d:sonar.security.sources.javasecurity=true /d:sonar.security.sources.pythonsecurity=true /d:sonar.security.sources.phpsecurity=true /d:sonar.security.sources.roslynsecurity=true /d:sonar.scanner.skipJreProvisioning=true
+      dotnet build AMAP/AMAP.sln
+      ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+  ```
+
+Esta integração automatizada assegura que a análise estática é uma etapa obrigatória antes da integração de novas funcionalidades e da respetiva disponibilização em produção.
+
+##### Estado Atual da Análise no SonarCloud
+
+Com base na análise mais recente disponível no **SonarCloud**, o projeto apresenta o seguinte perfil de qualidade:
+
+- **Segurança**: 1 vulnerabilidade (Grau D) — requer correção prioritária.  
+- **Confiabilidade**: 63 *issues* (Grau D) — identificadas situações com comportamento potencialmente incorreto.  
+- **Manutenibilidade**: 284 *issues* (Grau A) — embora existam vários *code smells*, a manutenibilidade é considerada boa.  
+- **Cobertura de Código**: **78,06%** — valor obtido diretamente através do **Visual Studio Enterprise**. Contudo, o **SonarCloud ainda não está a refletir corretamente esta métrica**, possivelmente devido à configuração do ficheiro de cobertura.  
+- **Código Duplicado**: 2,0% — um valor relativamente baixo.  
+- **Security Hotspots**: 1 fragmento de código que requer revisão manual para verificar se constitui ou não uma vulnerabilidade real.
+
+Este panorama oferece uma visão clara sobre a qualidade e segurança do código, permitindo priorizar as áreas que mais necessitam de atenção.
+
+##### Configurações de Segurança da Análise
+
+A análise efetuada pelo SonarQube encontra-se configurada com diversas opções de segurança que garantem uma verificação rigorosa, nomeadamente:
+
+- `sonar.security.enabled=true`: ativa a análise de segurança.  
+- Configurações adicionais como `sonar.security.sources.cs.security=true` (para projetos .NET) permitem a análise específica de fontes potencialmente inseguras nas respetivas linguagens.
+
+##### Métricas Avaliadas
+
+O SonarQube avalia continuamente diversas métricas essenciais para a saúde do projeto:
+
+- **Qualidade do Código**: deteção de *code smells*, bugs, vulnerabilidades e duplicações.  
+- **Confiabilidade**: probabilidade de ocorrência de erros em tempo de execução.  
+- **Manutenibilidade**: facilidade de compreender, modificar e manter o código.  
+- **Segurança**: identificação de más práticas e vulnerabilidades conhecidas.  
+- **Cobertura de Código**: análise da proporção de código testado — embora já esteja nos 78,06%, o SonarCloud ainda não apresenta este valor corretamente devido a uma questão de configuração.
+
+##### Acesso aos Resultados
+
+Os resultados detalhados da análise estática estão disponíveis publicamente através da plataforma SonarCloud:
+
+🔗 [Link para o Projeto no SonarCloud](https://sonarcloud.io/project/overview?id=diogoc0307_desofs)
+
+##### Manutenção e Melhoria Contínua
+
+Para assegurar a eficácia contínua da análise estática de código:
+
+- O scanner e as regras de análise são regularmente atualizados.  
+- As configurações são revistas e adaptadas com a evolução do projeto.  
+- Os resultados são monitorizados com frequência e as *issues* (bugs, vulnerabilidades e *code smells*) são triadas e resolvidas por ordem de prioridade.  
+- Estamos a investigar e ajustar a configuração do pipeline para garantir que a cobertura de testes seja corretamente interpretada e refletida no SonarCloud.
 
 #### Análise Dinâmica de Código (DAST)
 - Ferramentas implementadas (OWASP ZAP, Burp Suite, etc.)  
@@ -976,54 +1066,167 @@ Durante o desenvolvimento, foram realizadas várias revisões de código que res
 - Vulnerabilidades detectadas durante a execução  
 
 #### Análise de Composição de Software (SCA)
-- Ferramentas implementadas (OWASP Dependency-Check, Snyk, etc.)  
-- Inventário completo de dependências  
-- Vulnerabilidades identificadas em componentes de terceiros  
-- Estratégia de atualização e mitigação  
-- Políticas de gestão de licenças  
+A Análise de Composição de Software (SCA) é um processo automatizado que visa identificar e gerir componentes de código aberto e bibliotecas de terceiros utilizados no projeto. A utilização destes componentes pode introduzir vulnerabilidades conhecidas e riscos legais associados a licenças.
+
+O objetivo da SCA no pipeline CI/CD é:
+
+- Gerar um inventário dos componentes de terceiros (Software Bill of Materials - SBOM);
+- Detetar vulnerabilidades de segurança conhecidas (CVEs);
+- Apoiar a gestão de riscos de licenciamento.
+
+Para este efeito, foram integradas duas ferramentas no pipeline: **OWASP Dependency Check** e **Snyk**.
+
+##### Automação no Pipeline CI/CD
+
+A análise de composição é automatizada através do ficheiro `.github/workflows/main.yml`, garantindo que cada alteração ao código verifica também as dependências utilizadas.
+
+##### OWASP Dependency Check
+
+O *OWASP Dependency Check* é uma ferramenta de código aberto que identifica vulnerabilidades conhecidas em dependências. Apesar de eficaz, está sujeita a falsos positivos/negativos.
+
+No pipeline, esta ferramenta:
+
+- Analisa as dependências do projeto .NET;
+- Gera um relatório em HTML com os resultados;
+- Publica esse relatório como artefacto no GitHub Actions.
+
+**Resumo da última análise**:
+
+- 356 dependências analisadas (232 únicas);
+- 3 bibliotecas vulneráveis encontradas:
+  - `Azure.Core.dll`: severidade **crítica**;
+  - `Azure.Identity.dll`: severidade **alta**;
+  - `System.ClientModel.dll`: severidade **crítica**.
+
+O relatório detalhado, disponível como artefacto no pipeline, inclui os CVEs detetados e recomendações de mitigação.
+
+##### Snyk
+
+O Snyk é uma plataforma de segurança orientada para desenvolvedores, que permite detetar e corrigir vulnerabilidades em código, dependências, contentores e infraestrutura como código. No nosso pipeline, foi utilizado o Snyk CLI para realizar a análise das dependências.
+
+A integração com o Snyk envolveu os seguintes passos:
+
+- **Instalação do Snyk CLI** 
+  Foi utilizada uma *GitHub Action* oficial do Snyk para configurar automaticamente o ambiente com o Snyk CLI.  
+
+```c#
+    - name: Install Snyk CLI
+  uses: snyk/actions/setup@master # Action para configurar o Snyk CLI
+```
+
+- **Monitorização de Vulnerabilidades** 
+  Um comando foi executado para enviar um *snapshot* das dependências do projeto para a plataforma Snyk, permitindo a monitorização contínua e a receção de alertas sobre novas vulnerabilidades.
+
+```c#
+- name: Monitor Security Vulnerabilities (Snyk CLI)
+  working-directory: AMAP/ # Executa o comando no diretório do projeto AMAP
+  env:
+    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} # Utiliza um segredo do GitHub para autenticação com Snyk
+  run: snyk monitor --all-projects # Monitora todas as sub-projetos encontrados no diretório
+```
+
+- **Teste de Segurança** 
+  Através deste comando, foi feita uma varredura de segurança que termina o passo do pipeline caso sejam detetadas vulnerabilidades com severidade alta ou crítica, funcionando assim como uma espécie de *quality gate* de segurança.
+
+```c#
+- name: Run Security Scan (Snyk CLI)
+  working-directory: AMAP/ # Executa o comando no diretório do projeto AMAP
+  env:
+    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} # Utiliza um segredo do GitHub para autenticação com Snyk
+  run: snyk test --severity-threshold=high --all-projects # Testa todas as sub-projetos e falha se encontrar vulnerabilidades de severidade alta ou superior
+```
+
+- **Resultados do Snyk** 
+  Os resultados detalhados dos comandos `snyk monitor` e `snyk test` são enviados para a plataforma Snyk. No entanto, devido ao limite de testes de código aberto atingido na conta utilizada, a plataforma apresenta apenas as dependências detetadas (118 no total), mas não exibe as vulnerabilidades conhecidas associadas (0 listadas). 
+  A visualização completa das vulnerabilidades exige a atualização da conta Snyk.
+
+**Links úteis:**
+
+- Convite para a organização: [Aceitar convite](https://app.snyk.io/invite/link/accept?invite=f36e349a-03a1-4869-a311-e7dbb32af557)
+- Projetos no Snyk: [Ver projetos](https://app.snyk.io/org/diogoc0307/projects)
+
+##### Porquê utilizar duas ferramentas?
+
+Apesar de ambas servirem para identificar vulnerabilidades, **OWASP Dependency Check** e **Snyk** têm bases de dados e abordagens distintas. Ao usar as duas ferramentas em conjunto, aumentamos a cobertura e fiabilidade da análise.
+
+Esta redundância faz parte da boa prática de segurança em profundidade, ao garantir que falhas não detectadas por uma ferramenta possam ser captadas pela outra.
 
 ---
 
-## 3. Compilação e Testes
+# Compilação e Testes
 
-### 3.1 Inventário de Componentes
+## Inventário de Componentes
+
+Complementarmente à análise automatizada, realizamos verificações manuais utilizando o .NET CLI para obter um inventário detalhado das dependências e verificar a existência de vulnerabilidades conhecidas reportadas pelo próprio ecossistema .NET/NuGet.
+
+### Bibliotecas e Frameworks
 
 Durante o Sprint 1 foi realizada a tarefa de identificação e avaliação dos componentes externos utilizados no sistema, com foco na gestão segura de dependências e conformidade com as boas práticas definidas pela OWASP (nomeadamente ASVS V1.1.1 e V14.2.1).
 
-#### Bibliotecas e Frameworks
-
-A identificação dos componentes foi feita utilizando o comando:
+A identificação dos componentes utilizados em cada projeto (.NET) foi feita utilizando o comando:
 
 ```bash
 dotnet list package
 ```
 
-Este comando permite listar todos os pacotes NuGet utilizados em cada projeto (`AMAP.Api`, `AMAP.DataAccess` e `AMAP.Entities`), bem como as versões efetivamente resolvidas durante o processo de build. A análise revelou o uso das seguintes bibliotecas principais:
+Durante o processo de build, foi usado um comando para listar todos os pacotes NuGet utilizados em cada projeto da solução. A análise manual revelou as seguintes bibliotecas e respetivas versões:
 
-- **Microsoft.AspNetCore.Authentication.JwtBearer** (v8.0.11)
-- **Microsoft.AspNetCore.Cors** (v2.2.0 — versão desatualizada)
-- **Microsoft.AspNetCore.Identity.EntityFrameworkCore** (v8.0.11)
-- **Microsoft.AspNetCore.Mvc.Core** (v2.2.5 — versão desatualizada)
-- **Microsoft.EntityFrameworkCore** e pacotes associados (v9.0.0)
-- **Newtonsoft.Json** (v13.0.3 — versão desatualizada)
-- **Swashbuckle.AspNetCore** (v6.6.2)
+- AMAP.Api
+  - `Microsoft.AspNetCore.Authentication.JwtBearer` — **9.0.4**
+  - `Microsoft.AspNetCore.Cors` — **2.2.0**
+  - `Microsoft.AspNetCore.Identity.EntityFrameworkCore` — **9.0.4**
+  - `Microsoft.EntityFrameworkCore` — **9.0.4**
+  - `Microsoft.EntityFrameworkCore.Design` — **9.0.4**
+  - `Microsoft.EntityFrameworkCore.SqlServer` — **9.0.4**
+  - `Microsoft.EntityFrameworkCore.Tools` — **9.0.4**
+  - `Newtonsoft.Json` — **13.0.3**
+  - `Serilog.Extensions.Logging.File` — **3.0.0**
+  - `Swashbuckle.AspNetCore` — **6.6.2**
+- AMAP.DataAccess
+  - `Microsoft.AspNetCore.Authentication.JwtBearer` — **9.0.4**
+  - `Microsoft.AspNetCore.Identity.EntityFrameworkCore` — **9.0.4**
+  - `Microsoft.EntityFrameworkCore` — **9.0.4**
+  - `Microsoft.EntityFrameworkCore.SqlServer` — **9.0.4**
+  - `Microsoft.EntityFrameworkCore.Tools` — **9.0.4**
 
-### 6.2 Verificação de Vulnerabilidades
+- AMAP.Entities
+  - `Microsoft.AspNetCore.Authentication.JwtBearer` — **8.0.11**
+  - `Microsoft.AspNetCore.Identity.EntityFrameworkCore` — **8.0.11**
 
-A verificação de vulnerabilidades conhecidas foi realizada utilizando o comando:
+- AMAP.Business
+  - *Nenhum pacote NuGet encontrado.*
+
+- AMAP.UnitTests
+  - **coverlet.collector**: `6.0.4`
+  - **Microsoft.NET.Test.Sdk**: `17.14.0`
+  - **NSubstitute**: `5.3.0`
+  - **xunit**: `2.9.3`
+  - **xunit.runner.visualstudio**: `3.1.0`
+
+### Verificação de Vulnerabilidades com .NET CLI
+
+A verificação inicial de vulnerabilidades conhecidas utilizando as fontes públicas integradas ao .NET CLI foi realizada com o comando:
 
 ```bash
 dotnet list package --vulnerable
 ```
-Esta verificação abrange todos os pacotes instalados, cruzando-os com bases de dados públicas de vulnerabilidades como a do NuGet.org. O resultado da análise foi o seguinte:
+Esta verificação abrange os pacotes instalados e cruza-os com bases de dados públicas como a do NuGet.org. O resultado desta análise manual foi o seguinte:
 
-> "O projeto fornecido AMAP.Api não tem nenhum pacote vulnerável, considerando as fontes atuais."  
-> "O projeto fornecido AMAP.DataAccess não tem nenhum pacote vulnerável, considerando as fontes atuais."  
-> "O projeto fornecido AMAP.Entities não tem nenhum pacote vulnerável, considerando as fontes atuais."
+> \> "O projeto fornecido AMAP.Api não tem nenhum pacote vulnerável, considerando as fontes atuais."
+>
+> \> "O projeto fornecido AMAP.DataAccess não tem nenhum pacote vulnerável, considerando as fontes atuais."
+>
+> \> "O projeto fornecido AMAP.Entities não tem nenhum pacote vulnerável, considerando as fontes atuais."
+>
+> \> "O projeto fornecido AMAP.Business não tem nenhum pacote vulnerável, considerando as fontes atuais."
+>
+> \> "O projeto fornecido AMAP.UnitTests não tem nenhum pacote vulnerável, considerando as fontes atuais."
 
-Apesar da ausência de vulnerabilidades conhecidas, foram detetadas versões desatualizadas ou depreciadas, o que constitui um risco potencial em termos de manutenção e segurança futura.
+Embora não tenham sido encontradas vulnerabilidades conhecidas através deste método, foram identificadas algumas dependências com versões desatualizadas ou depreciadas, como se pode verificar no inventário abaixo. 
 
-### 6.3 Documentação e Plano de Ação
+Para complementar esta análise, recorreu-se também a ferramentas automáticas como o Dependency Check e o Snyk, que ajudaram a identificar vulnerabilidades que poderão não ser detetadas pelo comando `dotnet list package --vulnerable`.
+
+###  Documentação e Plano de Ação
 
 A documentação dos componentes foi organizada de acordo com os seguintes critérios:
 
@@ -1033,61 +1236,67 @@ A documentação dos componentes foi organizada de acordo com os seguintes crit�
 - Existência de vulnerabilidades conhecidas  
 - Plano de ação (atualizar, manter, substituir)  
 
-A tabela seguinte apresenta um excerto do inventário:
+Abaixo apresenta-se um inventário dos pacotes principais identificados manualmente, complementado com exemplos das versões mais recentes conhecidas no momento da análise. Esta verificação baseou-se na execução de comandos da .NET CLI e em fontes públicas de versões atualizadas.
 
-| Componente                                      | Versão Utilizada | Versão Mais Recente | Função no Sistema                           | Estado       | Ação Recomendada          |
-|------------------------------------------------|------------------|---------------------|--------------------------------------------|--------------|--------------------------|
-| Microsoft.AspNetCore.Authentication.JwtBearer  | 8.0.11           | 9.0.5               | Autenticação via JWT                        | Atual        | Monitorar futuras versões |
-| Microsoft.AspNetCore.Cors                       | 2.2.0            | 2.3.0               | Suporte a CORS                             | Desatualizada| Atualizar                |
-| Microsoft.AspNetCore.Identity.EntityFrameworkCore | 8.0.11         | 9.0.5               | Gestão de identidade com EF Core            | Atual        | Monitorar futuras versões |
-| Microsoft.AspNetCore.Mvc.Core                   | 2.2.5            | 2.3.0               | Lógica MVC                                 | Desatualizada| Atualizar                |
-| Microsoft.EntityFrameworkCore                   | 9.0.0            | 9.0.5               | ORM - acesso a dados                        | Atual        | Atualizar                |
-| Microsoft.EntityFrameworkCore.Design            | 9.0.0            | 9.0.5               | Ferramentas de scaffolding do EF Core      | Atual        | Atualizar                |
-| Microsoft.EntityFrameworkCore.SqlServer         | 9.0.0            | 9.0.5               | Provider EF Core para SQL Server            | Atual        | Atualizar                |
-| Microsoft.EntityFrameworkCore.Tools              | 9.0.0            | 9.0.5               | CLI e tooling EF Core                       | Atual        | Atualizar                |
-| Newtonsoft.Json                                | 13.0.3           | 13.0.3 (última)      | Serialização/Deserialização de JSON         | Depreciada   | Avaliar substituição     |
-| Swashbuckle.AspNetCore                         | 6.6.2            | 8.1.1               | Geração de documentação Swagger/OpenAPI     | Desatualizada| Atualizar                |
+| Pacote                                              | Versão Usada | Versão Mais Recente (exemplo) | Função no Sistema                         | Estado        | Ação Recomendada            |
+| --------------------------------------------------- | ------------ | ----------------------------- | ----------------------------------------- | ------------- | --------------------------- |
+| `Microsoft.AspNetCore.Authentication.JwtBearer`     | 9.0.4        | 9.0.5                         | Autenticação via JWT                      | Atual         | Monitorizar futuras versões |
+| `Microsoft.AspNetCore.Cors`                         | 2.2.0        | 2.3.0                         | Suporte a CORS                            | Desatualizada | Atualizar                   |
+| `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | 9.0.4        | 9.0.5                         | Gestão de identidade com EF Core          | Atual         | Monitorizar futuras versões |
+| `Microsoft.EntityFrameworkCore`                     | 9.0.4        | 9.0.5                         | ORM - Acesso a dados                      | Atual         | Atualizar                   |
+| `Microsoft.EntityFrameworkCore.Design`              | 9.0.4        | 9.0.5                         | Ferramentas de scaffolding do EF Core     | Atual         | Atualizar                   |
+| `Microsoft.EntityFrameworkCore.SqlServer`           | 9.0.4        | 9.0.5                         | Provider EF Core para SQL Server          | Atual         | Atualizar                   |
+| `Microsoft.EntityFrameworkCore.Tools`               | 9.0.4        | 9.0.5                         | Ferramentas de linha de comandos (CLI)    | Atual         | Atualizar                   |
+| `Newtonsoft.Json`                                   | 13.0.3       | 13.0.3                        | Serialização/Deserialização de JSON       | Depreciado    | Avaliar substituição        |
+| `Serilog.Extensions.Logging.File`                   | 3.0.0        | 3.0.0                         | Logging para ficheiro (via Serilog)       | Atual         | Monitorizar futuras versões |
+| `Swashbuckle.AspNetCore`                            | 6.6.2        | 8.1.1                         | Documentação Swagger/OpenAPI              | Desatualizada | Atualizar                   |
+| `coverlet.collector`                                | 6.0.4        | 6.0.4                         | Recolha de cobertura de testes            | Atual         | Monitorizar futuras versões |
+| `Microsoft.NET.Test.Sdk`                            | 17.14.0      | 17.14.0                       | SDK de suporte a testes .NET              | Atual         | Monitorizar futuras versões |
+| `NSubstitute`                                       | 5.3.0        | 5.3.0                         | Framework de mocking                      | Atual         | Monitorizar futuras versões |
+| `xunit`                                             | 2.9.3        | 2.9.3                         | Framework de testes unitários             | Atual         | Monitorizar futuras versões |
+| `xunit.runner.visualstudio`                         | 3.1.0        | 3.1.0                         | Execução de testes xUnit no Visual Studio | Atual         | Monitorizar futuras versões |
 
 Este inventário será mantido ao longo do próximo sprint como parte do processo de revisão contínua da segurança do projeto.
 
-### 3.2 Planos e Execução de Testes de Segurança
+### Manutenção Contínua e Segurança
 
-#### Metodologia de teste
-- Abordagem estruturada (white/gray/black box)  
-- Cobertura de teste alcançada  
-- Frequência de execução  
+Este inventário será mantido e atualizado no âmbito do processo de revisão contínua da segurança do projeto. Serão utilizadas tanto ferramentas automáticas como verificações manuais para garantir a conformidade e detetar vulnerabilidades em tempo útil.
 
-#### Testes baseados em casos de abuso
-- Derivação de casos de testes a partir da modelação de ameaças  
-- Implementação automatizada  
-- Resultados e feedback loop  
+### Porquê Usar Ferramentas Diferentes?
 
-#### Testes unitários com foco em segurança
+A combinação de ferramentas automáticas de análise de componentes (como o OWASP Dependency Check e o Snyk) com comandos manuais da .NET CLI permite uma análise mais robusta. Cada ferramenta possui métodos próprios de deteção e bases de dados de vulnerabilidades diferentes.
+
+Esta abordagem multifacetada segue as boas práticas recomendadas na área da segurança e proporciona uma visão mais completa dos riscos associados ao uso de software de terceiros no projeto.
+
+## Planos e Execução de Testes de Segurança
+
+### Testes unitários com foco em segurança
 
 Os testes unitários desempenham um papel crucial no desenvolvimento de software ao garantir a qualidade, estabilidade e confiabilidade do código. Para a solução AMAP, foi desenvolvido um conjunto abrangente de testes unitários, organizados no projeto AMAP.UnitTests dentro da pasta "5 - Unit Tests". Este relatório detalha a abordagem e implementação destes testes.
 
-*Frameworks e Ferramentas Utilizados*
+#### Frameworks e Ferramentas Utilizados
 
-xUnit
+**xUnit**
 O framework xUnit foi escolhido para implementar os testes unitários devido à sua simplicidade, extensibilidade e integração com o ecossistema .NET. O xUnit suporta a execução de testes em paralelo, facilitando o processo de desenvolvimento e integração contínua. No AMAP, os testes são identificados pelo atributo [Fact], que designa um método como sendo um teste unitário.
 
-NSubstitute
+**NSubstitute**
 Para o isolamento de componentes e criação de objetos simulados, foi utilizado o NSubstitute, uma biblioteca moderna de mocking para .NET. O NSubstitute permite simular interfaces e classes, facilitando a verificação de comportamentos sem depender de implementações reais. Esta abordagem foi crucial para testar a camada de negócios sem necessidade de acesso a bancos de dados reais ou serviços externos.
 
-*Estrutura dos Testes*
+#### Estrutura dos Testes
 
 Os testes unitários do AMAP foram organizados para cobrir duas camadas principais:
 1.	Camada de Business (Business Components): Testes voltados para a lógica de negócios, validando regras, comportamentos e fluxos de dados.
 2.	Camada de Services (Controllers): Testes focados na validação dos controllers, assegurando o correto processamento de requisições e respostas.
 
-*Mock de Camadas*
+#### Mock de Camadas
 
-Um elemento fundamental na abordagem de testes foi a simulação de todas as dependências das diferentes camadas do sistema, com o objetivo de garantir isolamento completo e testes mais fiáveis. As principais simulações realizadas incluem:
+Um elemento fundamental na abordagem de testes foi a simulação de todas as dependências das diferentes camadas do sistema, com o objetivo de garantir isolamento completo e testes mais fiáveis. 
 
-• Business Components: Para testar os controladores de forma isolada, foram criadas versões simuladas dos componentes de negócio, como `MockProductBc`, `MockCatalogBc` e `MockPaymentBc`. Estas simulações permitiram validar a lógica da API sem dependência da implementação real da camada Business.
-• Repositórios de Dados: Todos os repositórios foram simulados, eliminando a necessidade de ligação a uma base de dados real durante os testes. Isto permitiu executar testes rápidos e previsíveis, sem efeitos colaterais.
-• Serviços Externos: Serviços auxiliares, como envio de e-mails ou notificações, foram substituídos por implementações simuladas, garantindo que os testes se focassem exclusivamente na lógica interna.
-• Logging: As funcionalidades de registo (log) também foram simuladas, evitando efeitos colaterais e garantindo o isolamento total dos componentes sob teste.
+As principais simulações realizadas incluem:
+- **Business Components:** Para testar os controladores de forma isolada, foram criadas versões simuladas dos componentes de negócio, como `MockProductBc`, `MockCatalogBc` e `MockPaymentBc`. Estas simulações permitiram validar a lógica da API sem dependência da implementação real da camada Business.
+-  **Repositórios de Dados:** Todos os repositórios foram simulados, eliminando a necessidade de ligação a uma base de dados real durante os testes. Isto permitiu executar testes rápidos e previsíveis, sem efeitos colaterais.
+-  **Serviços Externos:** Serviços auxiliares, como envio de e-mails ou notificações, foram substituídos por implementações simuladas, garantindo que os testes se focassem exclusivamente na lógica interna.
+-   **Logging:** As funcionalidades de registo (log) também foram simuladas, evitando efeitos colaterais e garantindo o isolamento total dos componentes sob teste.
 
 Por exemplo, a classe `MockProductRepository` demonstra como os repositórios foram simulados, oferecendo dados e comportamentos predefinidos:
 
@@ -1115,12 +1324,12 @@ public static IUnitOfWork GetMockUnitOfWork()
 }
 ```
 
-*Padrão AAA (Arrange-Act-Assert)*
+#### Padrão AAA (Arrange-Act-Assert)
 
 Todos os testes foram estruturados seguindo o padrão AAA, que proporciona clareza e consistência na organização dos testes:
-1.	Arrange: Preparação do ambiente e dados necessários para o teste.
-2.	Act: Execução da operação sendo testada.
-3.	Assert: Verificação dos resultados esperados.
+1.	**Arrange:** Preparação do ambiente e dados necessários para o teste.
+2.	**Act:** Execução da operação sendo testada.
+3.	**Assert:** Verificação dos resultados esperados.
 
 Exemplo do padrão AAA aplicado em um teste do ProductControllerTests:
 
@@ -1140,16 +1349,16 @@ public void GetProduct_ValidId_ReturnsOk()
 }
 ```
 
-*Cobertura de Cenários*
+#### Cobertura de Cenários
 
 Os testes unitários foram projetados para cobrir diversos cenários, incluindo:
-1.	Casos positivos: Verificando o comportamento correto em situações esperadas.
-2.	Casos negativos: Testando como o sistema reage a entradas inválidas ou situações excepcionais.
-3.	Condições de borda: Testando o comportamento em situações limite.
+1.	**Casos positivos:** Verificando o comportamento correto em situações esperadas.
+2.	**Casos negativos:** Testando como o sistema reage a entradas inválidas ou situações excepcionais.
+3.	**Condições de borda:** Testando o comportamento em situações limite.
 
 Por exemplo, para o método `GetProduct()` da classe ProductBc, foram implementados testes que verificam:
 
-•	Recuperação de produtos válidos
+• Recuperação de produtos válidos:
 
 ```c#
 	[Fact]
@@ -1171,7 +1380,7 @@ Por exemplo, para o método `GetProduct()` da classe ProductBc, foram implementa
 	}
 ```
 
-•	Tratamento de IDs inválidos
+• Tratamento de IDs inválidos:
 
 ```c#
 	[Fact]
@@ -1186,7 +1395,7 @@ Por exemplo, para o método `GetProduct()` da classe ProductBc, foram implementa
 	}
 ```
 
-•	Comportamento com produtos inexistentes
+• Comportamento com produtos inexistentes:
 
 ```c#
 	[Fact]
@@ -1203,7 +1412,7 @@ Por exemplo, para o método `GetProduct()` da classe ProductBc, foram implementa
 	}
 ```
 
-•	Tratamento de produtos marcados como excluídos
+• Tratamento de produtos marcados como excluídos:
 
 ```c#
 	[Fact]
@@ -1220,7 +1429,7 @@ Por exemplo, para o método `GetProduct()` da classe ProductBc, foram implementa
 	}
 ```
 
-•	Carregamento correto de produtos compostos
+• Carregamento correto de produtos compostos:
 
 ```c#
 	[Fact]
@@ -1249,39 +1458,33 @@ Por exemplo, para o método `GetProduct()` da classe ProductBc, foram implementa
 		Assert.NotNull(composite.SubProduct);
 		Assert.Equal("Carrots", composite.SubProduct.Name);
 	}
+	
 ```
 
-*Teste de Segurança e Permissões*
+#### Teste de Segurança e Permissões
 
 Parte significativa dos testes unitários focou em validar aspectos de segurança e permissões, garantindo que:
-•	Utilizadores só possam aceder ou modificar os seus próprios recursos
-•	Operações sensíveis incluam validações adequadas
-•	Erros sejam tratados apropriadamente sem expor informações sensíveis
 
-*Conclusão*
+- Utilizadores só possam aceder ou modificar os seus próprios recursos
+- Operações sensíveis incluam validações adequadas
+- Erros sejam tratados apropriadamente sem expor informações sensíveis
+
+#### Conclusão
 
 A implementação abrangente de testes unitários na solução AMAP, utilizando xUnit e NSubstitute, contribuiu significativamente para a qualidade e robustez do sistema. A cobertura extensiva de testes nas camadas de negócio e serviços, seguindo o padrão AAA e com simulação completa de dependências, proporcionou um alto nível de confiança no código desenvolvido e facilitará a manutenção e evolução futura do sistema.
 
 ![Explorador dos Testes Unitários](../../Imagens/TestExplorer.png)
 
 Todos os testes implementados foram concluídos com sucesso, alcançando uma cobertura de código de 78.06%. Esta taxa de cobertura é particularmente significativa, pois abrange as funcionalidades críticas e os fluxos de negócios essenciais da aplicação. A estratégia de testes unitários implementada na solução AMAP proporcionou:
-•	Maior confiabilidade do código através de verificação automatizada
-•	Melhor documentação do comportamento esperado de cada componente
-•	Facilitação de refatorações e melhorias no código existente
-•	Redução de bugs através da detecção precoce de problemas
+
+- Maior confiabilidade do código através de verificação automatizada.
+- Melhor documentação do comportamento esperado de cada componente.
+- Facilitação de refatorações e melhorias no código existente.
+- Redução de bugs através da detecção precoce de problemas.
 
 ![Cobertura dos Testes](../../Imagens/TestCoverage.png)
 
 A combinação do xUnit e NSubstitute, junto com a abordagem estruturada seguindo o padrão AAA, resultou em um conjunto de testes robustos e eficazes que contribuíram significativamente para a manutenção e evolução segura da solução AMAP.
-
-#### Fuzzing e testes de robustez
-- Implementação e configuração  
-- Casos de erro identificados  
-
-#### Análise dinâmica de comportamento
-- Monitorização em runtime  
-- Detecção de anomalias  
-- Técnicas de sandboxing implementadas  
 
 ### 3.3 Validação de Configurações e Verificação de Artefactos
 
@@ -1298,219 +1501,310 @@ A combinação do xUnit e NSubstitute, junto com a abordagem estruturada seguind
 
 ---
 
-## 4. Automação da Pipeline DevSecOps
+# Automação da Pipeline DevSecOps
 
-### 4.1 Arquitetura e Implementação da Pipeline
-- Diagrama completo da pipeline CI/CD  
-- Justificação das ferramentas selecionadas  
-- Infraestrutura como código (configuration as code)  
+## Pipeline de CI/CD com GitHub Actions
 
-Esta secção descreve a pipeline de Integração Contínua e Entrega Contínua (CI/CD) implementada para o projeto AMAP utilizando o GitHub Actions. A pipeline foi concebida de acordo com os princípios DevSecOps, integrando práticas de segurança em todas as fases.
-#### Diagrama completo da pipeline CI/CD
+Este documento descreve a pipeline de Integração Contínua e Implantação Contínua (CI/CD) configurada utilizando o GitHub Actions para o projeto AMAP. A pipeline automatiza os processos de construção, teste e implantação da aplicação sempre que há novas alterações no código. A pipeline é definida no ficheiro `.github/workflows/main.yml`.
+
+## Visão Geral da Pipeline
+
+A pipeline de CI/CD foi projetada para garantir qualidade, segurança e confiabilidade do código, seguindo as melhores práticas de desenvolvimento. A pipeline é executada automaticamente em cada push para qualquer branch, com etapas adicionais de implantação sendo executadas apenas na branch `main`.
+
+## Fluxo da Pipeline
 
 ```mermaid
 graph TD
-    A[Commit] --> B[Pre-commit Hooks]
-    B --> C[Build & Test]
-    C --> D[Security Analysis]
-    D --> E[Quality Analysis]
-    E --> F[Deployment]
-    
-    subgraph "Security Measures"
-        B --> G[Secret Scanning]
-        C --> H[SAST/SCA]
-        D --> I[Security Tests]
-        E --> J[Final Security Checks]
-    end
+    A[Push de Código] --> B(Checkout)
+     B --> C(Setup de Pré-requisitos)
+    C --> D(Build e Testes)
+    D --> E(Análise SonarCloud)
+    E --> F(Análise de Segurança)
+    F --> G(SCA com OWASP)
+    G --> H{Branch main?}
+    H -->|Sim| I(Build Docker)
+    I --> J(Push Docker Hub)
+    J --> K(Deploy via SSH Gateway)
+    H -->|Não| L(Fim)
+    K --> L
 ```
 
-#### Justificação da Seleção de Ferramentas
+## Tecnologias Utilizadas e Justificações
 
-##### Ferramentas de Build e Teste
+1. **GitHub Actions**
+   - Plataforma nativa do GitHub para CI/CD
+   - Integração perfeita com o repositório
+   - Suporte a containers e runners auto-hospedados
+   - Marketplace rico em ações pré-configuradas
 
-- **GitHub Actions**: Integração nativa, marketplace extenso e configuração de workflows flexível.
-- **SonarCloud**: Solução baseada na cloud para análise estática de código e avaliação da qualidade, incluindo métricas de segurança.
+2. **.NET 9.0**
+   - Framework moderna
+   - Suporte a containers nativo
+   - Ferramentas para testes e cobertura de código
 
-##### Ferramentas de Segurança
+3. **Docker**
+   - Containerização para garantir consistência entre ambientes
+   - Multi-stage builds para otimizar tamanho da imagem
+   - Facilidade de deploy em diferentes ambientes
 
-- **OWASP Dependency Check**: Ferramenta de referência para identificação de vulnerabilidades em bibliotecas e dependências.
-- **Análise de Segurança do SonarCloud**: Funcionalidade integrada de análise estática (SAST).
-- **GitHub Secret Scanning**:  Verificação automática da presença de segredos e credenciais no repositório.
+4. **SonarCloud**
+   - Análise contínua da qualidade do código
+   - Detecção de bugs e vulnerabilidades
+   - Métricas de cobertura de código
+   - Integração nativa com GitHub
 
-##### Ferramentas de Teste
+5. **Snyk**
+   - Análise de vulnerabilidades nas dependências
+   - Monitorização contínua de segurança
+   - Integração com Docker para análise de imagens
 
-- **xUnit**: Framework de testes padrão para .NET.
-- **Cobertura de Código**: Geração de relatórios de cobertura para monitorização da qualidade dos testes.
+6. **Docker Hub**
+   - Registo de containers confiável
+   - Integração com GitHub Actions
+   - Suporte a autenticação segura
 
-#### Infraestrutura como Código
+7. **SSH Gateway**
+   - Acesso seguro ao ambiente de staging
+   - Suporte a autenticação por chave
+   - Configuração flexível para diferentes ambientes
 
-A pipeline encontra-se definida através de ficheiros de workflow localizados no diretório `.github/workflows/`, permitindo uma abordagem de *configuration as code*:
+## Fases da Pipeline
 
-- **Ficheiro principal**: `.github/workflows/main.yml`.
-- **Gestão de segredos e variáveis**: Realizada nas definições do repositório GitHub.
-- **Requisitos de infraestrutura**: Documentados diretamente nos workflows, assegurando reprodutibilidade e rastreabilidade.
+A pipeline é dividida nas seguintes fases principais, executadas sequencialmente:
 
-### 4.2 Integração de Segurança em Cada Fase da Pipeline
+### 1. Checkout do Código
 
-A segurança foi incorporada de forma transversal ao longo de todas as fases da pipeline CI/CD, assegurando a conformidade com as boas práticas DevSecOps. Segue-se a descrição detalhada das medidas aplicadas em cada fase.
+Esta é a primeira fase, onde o código mais recente do repositório é clonado para o ambiente do runner.
 
-#### Fase de commit
-##### *Pre-commit Hooks* e Controlo de Código:
-- Aplicação de regras de proteção no *branch* principal (main).
-- Revisões obrigatórias de pull requests.
-- Verificação obrigatória do estado da pipeline antes de fazer merge.
+*   **Objetivo:** Obter a versão mais recente do código-fonte para as etapas subsequentes da pipeline.
+*   **Passos:**
+    1.  Utilização da ação `actions/checkout@v3` para clonar o repositório.
+*   **Visualização:**
+    
+    ![CheckoutStep.png](../../Imagens/pipeline/CheckoutStep.png)
 
-##### Deteção de Segredos:
-- Utilização da funcionalidade nativa de *Secret Scanning* do GitHub.
-- Verificação adicional através da análise estática do SonarCloud.
-- Implementação de políticas de rotação periódica de credenciais e tokens de acesso.
+### 2. Setup de Pré-requisitos
 
-#### Fase de build
-##### SAST (Testes Estáticos de Segurança de Aplicações):
-- Análise estática do código fonte com SonarCloud, integrando verificações de vulnerabilidades comuns.
-- Avaliação contínua da qualidade do código com base em métricas como cobertura, complexidade ciclomática e duplicação.
-- Deteção de vulnerabilidades de segurança.
+Esta fase garante que o ambiente de execução do GitHub Actions runner esteja pronto para construir e testar a aplicação, instalando as ferramentas necessárias.
 
-##### SCA (Análise de Composição de Software):
-- Utilização do OWASP Dependency Check para inspeção de bibliotecas e dependências.
-- Deteção automática de vulnerabilidades conhecidas (CVEs).
-- Geração de relatórios com recomendações para atualização ou mitigação de riscos identificados.
+*   **Objetivo:** Instalar as ferramentas necessárias, como o .NET SDK e o ReportGenerator.
+*   **Passos:**
+    1.  Instalação do .NET SDK na versão especificada (`${{ env.DOTNET_VERSION }}`) utilizando `actions/setup-dotnet@v3`.
+    2.  Instalação global da ferramenta ReportGenerator (`dotnet tool install -g dotnet-reportgenerator-globaltool`) para processar relatórios de cobertura de código.
+*   **Visualização:**
+    
+    ![SetupSteps.png](../../Imagens/pipeline/SetupSteps.png)
 
-#### Fase de teste
-##### Testes de Segurança Automatizados:
-- Requisitos de cobertura mínima de testes unitários.
-- Execução de testes de integração e validação de fluxos críticos.
-- Inclusão de testes de segurança automatizados como parte integrante da pipeline.
+### 3. Build, Teste e Análise com SonarCloud
 
-##### DAST/IAST:
-- Execução de testes dinâmicos de segurança de aplicações (DAST), simulando interações reais com o sistema em tempo de execução.
-- Utilização de técnicas de testes interativos (IAST) para análise de comportamento e deteção de falhas internas durante a execução.
-- Automatização destas verificações sempre que possível, com alertas para vulnerabilidades críticas.
-#### Fase de implantação
-##### Validação de Configuração:
-- Verificações específicas por ambiente.
-- Verificação da configuração de segurança.
-- Validação de controlo de acessos.
+Esta fase é responsável por compilar o código, executar os testes unitários com cobertura de código e realizar análises de qualidade e segurança estática com SonarCloud.
 
-##### Verificações Finais de Segurança:
-- Análise de segurança antes do deploy.
-- Confirmação da integridade e segurança do ambiente de destino.
-- Verificação dos controlos de acesso.
+*   **Objetivo:** Verificar a integridade e qualidade do código, garantindo que as funcionalidades existentes não foram quebradas pelos testes e realizar a análise estática com o SonarCloud.
 
-### 4.3 Métricas e Eficiência da Automação
+#### 3.1 Restauração e ‘Build’
 
-A eficiência da pipeline CI/CD implementada foi avaliada com base em métricas de desempenho, indicadores de segurança e indicadores-chave de desempenho (KPIs), permitindo uma análise contínua e fundamentada da qualidade e segurança do processo.
+Esta subfase foca na preparação do projeto, restaurando dependências e compilando o código.
 
-#### Métricas de Desempenho
-**Tempo de Execução:**
-- Tempo médio de build: ~10 segundos.
-- Execução de testes: ~10 segundos.
-- Análise de segurança: ~1 minuto e 24 segundos.
-- Tempo total da pipeline: ~2 minutos e 40 segundos.
+*   **Objetivo:** Garantir que todas as dependências do projeto estão disponíveis e que o código fonte pode ser compilado com sucesso.
+*   **Passos:**
+    1.  Restauração das dependências do projeto (`dotnet restore AMAP/AMAP.sln`).
+    2.  Construção do projeto (`dotnet build AMAP/AMAP.sln --no-restore`).
+*   **Visualização:**
 
-Estas métricas refletem uma automação eficiente, com tempos de resposta adequados ao contexto de integração contínua e iteração frequente.
+    ![RestoreAndBuildStep.png](../../Imagens/pipeline/RestoreAndBuildStep.png)
 
-#### Métricas de Segurança
+    ![BuildSucceeded.png](../../Imagens/pipeline/BuildSucceeded.png)
 
-**Cobertura e Efetividade da Deteção de Vulnerabilidades:**
+#### 3.2 Testes Unitários
 
-- **Cobertura SAST:** 100% da base de código analisada através do SonarCloud
-- **SCA:** Verificação sistemática de dependências com deteção de CVEs relevantes
-- **Testes de Segurança:** Métricas de cobertura indicam uma validação robusta de fluxos críticos
+Nesta subfase, os testes unitários são executados e a cobertura de código é reportada.
 
-#### KPIs
+*   **Objetivo:** Verificar se as funcionalidades individuais da aplicação funcionam como esperado e medir a percentagem de código coberto pelos testes.
+*   **Passos:**
+    
+    1.  Execução dos testes unitários com coleta de cobertura de código (`dotnet test AMAP/AMAP.sln --no-build --collect:"XPlat Code Coverage"`).
+    2.  Geração do relatório de cobertura no formato OpenCover (`reportgenerator`).
+*   **Visualização:**
 
-##### Qualidade de Código:
-- **Classificação de Manutenibilidade:** Avaliação contínua através do SonarCloud
-- **Cobertura de Código:** Percentagem de linhas e caminhos de execução testados
-- **Rácio de Dívida Técnica:** Indicador da complexidade e esforço necessário para melhorar a base de código
+    ![RunTests.png](../../Imagens/pipeline/RunTests.png)
+    ![TestsWithCoverage.png](../../Imagens/pipeline/TestsWithCoverage.png)
 
-##### Segurança:
-- **Número de Vulnerabilidades Identificadas:** Monitorização por categoria e gravidade
-- **Tempo Médio de Resolução:** Intervalo entre deteção e correção das falhas
-- **Cobertura de Testes de Segurança:** Percentagem da aplicação validada com testes específicos
+#### 3.3 Análise com SonarCloud
 
-#### 4.4 Melhoria Contínua
+Esta subfase integra o SonarCloud para realizar a análise estática do código.
 
-##### Ciclo de Feedback:
-- **Geração de Relatórios Automáticos:** Resultados da pipeline disponibilizados em tempo real
-- **Revisões Regulares de Segurança:** Avaliações periódicas das políticas e práticas aplicadas
-- **Otimização de Desempenho:** Ajustes incrementais com base nos dados obtidos
+*   **Objetivo:** Identificar e reportar bugs, code smells, vulnerabilidades e hotspots de segurança no código.
+*   **Passos:**
+    1.  Configuração e execução da análise do SonarCloud para análise de código, cobertura e segurança.
+*   **Visualização:**
+    
+    ![SonnarCloudScanner.png](../../Imagens/pipeline/SonnarCloudScanner.png)
+    
+    ![SonarCloudOverview.png](../../Imagens/pipeline/SonarCloudOverview.png)
+    
+    ![MainBranchReport.png](../../Imagens/pipeline/MainBranchReport.png)
 
-##### Processo de Melhoria:
-- **Monitorização Contínua:** Acompanhamento em tempo real de métricas críticas de desempenho e segurança
-- **Atualização e Evolução de Ferramentas:** Incorporação de novas versões e substituição de ferramentas com base em benchmarks e necessidades emergentes
-- **Integração de Lições Aprendidas:** Inclusão de correções e melhorias no fluxo de desenvolvimento com base nos resultados anteriores
+### 4. Análise de Segurança com Snyk
 
-### 5. Configuração
+Esta fase executa a análise de segurança do código e das dependências utilizando o Snyk, verificando vulnerabilidades conhecidas.
 
-#### 5.1 Segredos Necessários
+*   **Objetivo:** Identificar vulnerabilidades conhecidas no código e nas bibliotecas utilizadas.
+*   **Passos:**
+    1.  Instalação do Snyk CLI (se necessário).
+    2.  Execução da análise do Snyk no projeto (por exemplo, `snyk test`).
+*   **Visualização:**
 
-- **SONAR_TOKEN**
-  - **Finalidade**: Token de autenticação para integração com o SonarCloud.
-  - **Localização**: Definido nos *Secrets* do repositório GitHub.
-  - **Como obter**: [https://sonarcloud.io/account/security](https://sonarcloud.io/account/security)
+    ![SynkMonitor.png](../../Imagens/pipeline/SynkMonitor.png)
+    
+    ![SynkTest.png](../../Imagens/pipeline/SynkTest.png)
 
-### 5.2 Variáveis de Ambiente
+### 5. Análise de Dependências (SCA) com OWASP Dependency Check
 
-**`DOTNET_VERSION`**: `'8.0.x'`
+Esta fase utiliza o OWASP Dependency Check para analisar as dependências do projeto na tentativa de encontrar vulnerabilidades conhecidas.
 
-- Define a versão do SDK .NET utilizada durante o processo de build
+*   **Objetivo:** Identificar componentes de ‘software’ com vulnerabilidades de segurança conhecidas e gerar relatórios detalhados.
+*   **Passos:**
+    1.  Execução da ação `dependency-check/Dependency-Check_Action` no projeto.
+    2.  Geração de relatórios com as vulnerabilidades encontradas.
+*   **Visualização:**
 
-### 6. Utilização da Pipeline
+    ![OWASP.png](../../Imagens/pipeline/OWASP.png)
 
-#### 6.1 Execução da Pipeline
+### 6. Construção da Imagem Docker
 
-**Triggers Automáticos:**
+Nesta fase, a aplicação é empacotada numa imagem Docker, pronta para ser executada em qualquer ambiente com Docker.
 
-- Push para o branch principal.
-- Criação de pull request.
+*   **Objetivo:** Criar um container leve e portátil contendo a aplicação pronta para ser executada em qualquer ambiente com Docker.
+*   **Passos:**
+    1.  Configuração do ambiente Docker buildx.
+    2.  Construção da imagem Docker usando o `Dockerfile`.
 
-**Trigger Manual:**
-- Aceder ao separador "Actions" no GitHub.
-- Selecionar o workflow.
-- Clicar em "Run workflow".
+### 7. Push da Imagem Docker (Apenas na main branch)
 
-#### 6.2 Visualização de Resultados
+Esta fase envia a imagem Docker construída para um registro de containers (Docker Hub), disponibilizando-a para implantação.
 
-**Estado da Pipeline:**
-- Separador GitHub Actions.
-- Permite a análise do estado de execução de cada *job*.
+*   **Objetivo:** Disponibilizar a imagem Docker para ser utilizada em ambientes de implantação (como o staging).
+*   **Pré-requisitos:** Configuração dos segredos `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN` no GitHub.
+*   **Passos:**
+    1.  Login no Docker Hub.
+    2.  Push da imagem Docker para o repositório configurado.
+*   **Visualização:**
 
-**Qualidade de Código:**
+    ![DockerPush.png](../../Imagens/pipeline/DockerPush.png)
+    
+    ![DockerHubBrowser.png](../../Imagens/pipeline/DockerHubBrowser.png)
 
-- Consultar o painel do projeto no **SonarCloud**.
-- Visualização de métricas como cobertura de testes, duplicação, complexidade e dívida técnica.
+### 8. Implantação no Ambiente de Staging (Apenas na main branch)
 
-**Resultados da Análise de Segurança:**
+Esta fase implanta a nova versão da aplicação no ambiente de staging, atualizando a aplicação rodando na máquina virtual de destino.
 
-- Disponíveis como artefactos no GitHub Actions.
-- Podem ser descarregados após a conclusão da pipeline.
+*   **Objetivo:** Atualizar a aplicação no ambiente de staging para testes e validação antes de uma possível implantação em produção.
+*   **Pré-requisitos:** Configuração de acesso SSH à VM de staging via gateway, incluindo os segredos `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`, `SSH_PASSPHRASE`, `VM_HOST`, `VM_PORT`, `VM_USER`, `VM_GATEWAY_HOST`, `VM_GATEWAY_PORT`, `VM_GATEWAY_USER`. O Docker e Docker Compose devem estar instalados na VM.
+*   **Passos:**
+    1.  Configuração do agente SSH para permitir a conexão segura.
+    2.  Cópia do arquivo `docker-compose-staging.yml` para a VM via SCP, utilizando o gateway SSH.
+    3.  Execução de comandos remotos na VM via SSH (utilizando o gateway) para:
+        *   Navegar até o diretório da aplicação.
+        *   Fazer pull da nova imagem Docker.
+        *   Parar os containers Docker em execução (`docker compose down`).
+        *   Iniciar os novos containers com a nova imagem (`docker compose up -d`).
+    4.  Output do URL de acesso ao ambiente de staging (local da VM, acessível via rede ISEP/VPN).
+*   **Visualização:**
+
+    ![EnvSetupVm.png](../../Imagens/pipeline/EnvSetupVm.png)
+    
+    ![DockerComposeRun.png](../../Imagens/pipeline/DockerComposeRun.png)
+
+## Gestão de Dependências
+
+### Análise e Instalação
+
+1. **Verificação de Dependências**
+   - Análise automática de pacotes NuGet
+   - Verificação de versões compatíveis
+   - Detecção de conflitos de dependências
+
+2. **Instalação Segura**
+   - Restauração de pacotes via `dotnet restore`
+   - Verificação da integridade dos pacotes
+   - Cache das dependências para builds mais rápidas
+
+3. **Monitorização de Segurança**
+   - Integração com Snyk para análise de vulnerabilidades
+   - Verificação de licenças de pacotes
+   - Alertas automáticos para dependências desatualizadas
+
+## Análise de Segurança
+
+O Snyk é integrado à pipeline para fornecer uma camada adicional de segurança, focando na análise de código e containers:
+
+1. **Análise de Código (SAST - Static Application Security Testing)**
+   - Detecção de problemas de segurança
+   - Verificação de boas práticas
+   - Sugestões de correção
+
+3. **Análise de Containers**
+   - Verificação de vulnerabilidades em imagens base
+   - Recomendações de atualizações
+   - Monitorização de camadas Docker
+
+## Relatórios Gerados
+
+A pipeline gera diversos relatórios para análise:
+
+1. **Relatórios de Testes**
+   - Resultados de testes unitários
+   - Cobertura de código
+   - Tempo de execução dos testes
+2. **Relatórios de Qualidade**
+   - Métricas do SonarCloud
+   - Code smells e bugs
+   - Duplicação de código
+   - Complexidade ciclomática
+3. **Relatórios de Segurança**
+   - Vulnerabilidades do Snyk (código e containers)
+   - Hotspots de segurança do SonarCloud
+   - Dependências desatualizadas
+   - **Vulnerabilidades de Dependências (OWASP Dependency Check)**
+4. **Relatórios de Build**
+   - Logs de compilação
+   - Tempo de build
+   - Uso de recursos
+5. **Relatórios de Deploy**
+   - Status da implantação
+   - Logs de containers
+   - Métricas de performance
+6. **Relatórios de Cobertura**
+   - Relatórios HTML de cobertura de código
+   - Disponibilizados como artefatos do GitHub Actions
+   - Acessíveis através da interface do GitHub Actions
+
+### Exemplos de Relatórios
+
+- [dependency-check-report.html](dependency-check-report.html)
+- [coverage-report.html](coverage-report.html)
+
+## Configuração de Segredos
+
+Para que a pipeline funcione corretamente, diversos segredos precisam de ser configurados no repositório do GitHub. Estes incluem credenciais para o Docker Hub e acesso SSH à máquina virtual de staging.
+
+*   `DOCKERHUB_USERNAME`: O nome de utilizador no Docker Hub.
+*   `DOCKERHUB_TOKEN`: Um Personal Access Token do Docker Hub com permissões de push.
+*   `SSH_PRIVATE_KEY`: A chave privada SSH para autenticação na VM de staging.
+*   `SSH_KNOWN_HOSTS`: A host key da VM de staging para verificar a autenticidade do servidor.
+*   `SSH_PASSPHRASE`: A senha da chave privada SSH.
+*   `SONAR_TOKEN`: Token de autenticação para o SonarCloud
+*   `SNYK_TOKEN`: Token de autenticação para o Snyk
+*   `VM_HOST`: O hostname ou endereço IP da VM de staging (resolvível dentro da rede ISEP/VPN).
+*   `VM_PORT`: A porta SSH da VM de staging.
+*   `VM_USER`: O utilizador SSH para login na VM de staging.
+*   `VM_GATEWAY_HOST`: O hostname ou endereço IP do servidor gateway SSH.
+*   `VM_GATEWAY_PORT`: A porta SSH do servidor gateway.
+*   `VM_GATEWAY_USER`: O utilizador SSH para login no servidor gateway.
 
 ---
 
-### 7. Resolução de Problemas
-
-#### 7.1 Problemas Comuns
-
-**A Pipeline Não Inicia:**
-- Verificar permissões do GitHub Actions.
-- Confirmar segredos do repositório.
-- Certificar-se de que o ficheiro de workflow está na localização correta.
-
-**Falha na Análise do SonarCloud:**
-- Verificar se o `SONAR_TOKEN` está definido.
-- Verificar a chave do projeto e a organização.
-- Certificar-se de que o branch principal está corretamente configurado.
-
-**Falhas no Build:**
-- Verificar a compatibilidade da versão do .NET.
-- Confirmar o caminho da solução.
-- Verificar erros de compilação.
-
----
-
-## 5. Avaliação com OWASP ASVS
+# Avaliação com OWASP ASVS
 
 ### 5.1 Metodologia de Avaliação
 - Processo de avaliação ASVS implementado  
@@ -1589,7 +1883,7 @@ Tabela de rastreabilidade entre:
 
 ---
 
-## 6. Conclusão e Próximos Passos
+# Conclusão e Próximos Passos
 
 - Síntese dos resultados alcançados neste sprint  
 - Análise crítica do processo de desenvolvimento seguro  
@@ -1599,20 +1893,7 @@ Tabela de rastreabilidade entre:
 
 ---
 
-## 7. Anexos
-
-- Evidências detalhadas dos testes e verificações  
-- Configurações relevantes das ferramentas  
-- Relatórios completos de análise de segurança  
-- Excertos de código relevantes com implementações de segurança  
-- Capturas de ecrã da pipeline em execução  
-- Excel ASVS preenchido com avaliações detalhadas  
-- Inventário completo de componentes com análise de vulnerabilidades  
-- Documentação de mitigações implementadas  
-
----
-
-## 8. Referências
+# Referências
 
 1. GitHub. (s.d.). *Documentação do GitHub Actions*. Disponível em: https://docs.github.com/actions
 2. SonarCloud. (s.d.). *Documentação do SonarCloud*. Disponível em: https://docs.sonarcloud.io/
