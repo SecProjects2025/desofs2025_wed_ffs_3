@@ -1,4 +1,4 @@
-using AMAP.Business.Interfaces;
+using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System.Security.Claims;
 
 namespace AMAP.Api.Controllers
 {
@@ -14,42 +13,27 @@ namespace AMAP.Api.Controllers
     [Route("api/[controller]")]
     public class PaymentController : ControllerBase
     {
-        private readonly IPaymentBc _paymentBc;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public PaymentController(IPaymentBc paymentBc)
+        public PaymentController(IUnitOfWork unitOfWork)
         {
-            _paymentBc = paymentBc;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpPost]
         [Authorize(Roles = nameof(UserType.CoProducer))]
         public IActionResult CreatePayment([FromBody] Payment payment)
         {
-            try
+            if (payment is null)
             {
-                var coProducerId = User.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier))?.Value;
-                var createdPayment = _paymentBc.CreatePayment(payment, coProducerId);
-                return CreatedAtAction(nameof(CreatePayment), new { id = createdPayment.Id }, createdPayment);
+                return BadRequest("Invalid payment data.");
             }
-            catch (ArgumentNullException ex)
+
+            // Verificar se a subscrição associada existe
+            var subscription = _unitOfWork.Subscription.Get(s => s.Id == payment.SubscriptionId);
+            if (subscription is null)
             {
-                return BadRequest(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred: {ex.Message}");
+                return NotFound($"Subscription with ID {payment.SubscriptionId} not found.");
             }
 
             payment.PaymentDate = DateTime.UtcNow;
