@@ -1,6 +1,7 @@
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.DataAccess.Data;
 using AMAP.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace AMAP.DataAccess.Repository
 {
@@ -11,6 +12,11 @@ namespace AMAP.DataAccess.Repository
         public PaymentRepository(AppDbContext context) : base(context)
         {
             _context = context;
+        }
+
+        public void Update(Payment payment)
+        {
+            _context.Payments.Update(payment);
         }
     }
 }

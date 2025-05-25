@@ -8,7 +8,6 @@ namespace AMAP.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = nameof(UserType.CoProducer))]
     public class PaymentController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -19,6 +18,7 @@ namespace AMAP.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = nameof(UserType.CoProducer))]
         public IActionResult CreatePayment([FromBody] Payment payment)
         {
             if (payment is null)
@@ -34,11 +34,35 @@ namespace AMAP.Api.Controllers
             }
 
             payment.PaymentDate = DateTime.UtcNow;
+            payment.Validated = false;
 
             _unitOfWork.Payment.Add(payment);
             _unitOfWork.Save();
 
             return CreatedAtAction(nameof(CreatePayment), new { id = payment.Id }, payment);
+        }
+
+        [HttpPut("{id}/validate")]
+        [Authorize(Roles = nameof(UserType.Producer))]
+        public IActionResult ValidatePayment(int id)
+        {
+            var payment = _unitOfWork.Payment.Get(p => p.Id == id);
+            if (payment == null)
+            {
+                return NotFound($"Payment with ID {id} not found.");
+            }
+
+            if (payment.Validated)
+            {
+                return BadRequest("Payment is already validated.");
+            }
+
+            payment.Validated = true;
+
+            _unitOfWork.Payment.Update(payment);
+            _unitOfWork.Save();
+
+            return Ok(payment);
         }
     }
 }
