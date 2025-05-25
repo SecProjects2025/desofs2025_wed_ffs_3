@@ -97,7 +97,6 @@ jobs:
       run: snyk test --severity-threshold=high --all-projects
 
     - name: Run SCA (OWASP Dependency Check)
-      if: github.ref == 'refs/heads/main'
       uses: dependency-check/Dependency-Check_Action@main
       with:
         project: 'diogoc0307_desofs'
@@ -162,15 +161,6 @@ jobs:
           # Para e remove contêineres antigos e inicia novos
           docker-compose -f docker-compose-staging.yml down
           docker-compose -f docker-compose-staging.yml up -d
-          
-    - name: Output Deployment Information
-      if: github.ref == 'refs/heads/main'
-      run: |
-        echo "Application deployed successfully!"
-        echo "Deployment Gateway: ${{ env.VM_HOST }}:${{ env.VM_PORT }}"
-        echo "Application running on VM internal port: 8080"
-        echo "deployment_url=${{ env.VM_HOST }}:${{ env.VM_PORT }} (Gateway - Access app on VM port 8080)" >> $GITHUB_OUTPUT
-        echo "deployment_status=success" >> $GITHUB_OUTPUT
 
     - name: Upload SCA Report
       uses: actions/upload-artifact@v4
