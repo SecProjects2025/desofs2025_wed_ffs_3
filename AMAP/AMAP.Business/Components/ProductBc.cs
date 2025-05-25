@@ -187,14 +187,13 @@ namespace AMAP.Business
                 id, producerId, DateTime.UtcNow);
         }
 
-        public (List<Product> ImportedProducts, List<string> Errors) ImportProductsFromFile(Stream fileStream, string fileName, string producerId)
+        public (List<Product> ImportedProducts, List<string> Errors) ImportProductsFromFile(
+            Stream fileStream, string fileName, string producerId)
         {
             if (fileStream == null || fileStream.Length == 0)
                 throw new ArgumentException("No file was uploaded.", nameof(fileStream));
-
             if (string.IsNullOrEmpty(fileName) || !fileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("File must be text format.", nameof(fileName));
-
+                throw new ArgumentException("File must be a .txt file.", nameof(fileName));
             if (string.IsNullOrEmpty(producerId))
                 throw new ArgumentException("Producer not authenticated.", nameof(producerId));
 
@@ -205,18 +204,22 @@ namespace AMAP.Business
             var importedProducts = new List<Product>();
             var errors = new List<string>();
             var duplicateProductFound = false;
-            const int MaxLinesToProcess = 10000; // Define a reasonable maximum limit
-            int safeMaxLines = Math.Min(MaxLinesToProcess, 10000); // Ensuring we never exceed the maximum limit
+            const int MaxLinesToProcess = 1000; // Reduced to a more reasonable limit
+            const int MaxLineLength = 1000; // Maximum characters per line
 
-            // First, validate the file content without saving
-            using (var reader = new StreamReader(fileStream, leaveOpen: true))
+            try
             {
+                using var reader = new StreamReader(fileStream, leaveOpen: true);
                 string? line;
                 int lineNumber = 0;
                 int processedLines = 0;
 
-                while (processedLines < safeMaxLines && (line = reader.ReadLine()) != null)
+                // Process file with strict bounds checking
+                while (processedLines < MaxLinesToProcess)
                 {
+                    line = reader.ReadLine();
+                    if (line == null) break; // End of file reached
+
                     lineNumber++;
                     processedLines++;
 
@@ -224,114 +227,52 @@ namespace AMAP.Business
                     if (string.IsNullOrWhiteSpace(line))
                         continue;
 
+                    // Validate line length
+                    if (line.Length > MaxLineLength)
+                    {
+                        errors.Add($"Line {lineNumber}: Line exceeds maximum length of {MaxLineLength} characters");
+                        continue;
+                    }
+
                     // Skip header line
-                    if (lineNumber == 1 && (line.Contains("Nome;") || line.Contains("Name;")))
-                        continue;
-
-                    // Parse line
-                    var parts = line.Split(';');
-
-                    if (parts.Length < 5)
-                    {
-                        errors.Add($"Line {lineNumber}: Invalid format. Expected: Name;Description;Photo;ReferencePrice;DeliveryUnits");
-                        continue;
-                    }
-
-                    // Parse price
-                    var priceString = parts[3].Trim().Replace(',', '.');
-                    if (!double.TryParse(priceString, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
-                    {
-                        errors.Add($"Line {lineNumber}: Invalid price value '{parts[3]}'. Use format 0.00");
-                        continue;
-                    }
-
-                    // Check for duplicate products
-                    var productName = parts[0].Trim();
-                    var existingProduct = _unitOfWork.Product.Get(p =>
-                        p.Name == productName &&
-                        p.ProducerId == producerId &&
-                        !p.IsDeleted);
-
-                    if (existingProduct != null)
-                    {
-                        errors.Add($"Line {lineNumber}: Product with name '{productName}' already exists");
-                        duplicateProductFound = true;
-                    }
-                }
-
-                // Check if we hit the limit
-                if (lineNumber >= safeMaxLines && reader.ReadLine() != null)
-                {
-                    var message = $"File exceeds the maximum allowed lines ({safeMaxLines}).";
-                    _logger.LogWarning("Product import failed - {Message}, Producer: {ProducerId} at {Time}",
-                        message, producerId, DateTime.UtcNow);
-                    throw new InvalidOperationException(message);
-                }
-            }
-
-            if (duplicateProductFound)
-            {
-                var message = "Import failed. Found duplicate product names.";
-                _logger.LogWarning("Product import failed - {Message}, Producer: {ProducerId} at {Time}",
-                    message, producerId, DateTime.UtcNow);
-                throw new InvalidOperationException(message) { Data = { { "Errors", errors } } };
-            }
-
-            // Prepare a safe file path first
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "ProductsUpload");
-            Directory.CreateDirectory(uploadsPath);
-            string canonicalUploadsPath = Path.GetFullPath(uploadsPath);
-
-            // Sanitize the filename to prevent path traversal attacks
-            string safeFileName = Path.GetFileName(fileName);
-            if (string.IsNullOrEmpty(safeFileName))
-                safeFileName = $"import_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
-
-            // Generate a unique filename to prevent overwriting
-            string uniqueFileName = $"{Guid.NewGuid()}_{safeFileName}";
-
-            // Create the safe validated path
-            string validatedFilePath = Path.Combine(canonicalUploadsPath, uniqueFileName);
-
-            // We're sure this path is safe now because we constructed it from controlled input
-            // and it's within our uploads directory
-
-            fileStream.Position = 0;
-            using (var file = new FileStream(validatedFilePath, FileMode.Create))
-            {
-                fileStream.CopyTo(file);
-            }
-
-            // Process the saved file with the validated path
-            using (var reader = new StreamReader(validatedFilePath))
-            {
-                string? line;
-                int lineNumber = 0;
-                int processedLines = 0;
-
-                while (processedLines < safeMaxLines && (line = reader.ReadLine()) != null)
-                {
-                    lineNumber++;
-                    processedLines++;
-
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
                     if (lineNumber == 1 && (line.Contains("Nome;") || line.Contains("Name;")))
                         continue;
 
                     try
                     {
                         var parts = line.Split(';');
+                        if (parts.Length < 5)
+                        {
+                            errors.Add($"Line {lineNumber}: Invalid format. Expected: Name;Description;Photo;ReferencePrice;DeliveryUnits");
+                            continue;
+                        }
 
-                        // Already validated format and price in previous step
+                        // Parse price
                         var priceString = parts[3].Trim().Replace(',', '.');
-                        double.TryParse(priceString, NumberStyles.Any, CultureInfo.InvariantCulture, out double price);
+                        if (!double.TryParse(priceString, NumberStyles.Any, CultureInfo.InvariantCulture, out double price))
+                        {
+                            errors.Add($"Line {lineNumber}: Invalid price value '{parts[3]}'. Use format 0.00");
+                            continue;
+                        }
 
-                        // Create product object
+                        // Check for duplicate products
+                        var productName = parts[0].Trim();
+                        var existingProduct = _unitOfWork.Product.Get(p =>
+                            p.Name == productName &&
+                            p.ProducerId == producerId &&
+                            !p.IsDeleted);
+
+                        if (existingProduct != null)
+                        {
+                            errors.Add($"Line {lineNumber}: Product with name '{productName}' already exists");
+                            duplicateProductFound = true;
+                            continue;
+                        }
+
+                        // Create and save product
                         var product = new Product
                         {
-                            Name = parts[0].Trim(),
+                            Name = productName,
                             Description = parts[1].Trim(),
                             Photo = parts[2].Trim(),
                             ReferencePrice = price,
@@ -340,9 +281,7 @@ namespace AMAP.Business
                             IsDeleted = false
                         };
 
-                        // Save product
                         _unitOfWork.Product.Add(product);
-                        _unitOfWork.Save();
                         importedProducts.Add(product);
 
                         // Log de produto importado
@@ -356,6 +295,23 @@ namespace AMAP.Business
                             lineNumber, producerId);
                     }
                 }
+
+                // Save all products at once if any were successfully imported
+                if (importedProducts.Any())
+                {
+                    _unitOfWork.Save();
+                }
+
+                // Add warning if file was truncated
+                if (processedLines >= MaxLinesToProcess)
+                {
+                    errors.Add($"Warning: File was truncated. Only the first {MaxLinesToProcess} lines were processed.");
+                }
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"Error processing file: {ex.Message}");
+                _logger.LogError(ex, "Error processing import file for Producer: {ProducerId}", producerId);
             }
 
             // Log resultado final da importação
