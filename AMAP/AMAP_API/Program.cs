@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Identity;
 using AMAP.Entities;
 using AMAP.DataAccess.DbInitializer;
 using AMAP.Entities.Utilities;
+using AMAP.Business.Components;
+using AMAP.Business.Interfaces;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
 using AMAP.Business.Components;
@@ -44,6 +46,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnityOfWork>();
+
+// Add all business components
 builder.Services.AddScoped<IProductBc, ProductBc>();
 builder.Services.AddScoped<ISubscriptionPeriodBc, SubscriptionPeriodBc>();
 builder.Services.AddScoped<IProductOfferBc, ProductOfferBc>();
@@ -52,29 +56,39 @@ builder.Services.AddScoped<IPaymentBc, PaymentBc>();
 builder.Services.AddScoped<ICatalogBc, CatalogBc>();
 builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
+
+// Configure database context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configure Identity with password requirements
-builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
-    options.Password.RequiredLength = 12; // Min length 12 chars
+    // Password settings
+    options.Password.RequiredLength = 12;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
-    
+
     // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
-    
+
     // User settings
     options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders()
-.AddPasswordValidator<CustomPasswordValidator<AppUser>>(); // Custom validator
+.AddPasswordValidator<CustomPasswordValidator<AppUser>>();
+
+// Configure password hasher
+builder.Services.Configure<PasswordHasherOptions>(options =>
+{
+    options.IterationCount = 100000;
+    options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3;
+});
 
 // Configurao do cookie de autenticao
 builder.Services.ConfigureApplicationCookie(options =>
@@ -106,6 +120,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
+
 // Configurao das roles de autorizao
 builder.Services.AddAuthorization(options =>
 {
@@ -134,13 +149,14 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Inicializar roles e usuários
 // Inicializar roles e utilizadores apenas se necessário
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
+
     // Verifica se há alguma migração pendente antes de inicializar
     if (dbContext.Database.GetPendingMigrations().Any())
     {

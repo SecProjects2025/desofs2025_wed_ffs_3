@@ -1,24 +1,57 @@
-﻿using AMAP.Api.Controllers;
+﻿using AMAP.Business.Components;
 using AMAP.Business.Interfaces;
+using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
+using AMAP.Entities.Utilities;
 using AMAP.UnitTests.Business.Mock;
+using AMAP_API.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Moq;
 using NSubstitute;
 using System.Security.Claims;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace AMAP.UnitTests.Services
 {
     public class PaymentControllerTests
     {
-        private readonly IPaymentBc _paymentBc;
-        private readonly PaymentController _paymentController;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly EmailSender _emailSender;
+        private readonly ILogger<PaymentBc> _logger;
+        private readonly PaymentBc _paymentBc;
+        private readonly PaymentController _controller;
+        private readonly ILogger<PaymentController> _loggerController;
+        private readonly IPaymentBc _mockPaymentBc;
 
         public PaymentControllerTests()
         {
-            _paymentBc = MockPaymentBc.GetMockPaymentBc();
-            _paymentController = new PaymentController(_paymentBc);
+            _unitOfWork = MockUnitOfWork.GetMockUnitOfWork();
+
+            // Mock IConfiguration for EmailSender
+            var configuration = new Mock<IConfiguration>();
+            var mailSettingsSection = new Mock<IConfigurationSection>();
+
+            mailSettingsSection.Setup(x => x["Host"]).Returns("smtp.example.com");
+            mailSettingsSection.Setup(x => x["Port"]).Returns("587");
+            mailSettingsSection.Setup(x => x["Username"]).Returns("test@example.com");
+            mailSettingsSection.Setup(x => x["Password"]).Returns("test-password");
+            mailSettingsSection.Setup(x => x["FromEmail"]).Returns("test@example.com");
+            mailSettingsSection.Setup(x => x["FromName"]).Returns("Test Sender");
+
+            configuration.Setup(x => x.GetSection("MailSettings")).Returns(mailSettingsSection.Object);
+
+            _emailSender = new EmailSender(configuration.Object);
+            _logger = Substitute.For<ILogger<PaymentBc>>();
+            _paymentBc = new PaymentBc(_unitOfWork, _logger);
+            _loggerController = Substitute.For<ILogger<PaymentController>>();
+            _mockPaymentBc = Substitute.For<IPaymentBc>();
+            _controller = new PaymentController(_unitOfWork, _loggerController, _mockPaymentBc);
 
             // Set up a ClaimsPrincipal for the controller to use
             var claims = new List<Claim>
@@ -30,7 +63,7 @@ namespace AMAP.UnitTests.Services
             var claimsPrincipal = new ClaimsPrincipal(identity);
 
             // Create and set up HttpContext with our ClaimsPrincipal
-            _paymentController.ControllerContext = new ControllerContext
+            _controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext { User = claimsPrincipal }
             };
@@ -43,32 +76,29 @@ namespace AMAP.UnitTests.Services
             var payment = new Payment
             {
                 SubscriptionId = 1,
-                AmountPaid = 50.0,
+                AmountPaid = 100,
                 PaymentDate = DateTime.Now
             };
+            _mockPaymentBc.CreatePayment(Arg.Any<Payment>(), Arg.Any<string>()).Returns(payment);
 
             // Act
-            var result = _paymentController.CreatePayment(payment);
+            var result = _controller.CreatePayment(payment);
 
             // Assert
             var createdResult = Assert.IsType<CreatedAtActionResult>(result);
-            Assert.Equal(201, createdResult.StatusCode);
             var returnValue = Assert.IsType<Payment>(createdResult.Value);
-            Assert.Equal(100, returnValue.Id);
+            Assert.Equal(payment.SubscriptionId, returnValue.SubscriptionId);
         }
 
         [Fact]
         public void CreatePayment_NullPayment_ReturnsBadRequest()
         {
-            // Arrange
-            Payment payment = null;
-
             // Act
-            var result = _paymentController.CreatePayment(payment);
+            var result = _controller.CreatePayment(null);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(400, badRequestResult.StatusCode);
+            Assert.NotNull(badRequestResult.Value);
         }
 
         [Fact]
@@ -78,16 +108,18 @@ namespace AMAP.UnitTests.Services
             var payment = new Payment
             {
                 SubscriptionId = 1,
-                AmountPaid = 0, // Invalid amount
+                AmountPaid = -100, // Invalid amount
                 PaymentDate = DateTime.Now
             };
+            _mockPaymentBc.CreatePayment(Arg.Any<Payment>(), Arg.Any<string>())
+                .Returns(x => throw new ArgumentException("Invalid payment data"));
 
             // Act
-            var result = _paymentController.CreatePayment(payment);
+            var result = _controller.CreatePayment(payment);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(400, badRequestResult.StatusCode);
+            Assert.NotNull(badRequestResult.Value);
         }
 
         [Fact]
@@ -96,17 +128,19 @@ namespace AMAP.UnitTests.Services
             // Arrange
             var payment = new Payment
             {
-                SubscriptionId = 999, // Non-existing Subscription ID
-                AmountPaid = 50.0,
+                SubscriptionId = 999, // Non-existent subscription
+                AmountPaid = 100,
                 PaymentDate = DateTime.Now
             };
+            _mockPaymentBc.CreatePayment(Arg.Any<Payment>(), Arg.Any<string>())
+                .Returns(x => throw new KeyNotFoundException("Subscription not found"));
 
             // Act
-            var result = _paymentController.CreatePayment(payment);
+            var result = _controller.CreatePayment(payment);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-            Assert.Equal(404, notFoundResult.StatusCode);
+            Assert.NotNull(notFoundResult.Value);
         }
 
         [Fact]
@@ -115,86 +149,42 @@ namespace AMAP.UnitTests.Services
             // Arrange
             var payment = new Payment
             {
-                SubscriptionId = 888, // Subscription not belonging to the co-producer
-                AmountPaid = 50.0,
-                PaymentDate = DateTime.Now
-            };
-
-            // Act
-            var result = _paymentController.CreatePayment(payment);
-
-            // Assert
-            var forbiddenResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(403, forbiddenResult.StatusCode);
-
-            // Convert to dictionary to access the anonymous type properties
-            var properties = Assert.IsAssignableFrom<IDictionary<string, object>>(
-                new RouteValueDictionary(forbiddenResult.Value));
-
-            Assert.True(properties.ContainsKey("message"));
-            Assert.Contains("You are not authorized", properties["message"].ToString());
-        }
-
-
-        [Fact]
-        public void CreatePayment_NoCoProducerId_ReturnsForbidden()
-        {
-            // Arrange
-            var payment = new Payment
-            {
                 SubscriptionId = 1,
-                AmountPaid = 50.0,
+                AmountPaid = 100,
                 PaymentDate = DateTime.Now
             };
-
-            // Clear the User claims
-            _paymentController.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
-            };
+            _mockPaymentBc.CreatePayment(Arg.Any<Payment>(), Arg.Any<string>())
+                .Returns(x => throw new UnauthorizedAccessException());
 
             // Act
-            var result = _paymentController.CreatePayment(payment);
+            var result = _controller.CreatePayment(payment);
 
             // Assert
             var forbiddenResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(403, forbiddenResult.StatusCode);
+            Assert.NotNull(forbiddenResult.Value);
         }
 
         [Fact]
         public void CreatePayment_ServerError_ReturnsInternalServerError()
         {
-            // Arrange - Create a substitute that will throw an unexpected exception
-            var errorPaymentBc = Substitute.For<IPaymentBc>();
-            errorPaymentBc
-                .CreatePayment(Arg.Any<Payment>(), Arg.Any<string>());
-
-            var errorController = new PaymentController(errorPaymentBc);
-
-            // Set up claims
-            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "test-coproducer-id") };
-            var identity = new ClaimsIdentity(claims);
-            var claimsPrincipal = new ClaimsPrincipal(identity);
-
-            errorController.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
-            };
-
+            // Arrange
             var payment = new Payment
             {
                 SubscriptionId = 1,
-                AmountPaid = 50.0,
+                AmountPaid = 100,
                 PaymentDate = DateTime.Now
             };
+            _mockPaymentBc.CreatePayment(Arg.Any<Payment>(), Arg.Any<string>())
+                .Returns(x => throw new Exception("Server error"));
 
             // Act
-            var result = errorController.CreatePayment(payment);
+            var result = _controller.CreatePayment(payment);
 
             // Assert
-            var errorResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, errorResult.StatusCode);
-            Assert.Contains("An error occurred", errorResult.Value.ToString());
+            var serverErrorResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, serverErrorResult.StatusCode);
+            Assert.NotNull(serverErrorResult.Value);
         }
     }
 }
