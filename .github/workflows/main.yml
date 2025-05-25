@@ -124,16 +124,14 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: Create deploy directory on VM
-      run: ssh ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
+      run: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
       
     - name: Copy docker-compose file to VM via SCP
-      run: scp -O -P ${{ env.VM_PORT }} docker-compose-staging.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose-staging.yml
+      run: scp -O -P ${{ env.VM_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose-staging.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose-staging.yml
 
     - name: Run Docker Compose on VM via SSH
       run: |
-          # Navega para o diretório de deploy
           cd ${{ env.VM_DEPLOY_PATH }}
-          # Define a variável de ambiente IMAGE_TAG para o docker compose
           export IMAGE_TAG=${{ env.DOCKER_TAG }}
           # Para e remove contêineres antigos e inicia novos
           docker compose -f docker-compose-staging.yml down
