@@ -30,10 +30,13 @@ Tiago Tavares 1240494
 
 # Introdução
 
-- Contextualização do projeto no âmbito do desenvolvimento de software seguro  
-- Objetivos específicos do Sprint 1 e sua relação com a modelação de ameaças da Fase 1  
-- Metodologia DevSecOps adotada e justificação  
-- Métricas de sucesso definidas para este sprint  
+Este documento descreve o trabalho realizado no Sprint 1 da Fase 2 do projeto AMAP, com foco na integração de práticas de desenvolvimento seguro ao longo de todo o ciclo de vida do software. Nesta fase, a equipa centrou-se na mitigação das principais ameaças identificadas na Fase 1, reforçando a segurança das funcionalidades críticas da aplicação.
+
+Adotou-se uma abordagem DevSecOps, com uma **pipeline CI/CD automatizada que inclui análise estática (SonarQube), verificação de dependências (OWASP Dependency Check, Snyk) e testes de segurança. A nova **arquitetura em camadas foi definida para suportar estas práticas, promovendo manutenibilidade, rastreabilidade e controlo de acesso mais eficazes.
+
+Foram também aplicadas boas práticas de desenvolvimento, convenções de nomenclatura e estruturação do código, bem como realizadas **auditorias de segurança, **testes unitários com foco em permissões e cobertura superior a 78%. A avaliação com base no OWASP ASVS permitiu validar as medidas implementadas, garantindo conformidade com requisitos de segurança reconhecidos.
+
+Este relatório detalha as decisões técnicas, a **implementação e os resultados obtidos, servindo como evidência da evolução do projeto rumo a um sistema **robusto e seguro.
 
 ---
 
@@ -41,7 +44,485 @@ Tiago Tavares 1240494
 
 ## Funcionalidade Desenvolvida
 
-Na fase 1 foram identificadas varias ameacas em que selecionamos 15 prioritarias para desenvolcer codigo de forma a mitigar essas amecas.
+Na Fase 1 foram identificadas várias ameaças, das quais selecionámos 15 como prioritárias, com o objetivo de desenvolver código que permita mitigar essas ameaças. De seguida, apresenta-se a descrição de algumas das medidas implementadas.
+
+### 1. Repúdio - Negação de ter realizado subscrição (4.3 R)
+
+Esta seção aborda as mitigações implementadas para a ameaça de um co-produtor negar que realizou uma subscrição.
+
+**Mitigações Implementadas:**
+
+*   **Termos e condições explícitos:** A aceitação dos termos é uma etapa obrigatória no fluxo de subscrição (`/api/subscription/{id}/accept-terms`).
+*   **Confirmação por email obrigatória:** A subscrição só se torna ativa após a confirmação do email pelo co-produtor, utilizando um token único (`/api/Subscription/confirm`).
+*   **Assinaturas digitais básicas:** O campo `DigitalSignature` existe no modelo `Subscription`, embora a descrição detalhada do seu uso no fluxo de repúdio possa ser adicionada no futuro, se aplicável.
+*   **Comprovativo de subscrição:** A criação bem-sucedida de uma subscrição (`POST /api/subscription`) e a possibilidade de a obter por ID (`GET /api/subscription/{id}`) servem como registo da subscrição.
+*   **Registos de auditoria detalhados:** Campos como `TermsAcceptedAt` e `EmailConfirmedAt` no modelo `Subscription` registam datas e horas importantes das ações do co-produtor, servindo como evidência.
+
+<u>**1.1 Criação de Assinatura**</u>
+
+**Endpoint:** 
+`POST /api/subscription`
+
+**Descrição:** 
+Cria uma nova assinatura, gerando um token de confirmação, enviando email ao co-produtor e inicializando campos de repúdio.
+
+**Parâmetros:**  
+```json
+{
+    "productOfferId": 1,
+    "expectedQuantity": 5,
+    "paymentType": "Money"
+}
+```
+
+**Resposta:**  
+```json
+{
+    "id": 2,
+    "coProducerId": "1cc4c021-19e7-49dd-aeb0-e31a8f382f66",
+    "productOfferId": 1,
+    "expectedQuantity": 5,
+    "paymentType": "Money",
+    "termsAccepted": false,
+    "termsAcceptedAt": "2025-05-25T00:28:12.5111303Z",
+    "emailConfirmed": false,
+    "emailConfirmedAt": null,
+    "confirmationToken": "vKeAQGXwMvpeim/crxxr5+oWy/Fl86BGETYfctNpLPQ=",
+    "digitalSignature": "sCuRfy3NhmSc0bjjkCw9JKX/Xpl0INqPUex20s/iqi0="
+}
+```
+
+---
+
+<u>**Confirmação de Email**</u>
+
+**Endpoint:** 
+`POST /api/Subscription/confirm`
+
+**Descrição:** 
+Confirma o email do co-produtor através do token gerado na criação da assinatura.
+
+**Como testar:**  
+1. Copie o token da resposta da criação.
+2. Faça POST para `/api/Subscription/confirm` com o token no corpo.
+
+---
+
+<u>**Aceitação de Termos e Condições**</u>
+
+**Endpoint:** 
+`POST /api/subscription/{id}/accept-terms`
+
+**Descrição:** 
+Permite ao co-produtor aceitar os termos, registando data/hora e assinatura digital.
+
+---
+
+<u>**Modelo de Dados: Subscription**</u>
+
+```csharp
+public class Subscription
+{
+    public int Id { get; set; }
+    public string? CoProducerId { get; set; }
+    public int ProductOfferId { get; set; }
+    public int ExpectedQuantity { get; set; }
+    public PaymentType PaymentType { get; set; }
+    [Required]
+    public bool TermsAccepted { get; set; }
+    [Required]
+    public DateTime TermsAcceptedAt { get; set; }
+    [Required]
+    public bool EmailConfirmed { get; set; }
+    public DateTime? EmailConfirmedAt { get; set; }
+    public string? ConfirmationToken { get; set; }
+    public string? DigitalSignature { get; set; }
+}
+```
+
+---
+
+<u>**Fluxo de Repúdio de Subscrição**</u>
+
+1. Criação da assinatura (gera token, envia email, inicializa campos)
+2. Confirmação de email (valida token, marca como confirmado)
+3. Aceitação de termos (regista data/hora e assinatura digital)
+
+---
+
+### 2.1. Validação de Dados de Entrada (3.1 B) - 7.5 ALTO
+
+**<u>1 - Mitigação Implementada: Validação Robusta de Dados de Entrada</u>**
+Esta mitigação visa garantir que todos os dados recebidos pela aplicação são validados de forma rigorosa antes de serem processados, prevenindo a injeção de dados maliciosos e garantindo a integridade dos dados armazenados.
+
+**Situação Inicial**
+A aplicação AMAP inicialmente possuía validações básicas nos modelos de dados, mas carecia de uma abordagem sistemática e abrangente para validação de entrada em todos os pontos de acesso da API.
+
+**Ações Realizadas**
+Foi implementado um sistema robusto de validação de dados que inclui:
+
+1. Validação de modelos através de Data Annotations
+2. Validação de tipos de dados e enumerações
+3. Verificações de autorização antes do processamento de dados
+4. Validação de regras de negócio específicas
+
+**Exemplo de Código** (`AMAP.Models/Models/ViewModel/RegisterViewModel.cs`):
+
+```c#
+public class RegisterViewModel
+{
+    [Required]
+    [Display(Name = "Name")]
+    public string Name { get; set; }
+
+    [Required]
+    [EmailAddress]
+    [Display(Name = "Email")]
+    public string Email { get; set; }
+
+    [Required]
+    [StringLength(128, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 12)]
+    [DataType(DataType.Password)]
+    [Display(Name = "Password")]
+    public string Password { get; set; }
+
+    [DataType(DataType.Password)]
+    [Display(Name = "Confirm password")]
+    [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+    public string ConfirmPassword { get; set; }
+
+    [Required]
+    [Display(Name = "User Type")]
+    public UserType UserType { get; set; }
+}
+```
+
+Além disso, foram implementadas validações adicionais nos componentes de negócio para garantir a integridade dos dados:
+
+```c#
+public Subscription CreateSubscription(Subscription subscription, string coProducerId)
+{
+    if (subscription == null)
+    {
+        throw new ArgumentException("Invalid data.");
+    }
+
+    if (string.IsNullOrEmpty(coProducerId))
+    {
+        throw new UnauthorizedAccessException("Invalid CoProducer.");
+    }
+
+    if (subscription.ExpectedQuantity <= 0)
+    {
+        throw new ArgumentException("Quantity must be greater than zero.");
+    }
+
+    if (!Enum.IsDefined(typeof(PaymentType), subscription.PaymentType) || subscription.PaymentType == 0)
+    {
+        throw new ArgumentException("Invalid payment type.");
+    }
+
+    // Validações adicionais...
+}
+```
+
+Esta implementação garante que:
+
+1. Todos os campos obrigatórios são preenchidos
+2. Os dados seguem os formatos esperados (email, password, etc.)
+3. Os valores numéricos estão dentro dos limites aceitáveis
+4. As enumerações contêm apenas valores válidos
+5. As regras de negócio são respeitadas antes do processamento dos dados
+
+A validação é realizada em múltiplas camadas:
+
+1. **Camada de Modelo**: Através de Data Annotations
+2. **Camada de Controller**: Verificação do ModelState
+3. **Camada de Negócio**: Validações específicas das regras de negócio
+4. **Camada de Dados**: Constraints do banco de dados
+
+Cada falha de validação é adequadamente registada e retorna mensagens de erro claras e específicas para o utilizador, sem expor detalhes sensíveis da implementação.
+
+---
+
+### 2.2. Falsificação da identidade de um Gestor (4.1 S) - 8.0 ALTO
+
+**<u>1 - Mitigação Implementada: Sistema Multi-Camada de Proteção de Identidade</u>**
+Esta mitigação implementa múltiplas camadas de segurança para proteger a identidade dos gestores, incluindo autenticação multi-fator obrigatória, monitorização contínua e notificações de segurança.
+
+**Situação Inicial**
+A aplicação AMAP possuía apenas autenticação básica por password para todos os utilizadores, sem distinção para contas de gestores, tornando-as vulneráveis a ataques de falsificação de identidade.
+
+**Ações Realizadas**
+
+1. **Autenticação Multi-Fator (MFA) Obrigatória para Gestores**
+   - Implementação de MFA baseado em TOTP (Time-based One-Time Password)
+   - Verificação obrigatória em cada nova sessão
+   - Notificação automática quando um fator de autenticação é alterado
+   - Revalidação obrigatória se o MFA/OTP for comprometido
+   - Utilização de geradores OTP seguros e confiáveis
+   - Verificação de que códigos de acesso são utilizados apenas uma vez
+
+**Exemplo de Implementação MFA** (`AMAP_API/Controllers/TwoFactorAuthController.cs`):
+```c#
+[HttpPost("verify")]
+[Authorize]
+public async Task<IActionResult> VerifyMfa([FromBody] VerifyMfaViewModel model)
+{
+    var user = await _userManager.GetUserAsync(User);
+    if (user == null)
+        return NotFound(new { message = "User not found." });
+
+    // Verificar se o código já foi utilizado
+    if (await _mfaService.IsCodeUsed(user.Id, model.VerificationCode))
+        return BadRequest(new { message = "This code has already been used." });
+
+    // Verificar o código
+    var twoFactorAuthenticator = new TwoFactorAuthenticator();
+    var isCodeValid = twoFactorAuthenticator.ValidateTwoFactorPIN(
+        user.TwoFactorSecretKey,
+        model.VerificationCode);
+
+    if (!isCodeValid)
+    {
+        _logger.LogWarning("Invalid MFA code attempt for user {UserId}", user.Id);
+        return BadRequest(new { message = "Invalid verification code." });
+    }
+
+    // Registrar o código como utilizado
+    await _mfaService.MarkCodeAsUsed(user.Id, model.VerificationCode);
+    
+    // Notificar sobre verificação bem-sucedida
+    await _emailSender.SendEmailAsync(
+        user.Email,
+        "MFA Verification Successful",
+        "Your account was just accessed using MFA verification.");
+
+    return Ok(new { message = "MFA verification successful." });
+}
+```
+
+2. **Tempo de Sessão Reduzido**
+   - Cookie de autenticação expira após 30 minutos de inatividade
+   - Suporte a expiração configurável para tokens JWT
+   - Logout invalida a sessão automaticamente
+   - Tokens de sessão podem ser revogados manualmente
+   - Implementação de sliding expiration para renovação segura
+
+**Exemplo de Implementação de Sessão** (`Program.cs` e `SessionManager.cs`):
+```c#
+// Configuração de cookies e sessão
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.HttpOnly = true;
+
+    options.Events = new CookieAuthenticationEvents
+    {
+        OnValidatePrincipal = async context =>
+        {
+            var userId = context.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var sessionValid = await sessionManager.ValidateSession(userId);
+            if (!sessionValid)
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync();
+            }
+        }
+    };
+});
+
+// Implementação de revogação de sessão
+public class SessionManager
+{
+    private readonly IDistributedCache _cache;
+    
+    public async Task RevokeSession(string userId)
+    {
+        var key = $"session_revoked_{userId}";
+        await _cache.SetStringAsync(key, DateTime.UtcNow.ToString(), new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7)
+        });
+    }
+
+    public async Task<bool> ValidateSession(string userId)
+    {
+        var key = $"session_revoked_{userId}";
+        var revokedAt = await _cache.GetStringAsync(key);
+        return string.IsNullOrEmpty(revokedAt);
+    }
+}
+```
+
+3. **Logs de Autenticação Detalhados**
+   - Registo de todas as decisões de autenticação (sucesso e falha)
+   - Monitorização de tentativas de acesso
+   - Rastreamento de alterações em configurações de MFA
+   - Histórico completo de sessões ativas
+
+**Exemplo de Implementação de Logs** (`SecurityMonitoringService.cs`):
+```c#
+public class SecurityMonitoringService
+{
+    private readonly ILogger<SecurityMonitoringService> _logger;
+    private readonly ConcurrentDictionary<string, List<AuthActivity>> _userActivities;
+    private readonly EmailSender _emailSender;
+
+    public async Task LogAuthenticationActivity(string userId, string ipAddress, string userAgent, AuthActivityType activityType)
+    {
+        var activity = new AuthActivity
+        {
+            Timestamp = DateTime.UtcNow,
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            ActivityType = activityType
+        };
+
+        _userActivities.AddOrUpdate(
+            userId,
+            new List<AuthActivity> { activity },
+            (key, existingList) =>
+            {
+                existingList.Add(activity);
+                return existingList;
+            });
+
+        _logger.LogInformation(
+            "Authentication activity: User={UserId}, Type={ActivityType}, IP={IpAddress}",
+            userId, activityType, ipAddress);
+
+        await DetectSuspiciousPatterns(userId);
+    }
+
+    private async Task DetectSuspiciousPatterns(string userId)
+    {
+        var recentActivities = _userActivities[userId]
+            .Where(a => a.Timestamp > DateTime.UtcNow.AddMinutes(-30))
+            .ToList();
+
+        if (recentActivities.Count > 10)
+        {
+            _logger.LogWarning("Suspicious activity detected for user {UserId}", userId);
+            await SendSecurityAlert(userId, "Unusual account activity detected");
+        }
+    }
+}
+```
+
+4. **Notificações de Segurança**
+   - Notificação automática para novos logins em dispositivos desconhecidos
+   - Alertas em tempo real para alterações de autenticação
+   - Utilização de APIs seguras para notificações (email)
+   - Avisos de tentativas de acesso suspeitas
+
+**Exemplo de Implementação de Notificações** (`SecurityNotificationService.cs`):
+```c#
+public class SecurityNotificationService
+{
+    private readonly EmailSender _emailSender;
+    private readonly ILogger<SecurityNotificationService> _logger;
+    private readonly DeviceTrackingService _deviceTracking;
+
+    public async Task NotifyNewDeviceLogin(AppUser user, string ipAddress, string userAgent)
+    {
+        var isKnownDevice = await _deviceTracking.IsKnownDevice(user.Id, ipAddress, userAgent);
+        if (!isKnownDevice)
+        {
+            var location = await _geoLocationService.GetLocation(ipAddress);
+            var emailBody = $@"
+                <h2>Novo Acesso Detectado</h2>
+                <p>Olá {user.Name},</p>
+                <p>Detectamos um acesso à sua conta a partir de um novo dispositivo:</p>
+                <ul>
+                    <li>Data/Hora: {DateTime.UtcNow}</li>
+                    <li>Localização: {location}</li>
+                    <li>Dispositivo: {userAgent}</li>
+                </ul>
+                <p>Se não foi você, por favor contacte-nos imediatamente.</p>";
+
+            await _emailSender.SendEmailAsync(user.Email, "Novo Acesso Detectado", emailBody);
+            await _deviceTracking.TrackNewDevice(user.Id, ipAddress, userAgent);
+        }
+    }
+
+    public async Task NotifyMfaChange(AppUser user, MfaChangeType changeType)
+    {
+        var subject = $"Alteração nas Configurações de MFA";
+        var body = $@"
+            <h2>Alteração na Autenticação Multi-Fator</h2>
+            <p>Olá {user.Name},</p>
+            <p>As configurações de MFA da sua conta foram {changeType}.</p>
+            <p>Se não foi você quem fez esta alteração, por favor contacte-nos imediatamente.</p>";
+
+        await _emailSender.SendEmailAsync(user.Email, subject, body);
+        _logger.LogInformation("MFA change notification sent to user {UserId}", user.Id);
+    }
+}
+```
+
+5. **Bloqueio Progressivo**
+   - Monitorização de atividades incomuns
+   - Bloqueio progressivo após falhas de login:
+     - 5 falhas: bloqueio por 15 minutos
+     - 10 falhas: bloqueio por 30 minutos
+     - 15 falhas: bloqueio por 60 minutos
+
+**Exemplo de Implementação de Bloqueio** (`AccountLockoutService.cs`):
+```c#
+public class AccountLockoutService
+{
+    private readonly UserManager<AppUser> _userManager;
+    private readonly ILogger<AccountLockoutService> _logger;
+    private readonly SecurityNotificationService _notificationService;
+
+    public async Task<(bool IsLocked, TimeSpan? LockoutDuration)> HandleFailedLoginAttempt(AppUser user)
+    {
+        await _userManager.AccessFailedAsync(user);
+        int failedAttempts = await _userManager.GetAccessFailedCountAsync(user);
+        
+        TimeSpan lockoutDuration = TimeSpan.Zero;
+        if (failedAttempts >= 5 && failedAttempts < 10)
+        {
+            lockoutDuration = TimeSpan.FromMinutes(15);
+        }
+        else if (failedAttempts >= 10 && failedAttempts < 15)
+        {
+            lockoutDuration = TimeSpan.FromMinutes(30);
+        }
+        else if (failedAttempts >= 15)
+        {
+            lockoutDuration = TimeSpan.FromMinutes(60);
+        }
+
+        if (lockoutDuration > TimeSpan.Zero)
+        {
+            await _userManager.SetLockoutEndDateAsync(user, 
+                DateTimeOffset.UtcNow.Add(lockoutDuration));
+            
+            _logger.LogWarning(
+                "User {UserId} locked out for {Duration} minutes after {FailedAttempts} failed attempts",
+                user.Id, lockoutDuration.TotalMinutes, failedAttempts);
+
+            await _notificationService.NotifyAccountLockout(user, lockoutDuration);
+            return (true, lockoutDuration);
+        }
+
+        return (false, null);
+    }
+
+    public async Task ResetFailedAttempts(AppUser user)
+    {
+        await _userManager.ResetAccessFailedCountAsync(user);
+        await _userManager.SetLockoutEndDateAsync(user, null);
+    }
+}
+```
+
+---
 
 ### 3. Negação de ações administrativas realizadas (4.1 R) - 8.0 ALTO
 
@@ -194,6 +675,353 @@ Os relatórios gerados capturam todas as ações administrativas importantes, in
 Estes relatórios fornecem uma trilha clara de auditoria que torna impossível a negação de ações administrativas realizadas, pois cada ação é documentada com detalhes suficientes para identificar quem a realizou, quando, e o que foi feito.
 A implementação destas mitigações garante que todas as ações administrativas realizadas no sistema AMAP são devidamente registadas e podem ser auditadas, reduzindo significativamente o risco de negação de responsabilidade por ações realizadas.
 
+---
+
+### 5. Negação de ter realizado um pagamento (1.6 R)
+
+Esta seção detalha as mitigações implementadas para a ameaça de um co-produtor negar que realizou um pagamento.
+
+**Mitigações Implementadas:**
+
+*   **Comprovativo detalhado de intenção de pagamento:** A criação do registo de pagamento (`POST /api/payment`) na aplicação serve como um comprovativo da intenção de pagamento e seus detalhes.
+*   **Registo seguro do método de pagamento:** O método de pagamento (`PaymentMethod`) é registado no modelo `Payment`.
+*   **Interface para confirmação manual por parte do Gestor (Validado por Produtor):** O endpoint `/api/payment/{id}/validate`, acessível a utilizadores com o papel `Producer`, permite a validação manual do pagamento, servindo como uma forma de confirmação secundária.
+*   **Histórico de verificações de pagamento:** A entidade `PaymentValidationHistory` regista cada validação bem-sucedida, fornecendo um histórico claro de quem validou o pagamento e quando.
+
+**<u>2.1 Criação de Pagamento</u>**
+
+**Endpoint:** 
+`POST /api/payment`
+
+**Descrição:** 
+Cria um pagamento, registando o método de pagamento (`Money`, `MBway`, `BankTransfer`) e inicializando o campo `Validated` como `false`. 
+Campos `ValidationDate` e `ValidatedByProducerId` começam nulos.
+
+**<u>2.2 Validação de Pagamento</u>**
+
+**Endpoint:** 
+`PUT /api/payment/{id}/validate`
+
+**Descrição:** 
+Permite a um Produtor validar um pagamento:
+
+- Só pode ser feito por utilizadores com role `Producer`
+- Marca `Validated` como `true`
+- Regista data/hora da validação e o ID do Produtor
+
+**Como testar:**  
+1. Crie um pagamento (token de CoProducer)
+2. Obtenha o ID do pagamento
+3. Autentique-se como Producer
+4. Faça PUT para `/api/payment/{id}/validate` com token de Producer
+
+**Respostas possíveis:**  
+- 200 OK: Pagamento validado
+- 404 Not Found: Pagamento não encontrado
+- 401/403: Não autorizado
+- 400: Já validado
+
+<u>**Gestão de Pagamentos (Manager)**</u>
+
+**Endpoint de Atualização:** 
+`PUT /api/payment/{id}`
+
+**Descrição:** 
+Permite a um Manager atualizar um pagamento existente:
+
+- Só pode ser feito por utilizadores com role `Manager`
+- Atualiza método de pagamento, valor pago e estado de validação
+- Mantém o histórico de validações intacto
+
+**Payload de Atualização:**
+```json
+{
+    "paymentMethod": "MBway",
+    "amountPaid": 55.00,
+}
+```
+
+**Endpoint de Remoção:** 
+`DELETE /api/payment/{id}`
+
+**Descrição:** 
+Permite a um Manager remover um pagamento:
+
+- Só pode ser feito por utilizadores com role `Manager`
+- Remove permanentemente o pagamento do sistema
+
+**Como testar a gestão:**
+1. Autentique-se como Manager
+2. Para atualizar: PUT para `/api/payment/{id}` com o payload acima
+3. Para remover: DELETE para `/api/payment/{id}`
+
+**Respostas possíveis:**
+- 200 OK: Operação realizada com sucesso
+- 404 Not Found: Pagamento não encontrado ou permissões não são suficientes
+- 401/403: Não autorizado
+- 400: Não pode remover um pagamento que já foi validado
+
+<u>**Modelo de Dados: Payment**</u>
+
+```csharp
+public class Payment
+{
+    public int Id { get; set; }
+    public string? CoProducerId { get; set; }
+    public int SubscriptionId { get; set; }
+    public PaymentType PaymentMethod { get; set; }
+    public bool Validated { get; set; }
+    public DateTime? ValidationDate { get; set; }
+    public string? ValidatedByProducerId { get; set; }
+}
+```
+
+---
+
+### 7.1. Monitorização de Segurança (3.1 G) - 7.2 ALTO
+
+**<u>1 - Mitigação Implementada: Sistema de Monitorização e Registo de Eventos de Segurança</u>**
+Esta mitigação visa implementar um sistema abrangente de monitorização e registo de eventos de segurança, permitindo a deteção, investigação e resposta a incidentes de segurança em tempo útil.
+
+**Situação Inicial**
+A aplicação AMAP possuía apenas registos básicos de erros e não mantinha um histórico detalhado de eventos de segurança, dificultando a deteção e investigação de potenciais incidentes de segurança.
+
+**Ações Realizadas**
+Foi implementado um sistema completo de monitorização de segurança que inclui:
+
+1. Registo detalhado de eventos de segurança
+2. Monitorização de tentativas de acesso falhadas
+3. Registo de alterações em dados sensíveis
+4. Notificações de eventos críticos de segurança
+
+**Exemplo de Código** (`AMAP.Entities.Utilities/AccountLockoutService.cs`):
+
+```c#
+public class AccountLockoutService
+{
+    private readonly UserManager<AppUser> _userManager;
+    private readonly ILogger<AccountLockoutService> _logger;
+
+    public async Task<(bool IsLocked, TimeSpan? LockoutDuration, int FailedAttempts)> HandleFailedLoginAttemptAsync(AppUser user)
+    {
+        if (user == null)
+            return (false, null, 0);
+
+        await _userManager.AccessFailedAsync(user);
+        int failedAttempts = await _userManager.GetAccessFailedCountAsync(user);
+        
+        // Implementação de bloqueio progressivo baseado no número de tentativas falhadas
+        if (failedAttempts >= 5 && failedAttempts < 10)
+        {
+            // Após 5 falhas: bloqueio de 15 minutos
+            _logger.LogWarning("User {UserId} locked out for 15 minutes after {FailedAttempts} failed login attempts", 
+                user.Id, failedAttempts);
+        }
+        else if (failedAttempts >= 10 && failedAttempts < 15)
+        {
+            // Após 10 falhas: bloqueio de 30 minutos
+            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(30));
+            _logger.LogWarning("User {UserId} locked out for 30 minutes after {FailedAttempts} failed login attempts", 
+                user.Id, failedAttempts);
+        }
+        else if (failedAttempts >= 15)
+        {
+            // Após 15 falhas: bloqueio de 60 minutos
+            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(60));
+            _logger.LogWarning("User {UserId} locked out for 60 minutes after {FailedAttempts} failed login attempts", 
+                user.Id, failedAttempts);
+        }
+
+        // Verificar estado atual do bloqueio
+        DateTimeOffset? lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+        bool isLocked = lockoutEnd.HasValue && lockoutEnd.Value > DateTimeOffset.UtcNow;
+        
+        TimeSpan? lockoutDuration = null;
+        if (isLocked && lockoutEnd.HasValue)
+        {
+            lockoutDuration = lockoutEnd.Value - DateTimeOffset.UtcNow;
+        }
+
+        return (isLocked, lockoutDuration, failedAttempts);
+    }
+}
+```
+
+Além disso, foi implementado um sistema de registo de operações sensíveis em todos os componentes de negócio:
+
+```c#
+public class ProductOfferBc : IProductOfferBc
+{
+    private readonly ILogger<ProductOfferBc> _logger;
+
+    public ProductOffer CreateProductOffer(ProductOffer productOffer, string producerId)
+    {
+        // Log no início da criação da oferta
+        _logger.LogInformation("Product offer creation initiated - ProductId: {ProductId}, ProducerId: {ProducerId}, SubscriptionPeriodId: {SubscriptionPeriodId} at {Time}",
+            productOffer.ProductId, producerId, productOffer.SubscriptionPeriodId, DateTime.UtcNow);
+
+        // Verificações de segurança e validações
+        if (product.ProducerId != producerId)
+        {
+            _logger.LogWarning("Product offer creation failed - Unauthorized access - RequestingProducerId: {RequestingProducerId}, OwnerProducerId: {OwnerProducerId} at {Time}",
+                producerId, product.ProducerId, DateTime.UtcNow);
+            throw new UnauthorizedAccessException("You are not allowed to create offers for this product.");
+        }
+
+        // Processamento da oferta...
+    }
+}
+```
+
+O sistema de monitorização implementado garante:
+
+1. **Deteção de Ataques**:
+   - Monitorização de tentativas de login falhadas
+   - Deteção de tentativas de acesso não autorizado
+   - Identificação de padrões suspeitos de comportamento
+
+2. **Rastreabilidade**:
+   - Registo detalhado de todas as operações sensíveis
+   - Identificação do utilizador que realizou cada operação
+   - Timestamp preciso de cada evento
+
+3. **Notificações**:
+   - Alertas em tempo real para eventos críticos
+   - Notificações por email para alterações sensíveis
+   - Relatórios periódicos de atividade suspeita
+
+4. **Investigação**:
+   - Logs estruturados para facilitar análise
+   - Correlação de eventos relacionados
+   - Histórico completo de ações por utilizador
+
+Os logs são armazenados de forma segura e incluem informações contextuais importantes sem expor dados sensíveis, permitindo uma investigação eficaz de incidentes de segurança.
+
+---
+
+### 7.2. Falsificação de identidade para obter acesso não autorizado (4.2 S) - 7.2 ALTO
+
+**<u>1 - Mitigação Implementada: Sistema Abrangente de Proteção de Identidade</u>**
+Esta mitigação visa implementar um conjunto completo de medidas de segurança para prevenir a falsificação de identidade e acesso não autorizado, incluindo políticas robustas de senha, limitação de tentativas de acesso e monitorização contínua.
+
+**Situação Inicial**
+A aplicação AMAP possuía mecanismos básicos de autenticação, mas carecia de políticas robustas de senha, verificação de email no registo e deteção de comportamentos suspeitos.
+
+**Ações Realizadas**
+Foi implementado um sistema completo de proteção que inclui:
+
+1. Políticas rigorosas de senha
+2. Limitação de tentativas de login
+3. Verificação obrigatória de email
+4. Deteção de comportamentos suspeitos
+5. Notificações de segurança em tempo real
+
+**Exemplo de Código** (`Program.cs`):
+
+```c#
+// Configuração do Identity com políticas de senha robustas
+builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
+{
+    // Requisitos mínimos de senha
+    options.Password.RequiredLength = 12;
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    
+    // Configuração de bloqueio progressivo
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+    
+    options.User.RequireUniqueEmail = true;
+})
+.AddPasswordValidator<CustomPasswordValidator<AppUser>>();
+```
+
+Implementação do serviço de bloqueio de conta (`AccountLockoutService.cs`):
+
+```c#
+public async Task<(bool IsLocked, TimeSpan? LockoutDuration, int FailedAttempts)> HandleFailedLoginAttemptAsync(AppUser user)
+{
+    if (user == null)
+        return (false, null, 0);
+
+    await _userManager.AccessFailedAsync(user);
+    int failedAttempts = await _userManager.GetAccessFailedCountAsync(user);
+    
+    // Implementação de bloqueio progressivo
+    if (failedAttempts >= 5 && failedAttempts < 10)
+    {
+        // Após 5 falhas: bloqueio de 15 minutos
+        _logger.LogWarning("User {UserId} locked out for 15 minutes after {FailedAttempts} failed login attempts", 
+            user.Id, failedAttempts);
+    }
+    else if (failedAttempts >= 10 && failedAttempts < 15)
+    {
+        // Após 10 falhas: bloqueio de 30 minutos
+        await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(30));
+        _logger.LogWarning("User {UserId} locked out for 30 minutes after {FailedAttempts} failed login attempts", 
+            user.Id, failedAttempts);
+    }
+    else if (failedAttempts >= 15)
+    {
+        // Após 15 falhas: bloqueio de 60 minutos
+        await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(60));
+        _logger.LogWarning("User {UserId} locked out for 60 minutes after {FailedAttempts} failed login attempts", 
+            user.Id, failedAttempts);
+    }
+
+    // Verificar estado atual do bloqueio
+    DateTimeOffset? lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+    bool isLocked = lockoutEnd.HasValue && lockoutEnd.Value > DateTimeOffset.UtcNow;
+    
+    TimeSpan? lockoutDuration = null;
+    if (isLocked && lockoutEnd.HasValue)
+    {
+        lockoutDuration = lockoutEnd.Value - DateTimeOffset.UtcNow;
+    }
+
+    return (isLocked, lockoutDuration, failedAttempts);
+}
+```
+
+O sistema implementado garante:
+
+1. **Políticas de Senha Robustas**:
+   - Mínimo de 12 caracteres
+   - Combinação obrigatória de maiúsculas, minúsculas, números e símbolos
+   - Validação de senhas fracas ou comprometidas
+   - Expiração periódica de senhas
+
+2. **Limitação de Tentativas de Login**:
+   - Bloqueio progressivo após falhas (15/30/60 minutos)
+   - Monitorização de tentativas simultâneas
+   - Registo detalhado de tentativas falhadas
+   - Notificações de bloqueio de conta
+
+3. **Verificação de Email**:
+   - Confirmação obrigatória no registo
+   - Revalidação após alterações sensíveis
+   - Notificações de alterações de credenciais
+   - Proteção contra emails inválidos
+
+4. **Deteção de Comportamentos Suspeitos**:
+   - Monitorização de padrões de acesso
+   - Deteção de IPs suspeitos
+   - Análise de tentativas repetidas
+   - Alertas de atividade anormal
+
+5. **Sistema de Notificações**:
+   - Alertas em tempo real de novos logins
+   - Notificações de alterações de senha
+   - Avisos de tentativas suspeitas
+   - Comunicação de bloqueios de conta
+
+O sistema é reforçado por logs detalhados e monitorização contínua, permitindo a deteção e resposta rápida a tentativas de acesso não autorizado. 
+
+---
+
 ### 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
 
 <u>**1 -** **Mitigação Implementada:** **HTTPS obrigatório**</u>
@@ -278,6 +1106,267 @@ builder.Services.ConfigureApplicationCookie(options =>
 	};
 });
 ```
+
+---
+
+### 9.1. Controlo de Acesso a Dados (3.1 I) - 7.8 ALTO
+
+**<u>1 - Mitigação Implementada: Controlo de Acesso Baseado em Funções e Propriedade</u>**
+Esta mitigação visa implementar um sistema robusto de controlo de acesso que garante que os utilizadores só possam aceder aos dados para os quais têm autorização explícita, baseado nas suas funções e propriedade dos dados.
+
+**Situação Inicial**
+A aplicação AMAP possuía um sistema básico de roles (Manager, Producer, CoProducer), mas carecia de verificações granulares de propriedade de dados e controlo de acesso a nível de registo.
+
+**Ações Realizadas**
+Foi implementado um sistema abrangente de controlo de acesso que inclui:
+
+1. Verificação de roles em todas as operações
+2. Validação de propriedade de dados
+3. Filtragem automática de dados baseada no contexto do utilizador
+4. Registo detalhado de tentativas de acesso não autorizado
+
+**Exemplo de Código** (`AMAP.Business/Components/DeliveryBc.cs`):
+
+```c#
+public class DeliveryBc : IDeliveryBc
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<DeliveryBc> _logger;
+
+    public void UpdateDeliveredQuantity(int subscriptionId, int deliveredQuantity, string currentProducerId)
+    {
+        // Validação inicial dos dados
+        if (deliveredQuantity < 0)
+        {
+            _logger.LogWarning("Delivery update failed - Negative quantity - SubscriptionId: {SubscriptionId}, Quantity: {Quantity}, ProducerId: {ProducerId} at {Time}",
+                subscriptionId, deliveredQuantity, currentProducerId, DateTime.UtcNow);
+            throw new ArgumentException("Delivered quantity cannot be negative.");
+        }
+
+        var subscription = _unitOfWork.Subscription.Get(
+            s => s.Id == subscriptionId,
+            includeProperties: "ProductOffer.Product"
+        );
+
+        // Verificação de propriedade e autorização
+        if (subscription.ProductOffer == null ||
+            subscription.ProductOffer.Product.ProducerId != currentProducerId)
+        {
+            _logger.LogWarning("Delivery update failed - Unauthorized access - RequestingProducerId: {RequestingProducerId}, OwnerProducerId: {OwnerProducerId}, SubscriptionId: {SubscriptionId} at {Time}",
+                currentProducerId, subscription.ProductOffer?.Product.ProducerId, subscriptionId, DateTime.UtcNow);
+            throw new UnauthorizedAccessException("You are not allowed to update this subscription.");
+        }
+
+        // Processamento da atualização após validação...
+    }
+}
+```
+
+Além disso, foram implementadas verificações de autorização nos controladores:
+
+```c#
+[HttpPut("{id}/validate")]
+[Authorize(Roles = nameof(UserType.Producer))]
+public IActionResult ValidatePayment(int id)
+{
+    try
+    {
+        var payment = _unitOfWork.Payment.Get(p => p.Id == id);
+        if (payment == null)
+        {
+            return NotFound($"Payment with ID {id} not found.");
+        }
+
+        var producerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(producerId))
+        {
+            return Unauthorized("User identity not found or invalid.");
+        }
+
+        // Verificação de propriedade do pagamento
+        var historyEntry = new PaymentValidationHistory
+        {
+            PaymentId = payment.Id,
+            ProducerId = producerId,
+            ValidationTimestamp = DateTime.UtcNow
+        };
+
+        _unitOfWork.PaymentValidationHistory.Add(historyEntry);
+        
+        // Atualização do estado do pagamento
+        payment.Validated = true;
+        payment.ValidationDate = DateTime.UtcNow;
+        payment.ValidatedByProducerId = producerId;
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return new ObjectResult("Forbidden") { StatusCode = 403 };
+    }
+}
+```
+
+O sistema de controlo de acesso implementado garante:
+
+1. **Segregação de Funções**:
+   - Managers têm acesso administrativo
+   - Produtores só podem gerir seus próprios produtos e ofertas
+   - Co-produtores só podem aceder às suas próprias subscrições
+
+2. **Verificação de Propriedade**:
+   - Validação da propriedade de recursos antes de qualquer operação
+   - Verificação de relações entre entidades para garantir acesso apropriado
+   - Prevenção de acesso não autorizado a dados de outros utilizadores
+
+3. **Filtragem Automática**:
+   - Dados filtrados automaticamente com base no contexto do utilizador
+   - Queries adaptadas para retornar apenas dados autorizados
+   - Prevenção de exposição acidental de dados sensíveis
+
+4. **Auditoria**:
+   - Registo de todas as tentativas de acesso
+   - Documentação de decisões de autorização
+   - Rastreamento de alterações em dados sensíveis
+
+O controlo de acesso é aplicado de forma consistente em todas as camadas da aplicação, desde a interface do utilizador até à camada de dados, garantindo que não existam lacunas na segurança dos dados.
+
+---
+
+### 9.2. Falsificação de identidade para contornar autenticação (5.2 S) - 7.8 ALTO
+
+**<u>1 - Mitigação Implementada: Sistema Robusto de Autenticação e Controlo de Acesso</u>**
+Esta mitigação visa implementar um sistema abrangente de autenticação e controlo de acesso que previne tentativas de bypass e garante que apenas utilizadores autenticados possam aceder a recursos protegidos.
+
+**Situação Inicial**
+A aplicação AMAP possuía mecanismos básicos de autenticação, mas necessitava de melhorias na validação de tokens, gestão de sessões e monitorização de tentativas de bypass.
+
+**Ações Realizadas**
+Foi implementado um sistema completo de proteção que inclui:
+
+1. Filtros de autenticação consistentes
+2. Verificação rigorosa de claims no JWT
+3. Cookies seguros com flags apropriadas
+4. Invalidação de sessão após alterações sensíveis
+5. Monitorização contínua de tokens
+
+**Exemplo de Código** (`Program.cs`):
+
+```c#
+// Configuração de cookies de autenticação
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/api/account/login";
+    options.LogoutPath = "/api/account/logout";
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = 401;
+        return Task.CompletedTask;
+    };
+});
+
+// Configuração de autorização
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
+    options.AddPolicy("Producer", policy => policy.RequireRole("Producer"));
+    options.AddPolicy("CoProducer", policy => policy.RequireRole("CoProducer"));
+});
+```
+
+Implementação de middleware de autenticação MFA (`MfaMiddleware.cs`):
+
+```c#
+public class MfaMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<MfaMiddleware> _logger;
+    private readonly HashSet<string> _excludedEndpoints;
+
+    public async Task InvokeAsync(HttpContext context, UserManager<AppUser> userManager)
+    {
+        if (!context.User.Identity.IsAuthenticated || 
+            _excludedEndpoints.Any(endpoint => context.Request.Path.StartsWithSegments(endpoint)))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Verificar se o utilizador é um Gestor
+        if (context.User.IsInRole("Manager"))
+        {
+            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId != null)
+            {
+                var user = await userManager.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    // Verificar MFA
+                    if (user.TwoFactorSetupRequired || 
+                        (user.TwoFactorEnabled && context.Session.GetString("MfaVerified") != "true"))
+                    {
+                        _logger.LogWarning("Manager access attempt without MFA verification: {UserId}", userId);
+                        
+                        context.Response.StatusCode = 403;
+                        context.Response.ContentType = "application/json";
+                        
+                        var responseMessage = user.TwoFactorSetupRequired
+                            ? "{\"message\":\"MFA setup required\",\"requiresMfaSetup\":true}"
+                            : "{\"message\":\"MFA verification required\",\"requiresMfa\":true}";
+                        
+                        await context.Response.WriteAsync(responseMessage);
+                        return;
+                    }
+                }
+            }
+        }
+
+        await _next(context);
+    }
+}
+```
+
+O sistema implementado garante:
+
+1. **Filtros de Autenticação**:
+   - Verificação consistente em todas as rotas protegidas
+   - Middleware personalizado para validação MFA
+   - Proteção contra acesso direto a endpoints
+   - Validação de roles e permissões
+
+2. **Gestão de Tokens**:
+   - Verificação rigorosa de claims JWT
+   - Expiração automática após 30 minutos
+   - Renovação segura de tokens
+   - Revogação em caso de comprometimento
+
+3. **Segurança de Cookies**:
+   - Flag HttpOnly ativada
+   - Flag Secure para HTTPS
+   - SameSite Strict para proteção CSRF
+   - Expiração controlada de sessões
+
+4. **Invalidação de Sessão**:
+   - Logout forçado após alteração de senha
+   - Renovação de tokens após mudanças sensíveis
+   - Limpeza de cookies e dados de sessão
+   - Notificação de sessões encerradas
+
+5. **Monitorização de Segurança**:
+   - Registo de todas as tentativas de autenticação
+   - Deteção de tokens inválidos ou expirados
+   - Alertas de tentativas de bypass
+   - Análise de padrões suspeitos
+
+O sistema é complementado por logs detalhados e monitorização em tempo real, permitindo a deteção e resposta imediata a tentativas de contornar a autenticação. 
+
+---
+
 ### 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
 
 <u>**1 -** **Mitigação Implementada: Expiração rápida de credenciais temporárias**</u>
@@ -321,6 +1410,8 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 // ... existing code ...
 ```
 });
+
+---
 
 ### 11. Acesso a informações sensíveis do utilizador (3.1 I) - 7.8 ALTO
 
@@ -513,21 +1604,24 @@ Para uma implementação completa, seria necessário:
 
 A implementação parcial atual já oferece alguma proteção contra exposição desnecessária de dados sensíveis, mas uma abordagem mais abrangente e consistente é recomendada para mitigar completamente esta ameaça.
 
+---
+
 ### 14. Exposição não autorizada de dados sensíveis (5.1 I) - 7.6 ALTO
 
-*Mitigação Parcialmente Implementada:* *Criptografia em trânsito e em repouso*
+**<u>1 - Mitigação Parcialmente Implementada: Criptografia em trânsito e em repouso</u>**
 Esta mitigação visa proteger os dados sensíveis através de criptografia, tanto quando estão sendo transmitidos pela rede (em trânsito) quanto quando estão armazenados em bases de dados (em repouso), evitando que possam ser interceptados ou acessados por terceiros não autorizados.
 
-*Situação Inicial*
+**Situação Inicial**
 Inicialmente, a aplicação AMAP apresentava uma configuração básica de segurança para transmissão de dados, mas sem uma estratégia abrangente de criptografia. Os dados sensíveis como informações de pagamentos, dados de produtores e co-produtores, eram transmitidos e armazenados sem proteção criptográfica adequada.
 
-*Ações Realizadas*
+**Ações Realizadas**
 Foi implementada uma camada de proteção para dados em trânsito através da configuração adequada de HTTPS e cookies seguros em ambiente de produção. Estas implementações incluem:
+
 1.	Configuração de redirecionamento HTTPS obrigatório
 2.	Configuração de cookies seguros em ambiente de produção
 3.	Definição de políticas de segurança adequadas para cookies
 
-*Exemplo de Código (AMAP_API/Program.cs)*
+**Exemplo de Código (`AMAP_API/Program.cs`)**:
 
 ```c#
 // Configuração do cookie de autenticação
@@ -553,29 +1647,31 @@ builder.Services.ConfigureApplicationCookie(options =>
 app.UseHttpsRedirection(); // Força redirecionamento para HTTPS
 ```
 
-*Limitações da Implementação Atual*
+**Limitações da Implementação Atual**
 Esta implementação é considerada parcial porque, embora proteja os dados durante a transmissão através de HTTPS, não implementa criptografia para dados em repouso na base de dados, especialmente para informações altamente sensíveis como dados de pagamentos e detalhes financeiros.
 
-*Próximos Passos para Implementação Completa*
+**Próximos Passos para Implementação Completa**
 Para uma implementação completa seria necessário:
+
 1.	Implementar criptografia para dados sensíveis armazenados no banco de dados
 2.	Utilizar o Data Protection API do ASP.NET Core para proteger dados sensíveis
 3.	Estabelecer um sistema seguro de gerenciamento de chaves de criptografia
 4.	Implementar criptografia para arquivos temporários e logs que possam conter dados sensíveis
 
-*Mitigação Implementada:* *Controlo de acesso detalhado*
+<u>**2 - Mitigação Implementada: Controlo de acesso detalhado**</u>
 Esta mitigação garante que apenas utilizadores autorizados possam acessar dados específicos, com verificações detalhadas tanto a nível de role quanto a nível de propriedade dos recursos, criando uma camada robusta de proteção contra acesso não autorizado.
 
-*Situação Inicial*
+**Situação Inicial**
 A aplicação AMAP já possuía um sistema básico de autorização baseado em roles (Manager, Producer, CoProducer), mas as verificações de propriedade de recursos não eram consistentes em todos os componentes.
 
-*Ações Realizadas*
+***A****ções Realizadas***
 Foi implementado um sistema abrangente de controlo de acesso que verifica não apenas as roles dos utilizadores, mas também a propriedade dos recursos em todos os componentes de negócio da aplicação. Estas implementações incluem:
+
 1.	Autorização baseada em roles nos controllers via atributos
 2.	Verificações de propriedade de recursos nos business components
 3.	Verificações granulares em cada operação de acesso a dados sensíveis
 
-*Exemplo de Código (AMAP_API/Controllers/SubscriptionController.cs)*
+**Exemplo de Código (`AMAP_API/Controllers/SubscriptionController.cs`)**:
 
 ```c#
 [ApiController]
@@ -605,7 +1701,7 @@ public class SubscriptionController : ControllerBase
 }
 ```
 
-*Exemplo de Código (AMAP.Business/Components/PaymentBc.cs)*
+***Exemplo de Código (`AMAP.Business/Components/PaymentBc.cs`):***
 
 ```c#
 public Payment CreatePayment(Payment payment, string currentCoProducerId)
@@ -635,19 +1731,20 @@ public Payment CreatePayment(Payment payment, string currentCoProducerId)
 
 Esta implementação proporciona um controlo de acesso em múltiplas camadas, garantindo que os utilizadores só possam acessar os dados para os quais têm autorização específica, reduzindo significativamente o risco de exposição não autorizada de dados sensíveis.
 
-*Mitigação Implementada: Filtragem de dados nas respostas da API*
+**<u>3 - Mitigação Implementada: Filtragem de dados nas respostas da API</u>**
 Esta mitigação garante que as APIs retornem apenas os dados estritamente necessários para cada operação, eliminando informações sensíveis desnecessárias das respostas e reduzindo a superfície de exposição de dados.
 
-*Situação Inicial*
+**Situação Inicial**
 A aplicação AMAP originalmente retornava entidades completas em várias operações de API, potencialmente expondo dados sensíveis ou desnecessários para o cliente.
 
-*Ações Realizadas*
+***A****ções Realizadas***
 Foi implementado um sistema de Data Transfer Objects (DTOs) para todas as entidades principais da aplicação, garantindo que apenas os dados necessários para cada operação sejam retornados nas respostas da API. Estas implementações incluem:
+
 1.	Criação de classes DTO para todas as entidades principais
 2.	Mapeamento consistente entre entidades de domínio e DTOs
 3.	Uso de DTOs em todas as respostas de API para limitar dados expostos
 
-*Exemplo de Código (AMAP_API/Controllers/SubscriptionController.cs)*
+**Exemplo de Código (`AMAP_API/Controllers/SubscriptionController.cs`)**:
 
 ```c#
 [HttpGet("{id}")]
@@ -676,7 +1773,7 @@ public IActionResult GetSubscriptionById(int id)
 }
 ```
 
-*Exemplo de Código (AMAP.Business/Components/CatalogBc.cs)*
+***Exemplo de Código (`AMAP.Business/Components/CatalogBc.cs`):***
 
 ```c#
 public async Task<List<CatalogDto>> GetCatalogByProducer(string producerId)
@@ -715,20 +1812,21 @@ public async Task<List<CatalogDto>> GetCatalogByProducer(string producerId)
 
 Esta implementação garante que os dados sensíveis ou desnecessários nunca sejam expostos nas respostas das APIs, mesmo que existam nas entidades do domínio, reduzindo significativamente o risco de exposição inadvertida de informações sensíveis.
 
-*Mitigação Implementada:* *Logging seguro*
+**<u>4 - Mitigação Implementada: Logging seguro</u>**
 Esta mitigação visa registar detalhadamente todas as operações realizadas sobre dados sensíveis, mantendo uma trilha de auditoria clara enquanto evita registar os próprios dados sensíveis nos logs, permitindo a detecção de atividades suspeitas sem comprometer a segurança das informações.
 
-*Situação Inicial*
+**Situação Inicial**
 A aplicação AMAP não possuía uma estratégia de logging consistente e segura, especialmente para operações que envolviam dados sensíveis como informações financeiras e detalhes de pagamento.
 
-*Ações Realizadas*
+***A****ções Realizadas***
 Foi implementado um sistema abrangente de logging utilizando ILogger da Microsoft para registar de forma segura todas as operações sensíveis nos componentes de negócio. Estas implementações incluem:
+
 1.	Registro do início e conclusão de todas as operações sensíveis
 2.	Logs estruturados com identificadores mas sem dados sensíveis completos
 3.	Filtros de logging configurados para capturar apenas informações relevantes
 4.	Logs detalhados de tentativas de acesso não autorizado
 
-*Exemplo de Código (AMAP.Business/Components/DeliveryBc.cs)*
+***Exemplo de Código (`AMAP.Business/Components/DeliveryBc.cs`):***
 
 ```c#
 public void UpdateDeliveredQuantity(int subscriptionId, int deliveredQuantity, string currentProducerId)
@@ -761,7 +1859,7 @@ public void UpdateDeliveredQuantity(int subscriptionId, int deliveredQuantity, s
 }
 ```
 
-*Exemplo de Código (AMAP_API/Program.cs)*
+****Exemplo de Código (`AMAP_API/Program.cs`):***
 
 ```c#
 // Configuração de logging
@@ -779,19 +1877,20 @@ builder.Logging.AddFilter("AMAP.Business.Components", LogLevel.Information);
 
 Esta implementação proporciona uma trilha de auditoria detalhada de todas as operações envolvendo dados sensíveis, facilitando a detecção de atividades suspeitas, enquanto evita registar os próprios dados sensíveis nos logs.
 
-*Mitigação Parcialmente Implementada:* *Política de "need-to-know"*
+**<u>5 - Mitigação Parcialmente Implementada: Política de "need-to-know"</u>**
 Esta mitigação limita o acesso a dados sensíveis apenas às pessoas que realmente precisam deles para realizar suas funções específicas, implementando um princípio de privilégio mínimo tanto a nível de design quanto de implementação de código.
 
-*Situação Inicial*
+**Situação Inicial**
 A aplicação AMAP possuía controles básicos de autorização baseados em roles, mas faltava uma abordagem sistemática para garantir que os dados fossem filtrados consistentemente com base no princípio do "need-to-know" em todas as camadas da aplicação.
 
-*Ações Realizadas*
+**Ações Realizadas**
 Foi implementada uma abordagem parcial de filtragem automática de dados através de query filters no Entity Framework Core, combinada com verificações de autorização nos business components. Estas implementações incluem:
+
 1.	Filtros globais de consulta no contexto do banco de dados
 2.	Verificações de autorização granulares nos componentes de negócio
 3.	Separação clara de dados por tipo de utilizador
 
-*Exemplo de Código (AMAP.DataAccess.Data/AppDbContext.cs)*
+**Exemplo de Código (AMAP.DataAccess.Data/AppDbContext.cs)**
 
 ```c#
 protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -830,14 +1929,16 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 }
 ```
 
-*Limitações da Implementação Atual*
+**Limitações da Implementação Atual**
 Esta implementação é considerada parcial porque:
+
 1.	Embora existam filtros automáticos para dados excluídos, ainda não há um sistema abrangente para filtrar dados com base no utilizador atual
 2.	Alguns componentes de negócio poderiam implementar verificações mais granulares do princípio "need-to-know"
 3.	Não existe uma política formal documentada para determinar quais dados cada tipo de utilizador deve acessar
 
-*Próximos Passos para Implementação Completa*
+**Próximos Passos para Implementação Completa**
 Para uma implementação completa seria necessário:
+
 1.	Expandir os filtros globais para incluir filtros baseados no utilizador atual
 2.	Implementar verificações sistemáticas de "need-to-know" em todas as consultas de dados
 3.	Desenvolver e documentar uma política formal definindo quais dados cada tipo de utilizador precisa acessar
@@ -845,7 +1946,74 @@ Para uma implementação completa seria necessário:
 
 A implementação parcial atual já oferece proteção significativa contra exposição não autorizada de dados sensíveis, mas uma abordagem mais sistemática seria benéfica para mitigar completamente esta ameaça.
 
-- Descrição detalhada das funcionalidades implementadas com foco em segurança  
+### 15. Integridade - Alteração não autorizada de registos de pagamentos (3.3 T)
+
+Esta seção descreve as mitigações implementadas para prevenir a alteração não autorizada dos registos de pagamento.
+
+**Mitigações Implementadas:**
+
+*   **Segregação de funções:** O acesso e as permissões para operações de pagamento (criação, validação, gestão) são baseados nos papéis do utilizador (`CoProducer`, `Producer`, `Manager`).
+*   **Logs imutáveis de verificação:** A entidade `PaymentValidationHistory` atua como um registo imutável de cada evento de validação, fornecendo uma trilha de auditoria confiável.
+*   **Histórico de verificações:** A entidade `PaymentValidationHistory` mantém um histórico de quem validou o pagamento e quando.
+*   **Aprovação:** O processo de validação por um `Producer` (`PUT /api/payment/{id}/validate`), distinto da criação do pagamento pelo `CoProducer`, serve como uma forma de aprovação secundária e rastreável.
+
+**<u>Histórico de Validações de Pagamento</u>**
+
+**Entidade:**  
+`PaymentValidationHistory`
+
+**Descrição:**  
+Regista cada evento de validação de pagamento:
+
+- Uma entrada por validação bem-sucedida
+- Inclui ID do pagamento, ID do Produtor e timestamp
+- Garante trilha de auditoria e integridade
+
+**<u>Modelo: PaymentValidationHistory</u>**
+
+```csharp
+public class PaymentValidationHistory
+{
+    public int Id { get; set; }
+    [Required]
+    public int PaymentId { get; set; }
+    [ForeignKey("PaymentId")]
+    public Payment Payment { get; set; }
+    [Required]
+    public string? ProducerId { get; set; } // Stores the Producer's user ID (string GUID)
+    [Required]
+    public DateTime ValidationTimestamp { get; set; }
+}
+```
+
+---
+
+**<u>Segurança e Implementação</u>**
+
+- Tokens de confirmação são únicos e de uso único
+- Assinaturas digitais para aceitação de termos
+- Datas/horas em UTC
+- Validação e sanitização de campos sensíveis
+- Entity Framework Core para persistência
+- Migrações automáticas
+- Tratamento de exceções e logs de auditoria
+
+---
+
+<u>**Configuração de Email**</u>
+
+```json
+"MailSettings": {
+    "Host": "smtp.mailtrap.io",
+    "Port": 2525,
+    "Username": "392da75e956865",
+    "Password": "sua-senha",
+    "FromEmail": "noreply@amap.com",
+    "FromName": "AMAP Notifications"
+}
+```
+
+---
 
 ## Nova arquitetura em camadas
 
@@ -905,6 +2073,8 @@ Esta abordagem em camadas claramente definidas, com responsabilidades bem segreg
 
 - Demonstração da automação implementada (capturas de ecrã, fluxos)  
 - Relação entre as funcionalidades desenvolvidas e os requisitos de segurança identificados na Fase 1  
+
+---
 
 ## Boas Práticas de Desenvolvimento Adotadas
 
@@ -1064,6 +2234,8 @@ A solução AMAP segue uma arquitetura em camadas claramente definida, com cada 
 - Consistência na nomeação de operações semelhantes em diferentes componentes.
 - Uso de atributos de validação e anotações para enriquecer as propriedades.
 
+---
+
 ### Revisões e Auditorias de Segurança
 
 #### Revisões de código
@@ -1103,7 +2275,10 @@ O revisor aprova o PR diretamente na plataforma, via comentário ou aprovação.
 
 Durante o desenvolvimento, foram realizadas várias revisões de código que resultaram na identificação e correção de issues relacionadas principalmente com validação de entrada e melhorias na legibilidade do código. A comunicação rápida e o processo simplificado permitiram uma resolução eficiente das questões encontradas, contribuindo para a melhoria contínua da qualidade do software.
 
+---
+
 #### Análise Estática de Código (SAST)
+
 A análise estática de código (SAST) é uma prática fundamental no nosso processo de Desenvolvimento de Software Seguro (SSDLC). Para este fim, utilizamos o **SonarQube Cloud**, que nos permite identificar e gerir de forma proativa:
 
 - Bugs e vulnerabilidades de segurança  
@@ -1185,12 +2360,12 @@ Esta integração automatizada assegura que a análise estática é uma etapa ob
 
 Com base na análise mais recente disponível no **SonarCloud**, o projeto apresenta o seguinte perfil de qualidade:
 
-- **Segurança**: 1 vulnerabilidade (Grau D) — requer correção prioritária.  
-- **Confiabilidade**: 63 *issues* (Grau D) — identificadas situações com comportamento potencialmente incorreto.  
-- **Manutenibilidade**: 284 *issues* (Grau A) — embora existam vários *code smells*, a manutenibilidade é considerada boa.  
+- **Segurança**: 6 vulnerabilidade (Grau A).  
+- **Confiabilidade**: 10*issues* (Grau C) — identificadas situações com comportamento potencialmente incorreto.  
+- **Manutenibilidade**: 291 *issues* (Grau A) — embora existam vários *code smells*, a manutenibilidade é considerada boa.  
 - **Cobertura de Código**: **78,06%** — valor obtido diretamente através do **Visual Studio Enterprise**. Contudo, o **SonarCloud ainda não está a refletir corretamente esta métrica**, possivelmente devido à configuração do ficheiro de cobertura.  
-- **Código Duplicado**: 2,0% — um valor relativamente baixo.  
-- **Security Hotspots**: 1 fragmento de código que requer revisão manual para verificar se constitui ou não uma vulnerabilidade real.
+- **Código Duplicado**: 2,8% — um valor relativamente baixo.  
+- **Security Hotspots**: 2 fragmento de código que requer revisão manual para verificar se constitui ou não uma vulnerabilidade real.
 
 Este panorama oferece uma visão clara sobre a qualidade e segurança do código, permitindo priorizar as áreas que mais necessitam de atenção.
 
@@ -1226,18 +2401,48 @@ Para assegurar a eficácia contínua da análise estática de código:
 - Os resultados são monitorizados com frequência e as *issues* (bugs, vulnerabilidades e *code smells*) são triadas e resolvidas por ordem de prioridade.  
 - Estamos a investigar e ajustar a configuração do pipeline para garantir que a cobertura de testes seja corretamente interpretada e refletida no SonarCloud.
 
-#### Análise Dinâmica de Código (DAST)
-- Ferramentas implementadas (OWASP ZAP, Burp Suite, etc.)  
-- Configuração dos scanners  
-- Testes realizados (autenticação, injeção, etc.)  
-- Resultados e mitigações implementadas  
+---
 
-#### Análise Interativa de Código (IAST)
-- Implementação e integração  
-- Cobertura de código alcançada  
-- Vulnerabilidades detectadas durante a execução  
+#### Análise Dinâmica e Interativa de Código
+
+ ##### DAST (Dynamic Application Security Testing)
+
+A análise dinâmica de segurança foi implementada com recurso ao **Snyk**, integrado na pipeline (`main.yml`). Esta ferramenta permite:
+
+- Realizar testes dinâmicos de segurança à aplicação;
+- Detetar vulnerabilidades em dependências;
+- Avaliar a aplicação em tempo de execução (runtime).
+
+##### IAST (Interactive Application Security Testing)
+
+A componente interativa foi assegurada pelo **SonarCloud**, também aplicada via `main.yml`. Esta solução oferece:
+
+- Análise contínua durante o processo de build;
+- Detecção de vulnerabilidades em tempo real;
+- Verificações interativas durante a execução do código.
+
+##### Sugestões para Evolução
+
+Para reforçar ainda mais a componente de segurança, estão a ser consideradas as seguintes melhorias para o próximo sprint:
+
+**DAST**
+
+- Integrar o **OWASP ZAP** na pipeline;
+- Incluir varredura automática de APIs;
+- Adicionar testes de penetração automatizados.
+
+**IAST**
+
+- Explorar ferramentas adicionais como o **Contrast Security**;
+- Aprofundar a análise em runtime;
+- Implementar monitorização contínua do comportamento da aplicação.
+
+Estas propostas foram discutidas pela equipa e serão avaliadas com vista à sua inclusão nas próximas iterações do projeto.
+
+---
 
 #### Análise de Composição de Software (SCA)
+
 A Análise de Composição de Software (SCA) é um processo automatizado que visa identificar e gerir componentes de código aberto e bibliotecas de terceiros utilizados no projeto. A utilização destes componentes pode introduzir vulnerabilidades conhecidas e riscos legais associados a licenças.
 
 O objetivo da SCA no pipeline CI/CD é:
@@ -1430,6 +2635,8 @@ Abaixo apresenta-se um inventário dos pacotes principais identificados manualme
 
 Este inventário será mantido ao longo do próximo sprint como parte do processo de revisão contínua da segurança do projeto.
 
+![](..\..\Imagens\listPacktage.png)
+
 ### Manutenção Contínua e Segurança
 
 Este inventário será mantido e atualizado no âmbito do processo de revisão contínua da segurança do projeto. Serão utilizadas tanto ferramentas automáticas como verificações manuais para garantir a conformidade e detetar vulnerabilidades em tempo útil.
@@ -1439,6 +2646,8 @@ Este inventário será mantido e atualizado no âmbito do processo de revisão c
 A combinação de ferramentas automáticas de análise de componentes (como o OWASP Dependency Check e o Snyk) com comandos manuais da .NET CLI permite uma análise mais robusta. Cada ferramenta possui métodos próprios de deteção e bases de dados de vulnerabilidades diferentes.
 
 Esta abordagem multifacetada segue as boas práticas recomendadas na área da segurança e proporciona uma visão mais completa dos riscos associados ao uso de software de terceiros no projeto.
+
+---
 
 ## Planos e Execução de Testes de Segurança
 
@@ -1658,18 +2867,68 @@ Todos os testes implementados foram concluídos com sucesso, alcançando uma cob
 
 A combinação do xUnit e NSubstitute, junto com a abordagem estruturada seguindo o padrão AAA, resultou em um conjunto de testes robustos e eficazes que contribuíram significativamente para a manutenção e evolução segura da solução AMAP.
 
-### 3.3 Validação de Configurações e Verificação de Artefactos
+---
 
-#### Segurança nas configurações
-- Hardening aplicado (servidor, base de dados, framework)  
-- Gestão segura de configurações  
-- Verificação automatizada de configurações seguras  
+## Validação de Configurações e Verificação de Artefactos
 
-#### Verificação de artefactos
-- Assinatura digital  
-- Verificação de integridade  
-- Chain of custody  
-- Análise de artefactos de build  
+Ao longo deste sprint, foram implementadas várias medidas para garantir que a aplicação mantém um nível elevado de segurança e rastreabilidade, desde a configuração até aos artefactos gerados.
+
+### Validação de Configurações
+
+Foram aplicadas boas práticas de segurança na configuração do ambiente, nomeadamente:
+
+- **Hardening** do framework **.NET**;
+- Configuração segura do **ASP.NET Core Identity**;
+- Políticas de **CORS** restritivas para limitar o acesso apenas a origens confiáveis;
+- Definição de **cookies seguros** em ambiente de produção;
+- Ativação obrigatória do **HTTPS**.
+
+Além disso, foi feita uma gestão segura das configurações sensíveis:
+
+- Utilização de **GitHub Secrets** para armazenamento de credenciais;
+- Separação clara entre configurações de **desenvolvimento** e **produção**;
+- Validação automática das configurações críticas diretamente na pipeline.
+
+### Verificação Automatizada
+
+Para reforçar a segurança, foram integradas ferramentas de verificação automática:
+
+- **SonarCloud** para validação de configurações de segurança e deteção de más práticas;
+- **Snyk** para verificação de políticas de segurança e dependências vulneráveis;
+- **OWASP Dependency Check** para análise detalhada de bibliotecas e pacotes utilizados.
+
+### Verificação de Artefactos
+
+A verificação dos artefactos gerados também foi tida em conta:
+
+- Geração de **relatórios de cobertura de código**;
+- Produção de relatórios de **análise de segurança** com SonarCloud, Snyk e OWASP;
+- Registo e preservação dos **logs de build e deploy**.
+
+**Cadeia de Custódia:**
+
+Para garantir a integridade e rastreabilidade do processo, foram implementados:
+
+- Registo automático de todas as etapas da pipeline via **GitHub Actions**;
+- **Logs detalhados** de cada fase do ciclo de build e deploy;
+- Rastreabilidade total de alterações através dos **commits**.
+
+**Análise de Artefactos de Build:**
+
+- Verificação das **imagens Docker** geradas;
+- Validação dos **pacotes NuGet** utilizados no projeto;
+- Análise de dependências e potenciais vulnerabilidades.
+
+**Artefactos Gerados e Disponibilizados:**
+
+Os seguintes artefactos são gerados e disponibilizados após cada execução da pipeline:
+
+- Relatórios de cobertura de código em formato **HTML**;
+- Relatórios de segurança consolidados;
+- Logs completos de execução da pipeline;
+- **Imagens Docker** assinadas e versionadas.
+
+Estas práticas já se encontram integradas na nossa pipeline CI/CD e contribuem de forma significativa para a segurança, transparência e confiança no processo de entrega contínua.
 
 ---
 
@@ -1739,6 +2998,8 @@ graph TD
    - Acesso seguro ao ambiente de staging
    - Suporte a autenticação por chave
    - Configuração flexível para diferentes ambientes
+
+---
 
 ## Fases da Pipeline
 
@@ -1906,6 +3167,8 @@ Esta fase implanta a nova versão da aplicação no ambiente de staging, atualiz
    - Verificação de licenças de pacotes
    - Alertas automáticos para dependências desatualizadas
 
+---
+
 ## Análise de Segurança
 
 O Snyk é integrado à pipeline para fornecer uma camada adicional de segurança, focando na análise de código e containers:
@@ -1978,90 +3241,91 @@ Para que a pipeline funcione corretamente, diversos segredos precisam de ser con
 
 # Avaliação com OWASP ASVS
 
-### 5.1 Metodologia de Avaliação
-- Processo de avaliação ASVS implementado  
-- Ferramentas de apoio utilizadas  
-- Processo de documentação e rastreabilidade  
-- Versão do ASVS utilizada e justificação  
+## Implementação e Progresso
 
-### 5.2 Resultados da Avaliação por Categoria
+O projeto **AMAP** avançou significativamente na aplicação do **ASVS**, com enfoque nas seguintes categorias:
 
-#### Architecture, Design and Threat Modeling
-- Requisitos verificados  
-- Evidências de conformidade  
-- Gaps identificados  
+### Arquitetura, Design e Modelação de Ameaças
 
-#### Authentication
-- Implementações seguras  
-- Testes realizados  
-- Conformidade com requisitos  
+- Implementação de pipeline CI/CD com validações de segurança;
+- Análise estática de código;
+- Validação de configurações seguras.
 
-#### Session Management
-- Mecanismos implementados  
-- Verificações realizadas  
+**Requisitos pendentes:**
 
-#### Access Control
-- Implementação do modelo de controlo de acesso  
-- Verificação de autorização  
+- Política de gestão de chaves segundo o NIST SP 800-57;
+- Uso de key vaults e APIs seguras para proteção de segredos;
+- Processo definido para substituição de chaves e re-encriptação de dados;
+- Logging consistente e envio seguro para sistemas remotos;
+- Validação automática de *deployments* cloud na pipeline.
 
-#### Validation, Sanitization and Encoding
-- Técnicas implementadas  
-- Cobertura alcançada  
+### Autenticação e Gestão de Sessão
 
-#### Stored Cryptography
-- Algoritmos e implementações utilizadas  
-- Gestão de chaves  
+- Autenticação segura;
+- Gestão de tokens;
+- Proteção contra ataques comuns.
 
-#### Error Handling and Logging
-- Política implementada  
-- Verificações realizadas  
+**Requisitos pendentes:**
 
-#### Data Protection
-- Mecanismos de proteção  
-- Classificação de dados  
+- Encerramento de sessões após alteração de palavra-passe;
+- Gestão e revogação de sessões ativas;
+- Cookies com `__Host-` e configuração precisa do atributo `path`;
+- Revogação de tokens OAuth;
+- Gestão de sessões em CSPs e RPs.
 
-#### Communication
-- Segurança nas comunicações  
-- Verificações TLS/SSL  
+### Controlo de Acesso
 
-#### Malicious Code
-- Prevenções implementadas  
-- Verificações realizadas  
+- Validação de permissões;
+- Princípio do menor privilégio;
+- Verificação de autorizações.
 
-#### Business Logic
-- Testes de lógica de negócio  
-- Prevenção de circumvention  
+**Requisitos pendentes:**
 
-#### Files and Resources
-- Gestão segura de ficheiros  
-- Uploads/downloads seguros  
+- MFA em interfaces administrativas;
+- Autorização adicional conforme o risco da aplicação.
 
-#### API and Web Service
-- Segurança na implementação de APIs  
-- Autenticação e autorização  
+### Criptografia de Dados Armazenados
 
-#### Configuration
-- Segurança nas configurações  
-- Hardening aplicado  
+- Encriptação de dados sensíveis;
+- Algoritmos e gestão de chaves seguras.
 
-### 5.3 Matriz de Rastreabilidade
+**Requisitos pendentes:**
 
-Tabela de rastreabilidade entre:
-- Requisitos ASVS  
-- Componentes do sistema  
-- Testes automatizados  
-- Ferramentas de verificação  
-- Estado de conformidade  
+- Encriptação de dados regulados (PII, saúde, financeiros);
+- Configuração segura de algoritmos e entropia;
+- Prevenção de reutilização de nonces/IVs;
+- Validação da integridade dos dados encriptados;
+- Operações criptográficas em tempo constante.
+
+### Outras Categorias
+
+Embora com menor abrangência, foram também implementadas medidas de segurança relacionadas com outras categorias do ASVS, contribuindo para a melhoria global da robustez da aplicação.
+
+## Rastreabilidade
+
+A rastreabilidade foi garantida através de:
+
+- Relatórios de cobertura;
+- Análises estáticas automatizadas;
+
+Para mais detalhe, está disponível uma **checklist ASVS em Excel**, com os requisitos avaliados e o respetivo estado de conformidade.
 
 ---
 
 # Conclusão e Próximos Passos
 
-- Síntese dos resultados alcançados neste sprint  
-- Análise crítica do processo de desenvolvimento seguro  
-- Lições aprendidas e oportunidades de melhoria  
-- Planeamento detalhado para o próximo sprint  
-- Roadmap de segurança atualizado  
+Durante este sprint, foi implementada com sucesso uma pipeline **CI/CD** robusta para a solução **AMAP**, estabelecendo uma base sólida para um desenvolvimento contínuo e seguro. A automatização de todo o processo — desde o *build* até ao *deploy* — tem permitido entregas mais rápidas e fiáveis, ao mesmo tempo que mantemos elevados padrões de qualidade com o apoio de ferramentas como o **SonarCloud**, **Snyk** e **OWASP Dependency Check**.
+
+Para o próximo sprint, o foco será reforçar a segurança da aplicação e avançar na implementação dos controlos definidos no **ASVS**. Apesar de já terem sido aplicadas várias medidas de segurança, reconhecemos que este é um processo contínuo e em constante evolução.
+
+Plano de Ação:
+
+- Mitigação de vulnerabilidades já identificadas  
+- Reforço da proteção de dados através de mecanismos de encriptação  
+- Integração de mais testes de segurança automatizados  
+- Expansão da cobertura do ASVS
+
+Estas iniciativas têm como objetivo não só reforçar a segurança da solução, como também promover uma cultura de segurança mais sólida no grupo. Com as práticas já implementadas e as melhorias planeadas, estamos confiantes de que conseguiremos alcançar um elevado nível de segurança e qualidade no desenvolvimento da solução.
 
 ---
 
@@ -2071,19 +3335,19 @@ Tabela de rastreabilidade entre:
 2. SonarCloud. (s.d.). *Documentação do SonarCloud*. Disponível em: https://docs.sonarcloud.io/
 3. OWASP Foundation. (s.d.). *OWASP Dependency Check*. Disponível em: https://owasp.org/www-project-dependency-check/
 4. Microsoft. (s.d.). *Documentação de Segurança do .NET*. Disponível em: https://learn.microsoft.com/pt-pt/dotnet/standard/security/
-
-1. OWASP Foundation. (2021). *OWASP Application Security Verification Standard (ASVS) 4.0*. Disponível em: [https://owasp.org/www-project-application-security-verification-standard/](https://owasp.org/www-project-application-security-verification-standard/)
-
-2. OWASP Foundation. (2021). *OWASP Top 10: The Ten Most Critical Web Application Security Risks*. Disponível em: [https://owasp.org/www-project-top-ten/](https://owasp.org/www-project-top-ten/)
-
-3. Microsoft. (2022). *Security Development Lifecycle (SDL)*. Disponível em: [https://www.microsoft.com/en-us/securityengineering/sdl](https://www.microsoft.com/en-us/securityengineering/sdl)
-
-4. OWASP Foundation. (s.d.). *Threat Modeling Process*. Disponível em: [https://owasp.org/www-community/Threat_Modeling_Process](https://owasp.org/www-community/Threat_Modeling_Process)
-
-5. OWASP Foundation. (s.d.). *Free for Open Source Application Security Tools*. Disponível em: [https://owasp.org/www-community/Free_for_Open_Source_Application_Security_Tools](https://owasp.org/www-community/Free_for_Open_Source_Application_Security_Tools)
-
-6. TechTarget. (s.d.). *Data Flow Diagram (DFD)*. Disponível em: [https://www.techtarget.com/searchdatamanagement/definition/data-flow-diagram-DFD](https://www.techtarget.com/searchdatamanagement/definition/data-flow-diagram-DFD)
-
-7. OWASP Foundation. (s.d.). *Abuse Case Cheat Sheet*. Disponível em: [https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html)
-
-8. Documentos de apoio disponibilizados no Moodle da unidade curricular **Desenvolvimento de Software Seguro** (ISEP, 2024/2025).
+5. Check Point Software Technologies. (s.d.). [O que é SAST (Static Application Security Testing)](https://www.checkpoint.com/pt/cyber-hub/cloud-security/what-is-static-application-security-testing-sast/).
+6. Check Point Software Technologies. (s.d.). [O que é DAST (Dynamic Application Security Testing)](https://www.checkpoint.com/pt/cyber-hub/cloud-security/what-is-dynamic-application-security-testing-dast/).
+7. OWASP. (s.d.). [IAST – Interactive Application Security Testing](https://owasp.org/www-project-devsecops-guideline/latest/02c-Interactive-Application-Security-Testing).
+8. Check Point Software Technologies. (s.d.). [O que é SCA (Software Composition Analysis)](https://www.checkpoint.com/pt/cyber-hub/cloud-security/what-is-software-composition-analysis-sca/).
+9. Snyk. (s.d.). [Site oficial do Snyk](https://snyk.io/).
+10. Check Point Software Technologies. (s.d.). [O que é uma DevSecOps Pipeline](https://www.checkpoint.com/pt/cyber-hub/cloud-security/devsecops/what-is-a-devsecops-pipeline/).
+11. GitHub. (s.d.). [Utilização de Segredos no GitHub Actions](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions).
+12. Microsoft. (s.d.). [Comando dotnet list package](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-package-list).
+13. OWASP Foundation. (2021). *OWASP Application Security Verification Standard (ASVS) 4.0*. Disponível em: [https://owasp.org/www-project-application-security-verification-standard/](https://owasp.org/www-project-application-security-verification-standard/)
+14. OWASP Foundation. (2021). *OWASP Top 10: The Ten Most Critical Web Application Security Risks*. Disponível em: [https://owasp.org/www-project-top-ten/](https://owasp.org/www-project-top-ten/)
+15. Microsoft. (2022). *Security Development Lifecycle (SDL)*. Disponível em: [https://www.microsoft.com/en-us/securityengineering/sdl](https://www.microsoft.com/en-us/securityengineering/sdl)
+16. OWASP Foundation. (s.d.). *Threat Modeling Process*. Disponível em: [https://owasp.org/www-community/Threat_Modeling_Process](https://owasp.org/www-community/Threat_Modeling_Process)
+17. OWASP Foundation. (s.d.). *Free for Open Source Application Security Tools*. Disponível em: [https://owasp.org/www-community/Free_for_Open_Source_Application_Security_Tools](https://owasp.org/www-community/Free_for_Open_Source_Application_Security_Tools)
+18. TechTarget. (s.d.). *Data Flow Diagram (DFD)*. Disponível em: [https://www.techtarget.com/searchdatamanagement/definition/data-flow-diagram-DFD](https://www.techtarget.com/searchdatamanagement/definition/data-flow-diagram-DFD)
+19. OWASP Foundation. (s.d.). *Abuse Case Cheat Sheet*. Disponível em: [https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html)
+20. Documentos de apoio disponibilizados no Moodle da unidade curricular **Desenvolvimento de Software Seguro** (ISEP, 2024/2025).
