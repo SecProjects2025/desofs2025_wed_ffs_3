@@ -45,21 +45,22 @@ Na fase 1 foram identificadas varias ameacas em que selecionamos 15 prioritarias
 
 ### 3. Negação de ações administrativas realizadas (4.1 R) - 8.0 ALTO
 
-*Mitigação Implementada:* *Rastreabilidade de Ações* 
+<u>**1 -** **Mitigação Implementada:** **Rastreabilidade de Ações**</u> 
 Esta mitigação visa criar um registo detalhado e inalterável de todas as ações administrativas realizadas no sistema, permitindo verificar quem fez o quê e quando, evitando assim a negação de responsabilidade por ações realizadas.
 
-*Situação Inicial*
+**Situação Inicial**
 Inicialmente, a aplicação AMAP não possuía um sistema robusto para rastrear ações realizadas por utilizadores, especialmente utilizadores administrativos. Os logs eram básicos e não capturavam detalhes suficientes sobre as operações, dificultando a atribuição de responsabilidade por ações realizadas no sistema.
 
-*Ações Realizadas* 
+**Ações Realizadas** 
 Foi implementado um sistema abrangente de logging utilizando o mecanismo ILogger da Microsoft, que regista detalhadamente todas as ações administrativas em todos os componentes de negócio. O sistema atual captura:
+
 1.	Quem realizou a ação (ID e tipo do utilizador)
 2.	Qual ação foi realizada (criação, modificação, exclusão)
 3.	Sobre quais dados a ação foi realizada (IDs e informações relevantes)
 4.	Quando a ação foi realizada (timestamp preciso)
 5.	Resultado da ação (sucesso ou falha, com motivo detalhado)
 
-*Exemplo de Código (AMAP.Business/Components/ProductBc.cs)*
+**Exemplo de Código** (`AMAP.Business/Components/ProductBc.cs`): 
 
 ```c#
 public void DeleteProduct(int id, string producerId)
@@ -114,20 +115,23 @@ builder.Logging.AddFilter("AMAP.Api.Controllers.AccountController", LogLevel.Inf
 builder.Logging.AddFilter("AMAP.Business.Components", LogLevel.Information);
 ```
 
-*Mitigação Implementada:* *Relatórios automáticos (baseados nas ações realizadas)*
+
+
+<u>**2 -** **Mitigação Implementada: Relatórios automáticos**</u> (baseados nas ações realizadas)
 Esta mitigação proporciona a geração sistemática de relatórios que consolidam e apresentam as ações administrativas realizadas no sistema, facilitando a supervisão e criando registos formais de atividades que podem ser revisados por auditoria.
 
-*Situação Inicial* 
+**Situação Inicial** 
 A aplicação AMAP não possuía um mecanismo para gerar relatórios consolidados de ações administrativas. Embora existissem logs, não havia uma forma estruturada de extrair, organizar e apresentar essas informações em formato de relatório para análise e auditoria.
 
-*Ações Realizadas* 
+**Ações Realizadas** 
 Foi implementado um sistema de geração de relatórios que utiliza os logs detalhados para criar documentos estruturados sobre ações administrativas. O sistema:
+
 1.	Extrai dados dos logs sobre ações administrativas
 2.	Organiza as informações por tipo de ação, utilizador, e período de tempo
 3.	Gera relatórios em formato textual estruturado que podem ser exportados
 4.	Mantém um histórico de relatórios gerados para consulta futura
 
-*Exemplo de Código (AMAP.Business/Components/ProductBc.cs)*
+**Exemplo de Código** (`AMAP.Business/Components/ProductBc.cs`):
 
 ```c#
 public (byte[] FileContent, string FileName, string ContentType) ExportProductsToFile(string producerId, string contentRootPath)
@@ -180,18 +184,19 @@ public (byte[] FileContent, string FileName, string ContentType) ExportProductsT
 ```
 
 Os relatórios gerados capturam todas as ações administrativas importantes, incluindo:
-•	Criação, atualização e exclusão de produtos
-•	Alterações em ofertas de produtos
-•	Gestão de utilizadores e alteração de papéis/permissões
-•	Alterações de senhas e dados de autenticação
-•	Operações relacionadas com pagamentos
+
+- Criação, atualização e exclusão de produtos
+- Alterações em ofertas de produtos
+- Gestão de utilizadores e alteração de papéis/permissões
+- Alterações de senhas e dados de autenticação
+- Operações relacionadas com pagamentos
 
 Estes relatórios fornecem uma trilha clara de auditoria que torna impossível a negação de ações administrativas realizadas, pois cada ação é documentada com detalhes suficientes para identificar quem a realizou, quando, e o que foi feito.
 A implementação destas mitigações garante que todas as ações administrativas realizadas no sistema AMAP são devidamente registadas e podem ser auditadas, reduzindo significativamente o risco de negação de responsabilidade por ações realizadas.
 
 ### 8. Modificação das credenciais ou tokens durante a transmissão (2.1 T) - 8.0 ALTO
 
-**Mitigação Implementada:** **HTTPS obrigatório**
+<u>**1 -** **Mitigação Implementada:** **HTTPS obrigatório**</u>
 
 Esta mitigação visa garantir que todas as comunicações entre o cliente (navegador, aplicação frontend) e a API sejam encriptadas. Ao forçar o uso de HTTPS, evita-se que dados sensíveis, como credenciais e tokens de autenticação, sejam intercetados por atacantes durante a sua transmissão na rede.
 
@@ -221,7 +226,9 @@ app.UseHsts(); // <-- Linha adicionada
 app.UseAuthentication();
 ```
 
-**Mitigação Implementada: Configuração segura de cookies de autenticação**
+
+
+<u>**2 -** **Mitigação Implementada: Configuração segura de cookies de autenticação**</u>
 
 Esta mitigação centra-se na proteção do cookie de sessão, que atua como o token de autenticação na abordagem baseada em cookies utilizada pela aplicação **AMAP**. 
 Proteger o cookie durante a transmissão e contra acessos não autorizados no cliente é essencial para prevenir o roubo de sessão e outros ataques.
@@ -273,7 +280,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 ```
 ### 10. Interceção de credenciais durante a transmissão (2.1 I) - 7.8 ALTO
 
-**Mitigação Implementada: Expiração rápida de credenciais temporárias**
+<u>**1 -** **Mitigação Implementada: Expiração rápida de credenciais temporárias**</u>
 
 Esta mitigação tem como objetivo **limitar a validade temporal de credenciais temporárias** geradas para usos pontuais e específicos, como:
 
@@ -317,20 +324,21 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 
 ### 11. Acesso a informações sensíveis do utilizador (3.1 I) - 7.8 ALTO
 
-*Mitigação Implementada:* *Logs de acesso a dados sensíveis*
+**<u>1 - Mitigação Implementada: Logs de acesso a dados sensíveis</u>**
 Esta mitigação visa registar todas as operações realizadas sobre dados sensíveis dos utilizadores, possibilitando a deteção de acessos não autorizados e fornecendo uma trilha de auditoria para investigações de segurança. Os logs registam quem acedeu aos dados, quais dados foram acedidos, quando o acesso ocorreu e as ações realizadas.
 
-*Situação Inicial*
+**Situação Inicial**
 Inicialmente, a aplicação AMAP não possuía um sistema de logs adequado para registar o acesso a dados sensíveis. Operações críticas como consulta de pagamentos, informações financeiras de produtores e co-produtores, e detalhes de subscrições eram realizadas sem qualquer registo de auditoria.
 
-*Ações Realizadas*
+***Ações Realizadas***
 Foi implementado um sistema abrangente de logs utilizando o ILogger da Microsoft para registar todas as operações sensíveis em todos os componentes de negócio. Foram adicionados logs estratégicos que capturam:
+
 1.	O início e conclusão de cada operação sensível
 2.	Detalhes sobre os dados acedidos (IDs, valores financeiros)
 3.	Identificação do utilizador que realizou a operação
 4.	Timestamp preciso de cada acesso
 
-*Exemplo de Código (AMAP.Business/Components/PaymentsInfoBc.cs)*
+**Exemplo de Código** (`AMAP.Business/Components/PaymentsInfoBc.cs`):
 
 ```c#
 public Dictionary<string, Tuple<AppUser, Dictionary<int, Tuple<Subscription, IEnumerable<Payment>>>>> GetProducerPayments()
@@ -365,19 +373,23 @@ builder.Logging.AddFilter("AMAP.Business.Components", LogLevel.Information);
 
 Esta implementação permite a auditoria completa de todas as operações que envolvem dados sensíveis na aplicação, facilitando a detecção e investigação de acessos potencialmente maliciosos.
 
-*Mitigação Implementada:* *Acesso baseado na necessidade*
+
+
+<u>**2 - Mitigação Implementada: Acesso baseado na necessidade**</u>
 Esta mitigação garante que os utilizadores só possam acessar os dados de que realmente necessitam para realizar suas funções, limitando o acesso a informações sensíveis apenas aos utilizadores autorizados com base em suas funções e responsabilidades no sistema.
 
-*Situação Inicial*
+**Situação Inicial**
 Inicialmente, a aplicação AMAP já possuía um sistema básico de autorização baseado em roles (Manager, Producer, CoProducer), mas faltava uma verificação mais granular para garantir que utilizadores só pudessem acessar seus próprios dados ou dados para os quais tinham autorização específica.
 
-*Ações Realizadas*
+**Ações Realizadas**
 Foi implementada uma camada adicional de verificações de autorização em cada componente de negócio, que valida não apenas a role do utilizador, mas também se o utilizador tem permissão específica para acessar o recurso solicitado. Estas verificações garantem que:
+
 1.	Produtores só podem acessar seus próprios produtos
 2.	Co-produtores só podem acessar suas próprias subscrições e pagamentos
 3.	A tentativa de acesso não autorizado é registada nos logs e resulta em exceções apropriadas
 
-*Exemplo de Código (AMAP.Business/Components/PaymentBc.cs)*
+**Exemplo de Código** (`AMAP.Business/Components/PaymentBc.cs`): 
+
 ```c#
 public Payment CreatePayment(Payment payment, string currentCoProducerId)
 {
@@ -408,19 +420,20 @@ public Payment CreatePayment(Payment payment, string currentCoProducerId)
 
 No exemplo acima, além de verificar se o utilizador tem a role de co-produtor, o sistema também verifica se esse co-produtor específico é o dono da subscrição para a qual está tentando fazer um pagamento, garantindo acesso estritamente baseado na necessidade.
 
-*Mitigação Implementada:* *Filtragem de dados por tipo de utilizador*
+<u>**3 - Mitigação Implementada: Filtragem de dados por tipo de utilizador**</u>
 Esta mitigação garante que os dados exibidos ou manipulados sejam automaticamente filtrados com base no tipo do utilizador que faz a requisição, reduzindo a exposição de informações sensíveis desnecessárias e simplificando o controle de acesso.
 
-*Situação Inicial*
+**Situação Inicial**
 A aplicação AMAP já possuía um modelo de dados com relações entre entidades, mas não implementava consistentemente filtros automáticos para limitar os dados retornados com base no tipo ou identidade do utilizador.
 
-*Ações Realizadas*
+**Ações Realizadas**
 Foram implementados filtros sistemáticos nos métodos de consulta de todos os componentes de negócio para garantir que os resultados sejam automaticamente limitados aos dados pertinentes ao utilizador atual. Essa implementação inclui:
+
 1.	Filtros explícitos de consulta baseados no ID do utilizador atual
 2.	Verificações de autorização antes de retornar dados sensíveis
 3.	Log detalhado de todas as operações de filtragem para auditoria
 
-*Exemplo de Código (AMAP.Business/Components/ProductBc.cs)*
+**Exemplo de Código** (`AMAP.Business/Components/ProductBc.cs`): 
 
 ```c#
 // Em ProductBc.cs - Produtores só veem seus próprios produtos
@@ -452,19 +465,22 @@ modelBuilder.Entity<Subscription>()
 
 Estes filtros garantem que, independentemente de como os dados são consultados, utilizadores só tenham acesso aos dados relevantes ao seu papel no sistema, reduzindo drasticamente o risco de exposição não intencional de informações sensíveis.
 
-*Mitigação Parcialmente Implementada:* *Mascaramento de dados nas interfaces*
+
+
+**<u>4 - Mitigação Parcialmente Implementada: Mascaramento de dados nas interfaces</u>**
 Esta mitigação visa ocultar ou simplificar informações sensíveis quando exibidas nas interfaces do utilizador, exibindo apenas os dados necessários para a função específica sendo realizada e protegendo detalhes confidenciais mesmo de utilizadores autorizados.
 
-*Situação Inicial*
+**Situação Inicial**
 A aplicação AMAP retornava dados completos das entidades em várias APIs, potencialmente expondo informações sensíveis desnecessárias para as operações em curso. Não havia uma estratégia consistente de mascaramento ou filtragem de dados sensíveis nas respostas das APIs.
 
-*Ações Realizadas*
+**Ações Realizadas**
 Foi implementada uma abordagem parcial de mascaramento de dados através do uso de DTOs (Data Transfer Objects) em alguns componentes da aplicação, particularmente no CatalogBc. Esta abordagem:
+
 1.	Transforma entidades do domínio em objetos DTO antes de retorná-los nas APIs
 2.	Inclui apenas os campos necessários para cada caso de uso específico
 3.	Evita a exposição direta de IDs, chaves estrangeiras e detalhes técnicos desnecessários
 
-*Exemplo de Código (AMAP.Business/Components/CatalogBc.cs)*
+**Exemplo de Código** (`AMAP.Business/Components/CatalogBc.cs`): 
 
 ```c#
 // Em CatalogBc.cs - Uso de DTOs para limitar dados expostos
@@ -480,14 +496,16 @@ var productDto = new ProductDto
 };
 ```
 
-*Limitações da Implementação Atual*
+***Limitações da Implementação Atual***
 Esta implementação é considerada parcial porque:
+
 1.	Nem todos os componentes de negócio utilizam consistentemente DTOs para mascarar dados sensíveis
 2.	Não há mascaramento específico para dados altamente sensíveis como informações financeiras (valores parciais poderiam ser mostrados)
 3.	Não existe uma política ou estratégia global de mascaramento de dados na aplicação
 
-*Próximos Passos para Implementação Completa*
+***Próximos Passos para Implementação Completa***
 Para uma implementação completa, seria necessário:
+
 1.	Criar DTOs para todas as entidades com informações sensíveis
 2.	Implementar técnicas de mascaramento específicas para dados altamente sensíveis (ex: mascarar parte dos valores financeiros)
 3.	Desenvolver uma política consistente de mascaramento de dados em toda a aplicação
@@ -890,7 +908,161 @@ Esta abordagem em camadas claramente definidas, com responsabilidades bem segreg
 
 ## Boas Práticas de Desenvolvimento Adotadas
 
+### Regras de Nomenclatura da Solução AMAP
 
+#### Classes e Interfaces
+
+- **Classes**: Utilizam o estilo *PascalCase* com nomes descritivos que refletem a função ou entidade que representam:
+  - **Entidades**: `Product`, `AppUser`, `Subscription`, `Payment`
+  - **Controladores**: `CatalogController`, `PaymentController` (sufixo `"Controller"`)
+  - **Camada de negócio**: `ProductBc`, `CatalogBc`, `PaymentBc` (sufixo `"Bc"` para *Business Component*)
+  - **Repositórios**: `ProductRepository`, `CompositeRepository` (sufixo `"Repository"`)
+
+- **Interfaces**: Utilizam o prefixo `"I"` seguido do nome em *PascalCase*:
+  - `IProductBc`, `ICatalogBc` (interfaces da camada de negócio)
+  - `IProductRepository`, `IUnitOfWork` (interfaces da camada de dados)
+  - `IDbInitializer` (interfaces de componentes de infraestrutura)
+
+#### Variáveis e Campos
+
+- **Campos privados**: Utilizam o prefixo underscore (`_`) seguido por *camelCase*:
+  - `_unitOfWork`, `_logger`, `_productBc`, `_catalogBc`
+
+- **Parâmetros de método**: Utilizam *camelCase*:
+  - `producerId`, `subscription`, `nonExistingId`, `coProducerId`
+
+- **Variáveis locais**: Utilizam *camelCase*:
+  - `existingProduct`, `compositeProduct`, `invalidId`, `result`
+
+- **Propriedades das Classes**: Utilizam *PascalCase*:
+  - `Name`, `DeliveryUnits`, `ReferencePrice`
+
+#### DTOs (Objetos de Transferência de Dados)
+
+- **Classes DTO**: Utilizam o sufixo `"Dto"` em *PascalCase*:
+  - `CatalogDto`, `ProductDto`, `ProductComposeDto`
+  - Organizados em *namespaces* apropriados (`AMAP.Entities.Models.DTO.Product`)
+
+- **Propriedades de DTOs**: Utilizam *PascalCase*:
+  - `ProducerName`, `Products`, `ReferencePrice`, `DeliveryUnits`
+
+#### ViewModels
+
+- **Classes ViewModel**: Utilizam o sufixo `"ViewModel"` em *PascalCase*:
+  - `LoginViewModel`, `RegisterViewModel`
+  - Organizados num *namespace* específico (`AMAP.Entities.Models.ViewModel`)
+
+- **Propriedades de ViewModels**: Utilizam *PascalCase*:
+  - `Email`, `Password`, `RememberMe`, `Name`
+
+#### Métodos
+
+- **Métodos públicos**: Utilizam *PascalCase* com nomes descritivos, geralmente iniciando com um verbo:
+  - `GetProduct`, `CreateProduct`, `UpdateProduct`, `DeleteProduct`
+  - `GetAllCatalogs`, `GetCatalogByProducer`
+  - `CreateSubscription`, `GetSubscriptionById`
+
+- **Métodos privados**: Utilizam *PascalCase*, geralmente com nomes que descrevem a sua função auxiliar:
+  - `EscapeTxt`, `RemoveInvalidFileNameChars`
+
+#### Constantes e Enumerações
+
+- **Constantes**: Quando declaradas como campos, utilizam *PascalCase*:
+  - `MaxLinesToProcess`
+
+- **Enumerações**: Utilizam *PascalCase* para o nome da enumeração e dos seus valores:
+  - `UserType` (enumeração): `Manager`, `Producer`, `CoProducer`
+  - `PaymentType` (enumeração): `Money`, `BankTransfer`, `MBway`
+
+#### Organização de Pastas e Namespaces
+
+A solução AMAP segue uma arquitetura em camadas claramente definida, com cada projeto focado em responsabilidades específicas:
+
+##### 1. `AMAP.Entities` (Modelos)
+
+- **Entities**: Classes que representam as entidades principais do domínio
+  - `Product.cs`, `AppUser.cs`, `Subscription.cs`, `Payment.cs`, `Composite.cs`
+
+- **Models/DTO**: Objetos de Transferência de Dados para comunicação entre camadas
+  - `DTO/Catalog`: `CatalogDto.cs`
+  - `DTO/Product`: `ProductDto.cs`, `ProductComposeDto.cs`
+
+- **Models/ViewModel**: Objetos usados para comunicação com a interface de utilizador
+  - `LoginViewModel.cs`, `RegisterViewModel.cs`
+
+- **Utilities**: Classes utilitárias e enumerações
+  - `EmailSender.cs`: Serviço para envio de emails
+  - `UserType.cs`, `PaymentType.cs`: Enumerações do sistema
+  - Helpers e extensões para funcionalidades comuns
+
+##### 2. `AMAP.DataAccess`
+
+- **Data**: Configurações da base de dados e contexto
+  - `AppDbContext.cs`: Classe de contexto do Entity Framework
+
+- **DbInitializer**: Classes para inicialização e povoamento da base de dados (*seeding*)
+  - `DbInitializer.cs`, `IDbInitializer.cs`
+
+- **Repository**: Implementações concretas dos repositórios
+  - `ProductRepository.cs`, `PaymentRepository.cs`, etc.
+
+- **Repository/IRepository**: Interfaces dos repositórios
+  - `IProductRepository.cs`, `IPaymentRepository.cs`
+  - `IUnitOfWork.cs`: Interface para o padrão *Unit of Work*
+
+##### 3. `AMAP.Business`
+
+- **Interfaces**: Interfaces para os componentes da camada de negócio
+  - `IProductBc.cs`, `ICatalogBc.cs`, `IPaymentBc.cs`
+
+- **Components**: Implementações dos componentes da camada de negócio
+  - `ProductBc.cs`, `CatalogBc.cs`, `PaymentBc.cs`
+  - `PaymentsInfoBc.cs`, `SubscriptionPeriodBc.cs`
+
+##### 4. `AMAP_API`
+
+- **Controllers**: Controladores da API REST
+  - `CatalogController.cs`, `ProductController.cs`, `AccountController.cs`
+  - `BaseController.cs`: Classe base para os controladores
+
+- **Middlewares**: Componentes de *middleware* personalizados
+
+- **Configurations**: Ficheiros de configuração específicos
+  - Configurações de autenticação, CORS e registo de logs
+
+- **Logs**: Diretório para armazenamento dos registos do sistema
+  - Ficheiros de log organizados por data (ex.: `security-{Data}.txt`)
+  - Registo de operações, erros e informações de segurança
+
+- **ProductsUpload**: Pasta para armazenamento de ficheiros de produtos importados
+  - Ficheiros de texto com dados de produtos a importar
+  - Nomes de ficheiros com prefixo GUID para garantir unicidade
+
+- **ExportedProducts**: Diretório contendo ficheiros exportados do sistema
+  - Ficheiros de texto com dados de produtos exportados
+  - Nomes baseados no produtor que realizou a exportação
+
+##### 5. `AMAP.UnitTests`
+
+- **Business**: Testes unitários da camada de negócio
+  - `ProductBcTests.cs`, `CatalogBcTests.cs`, `PaymentBcTests.cs`
+
+- **Business/Mock**: Classes de *mock* para componentes da camada de negócio
+  - `MockProductBc.cs`, `MockCatalogBc.cs`, `MockPaymentBc.cs`
+
+- **Repository/Mock**: Classes de *mock* para repositórios
+  - `MockProductRepository.cs`, `MockCatalogRepository.cs`
+
+- **Services**: Testes para serviços e controladores
+  - `PaymentControllerTests.cs`, `AccountControllerTests.cs`
+
+#### Convenções Gerais
+
+- Utilização consistente da língua inglesa em toda a nomeação no código.
+- Nomes descritivos e significativos que transmitam claramente o seu propósito e função.
+- Evita-se o uso de abreviações obscuras, privilegiando a clareza em detrimento da brevidade.
+- Consistência na nomeação de operações semelhantes em diferentes componentes.
+- Uso de atributos de validação e anotações para enriquecer as propriedades.
 
 ### Revisões e Auditorias de Segurança
 
