@@ -26,6 +26,8 @@ namespace AMAP.DataAccess.Repository.IRepository
 
         IPaymentRepository Payment { get; }
 
+        IPaymentValidationHistoryRepository PaymentValidationHistory { get; }
+
         void Save();
     }
 }

@@ -5,5 +5,6 @@ namespace AMAP.Business.Interfaces
     public interface IPaymentBc
     {
         Payment CreatePayment(Payment payment, string currentCoProducerId);
+        Payment GetPaymentById(int id);
     }
 }

@@ -2,6 +2,7 @@
 using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.UnitTests.Business.Mock;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace AMAP.UnitTests.Business
@@ -10,12 +11,14 @@ namespace AMAP.UnitTests.Business
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ProductBc _productBc;
+        private readonly ILogger<ProductBc> _logger;
 
         public ProductBcTests()
         {
             // Setup mock repository
             _unitOfWork = MockProductRepository.GetMockUnitOfWork();
-            _productBc = new ProductBc(_unitOfWork);
+            _logger = Substitute.For<ILogger<ProductBc>>();
+            _productBc = new ProductBc(_unitOfWork, _logger);
         }
 
         [Fact]

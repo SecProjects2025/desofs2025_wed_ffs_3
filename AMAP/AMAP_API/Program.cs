@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Identity;
 using AMAP.Entities;
 using AMAP.DataAccess.DbInitializer;
 using AMAP.Entities.Utilities;
+using AMAP.Business.Components;
+using AMAP.Business.Interfaces;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
 using AMAP.Business.Components;
@@ -29,6 +31,7 @@ builder.Logging.AddEventSourceLogger();
 builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
 builder.Logging.AddFilter("System", LogLevel.Warning);
 builder.Logging.AddFilter("AMAP.Api.Controllers.AccountController", LogLevel.Information);
+builder.Logging.AddFilter("AMAP.Business.Components", LogLevel.Information);
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -44,6 +47,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnityOfWork>();
+
+// Add all business components
 builder.Services.AddScoped<IProductBc, ProductBc>();
 builder.Services.AddScoped<ISubscriptionPeriodBc, SubscriptionPeriodBc>();
 builder.Services.AddScoped<IProductOfferBc, ProductOfferBc>();
@@ -52,14 +57,17 @@ builder.Services.AddScoped<IPaymentBc, PaymentBc>();
 builder.Services.AddScoped<ICatalogBc, CatalogBc>();
 builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
+
 builder.Services.AddScoped<AccountLockoutService>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configure Identity with password requirements
-builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
-    options.Password.RequiredLength = 12; // Min length 12 chars
+    // Password settings
+    options.Password.RequiredLength = 12;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
@@ -75,7 +83,14 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders()
-.AddPasswordValidator<CustomPasswordValidator<AppUser>>(); // Custom validator
+.AddPasswordValidator<CustomPasswordValidator<AppUser>>();
+
+// Configure password hasher
+builder.Services.Configure<PasswordHasherOptions>(options =>
+{
+    options.IterationCount = 100000;
+    options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3;
+});
 
 // Authentication cookie configuration
 builder.Services.ConfigureApplicationCookie(options =>
@@ -85,6 +100,11 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Authentication cookie expiration time: 30 minutes
 
+    // Settings that apply to ALL environments
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+
+    // Environment-specific settings
     if (builder.Environment.IsDevelopment())
     {
         options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
@@ -103,7 +123,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-// Authorization roles configuration
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
@@ -131,13 +151,14 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Inicializar roles e usuários
 // Inicializar roles e utilizadores apenas se necessário
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
+
     // Verifica se há alguma migração pendente antes de inicializar
     if (dbContext.Database.GetPendingMigrations().Any())
     {
@@ -160,6 +181,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
+app.UseHsts();
 
 app.UseAuthentication();
 app.UseSession();

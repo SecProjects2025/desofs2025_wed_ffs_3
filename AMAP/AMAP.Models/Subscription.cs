@@ -36,6 +36,20 @@ namespace AMAP.Entities
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public PaymentType PaymentType { get; set; }
 
+        [Required]
+        public bool TermsAccepted { get; set; }
+
+        [Required]
+        public DateTime TermsAcceptedAt { get; set; }
+
+        [Required]
+        public bool EmailConfirmed { get; set; }
+
+        public DateTime? EmailConfirmedAt { get; set; }
+
+        public string? ConfirmationToken { get; set; }
+
+        public string? DigitalSignature { get; set; }
     }
 }
 

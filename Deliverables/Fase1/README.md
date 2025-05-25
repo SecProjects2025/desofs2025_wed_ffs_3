@@ -75,9 +75,9 @@ Esta modelação de ameaças servirá de base às fases subsequentes do projeto,
 
 ---
 
-## Visão Geral do Sistema
+## Visão Geral do Sistema
 
-O sistema AMAP (Associação para a Manutenção da Agricultura de Proximidade) foi concebido para modernizar e otimizar a gestão, comercialização e distribuição de produtos agrícolas locais, ligando produtores diretamente a consumidores (co‑produtores). Suporta o modelo de negócio das AMAP/CSA (Associações para a Manutenção da Agricultura de Proximidade / Comunidades que Sustentam a Agricultura), promovendo agricultura sustentável e comércio justo.
+O sistema AMAP (Associação para a Manutenção da Agricultura de Proximidade) foi concebido para modernizar e otimizar a gestão, comercialização e distribuição de produtos agrícolas locais, ligando produtores diretamente a consumidores (co‑produtores). Suporta o modelo de negócio das AMAP/CSA (Associações para a Manutenção da Agricultura de Proximidade / Comunidades que Sustentam a Agricultura), promovendo agricultura sustentável e comércio justo.
 
 ---
 
@@ -89,7 +89,7 @@ A componente de back‑end do AMAP assenta numa arquitetura n‑camadas, que gar
 
 #### Camada de Serviços (API)
 
-- **Tecnologia:** ASP.NET Core Web API  
+- **Tecnologia:** ASP.NET Core Web API  
 - **Responsabilidade:** expor endpoints RESTful seguros e robustos para todas as operações  
 - **Componentes principais:**  
   - **Controladores (Controllers):** implementam a lógica de negócio e coordenam as operações  
@@ -98,11 +98,11 @@ A componente de back‑end do AMAP assenta numa arquitetura n‑camadas, que gar
 
 #### Camada de Dados
 
-- **Tecnologia:** Entity Framework Core com SQL Server  
+- **Tecnologia:** Entity Framework Core com SQL Server  
 - **Responsabilidade:** gerir a persistência e recuperação de dados  
 - **Componentes principais:**  
   - **Repositórios (Repositories):** encapsulam as operações de acesso a dados por entidade  
-  - **Unit of Work:** assegura transações atómicas entre vários repositórios  
+  - **Unit of Work:** assegura transações atómicas entre vários repositórios  
   - **DbContext:** faz o mapeamento das entidades às tabelas e gere o ciclo de vida dos objetos  
 
 #### Camada Partilhada
@@ -122,7 +122,7 @@ A componente de back‑end do AMAP assenta numa arquitetura n‑camadas, que gar
 
 1. O cliente envia uma requisição HTTP para um endpoint da API.  
 2. O controlador correspondente processa a requisição e chama os repositórios para operações de dados.  
-3. O Unit of Work coordena, se necessário, transações atómicas entre múltiplas alterações.  
+3. O Unit of Work coordena, se necessário, transações atómicas entre múltiplas alterações.  
 4. Os serviços auxiliares (por exemplo, EmailSender) executam tarefas complementares.  
 5. A API devolve uma resposta HTTP padronizada com o resultado ou uma mensagem de erro.
 
@@ -258,6 +258,12 @@ Os requisitos não funcionais concentram‑se em aspetos qualitativos essenciais
 - **Cookies:** configuração segura (HttpOnly, Secure, SameSite)  
 - **Validação de inputs:** controlo rigoroso dos dados recebidos no back‑end  
 - **Prevenção de ataques:** proteção contra injeções SQL e outras ameaças comuns  
+- **Recuperação de password:** 
+  - Sistema de "Esqueci minha password" com geração de tokens seguros
+  - Tokens de redefinição de password com tempo de expiração
+  - Validação de tokens antes de permitir redefinição de password
+  - Proteção contra enumeração de usuários durante o processo de recuperação
+  - Notificações seguras por email para redefinição de password
 
 #### Manutenibilidade
 - **Modularidade:** código organizado em camadas (API, Data, Shared)  
@@ -2658,7 +2664,7 @@ Com base na avaliação de risco realizada, apresentamos um conjunto de mitigaç
 - Controlo de acesso detalhado.
 - Filtragem de dados nas respostas da API.
 - Logging seguro.
-- Política de “need-to-know”.
+- Política de "need-to-know".
 
 **Justificação:** Alinhado com a arquitetura de API do AMAP.
 

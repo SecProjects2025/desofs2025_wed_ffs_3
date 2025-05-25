@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -35,33 +35,33 @@ function App() {
 
     return (
         <BrowserRouter>
-            <div style={{display: 'flex', minHeight: '100vh'}}>
-                <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar}/>
-                <div style={{flex: 1, display: 'flex', flexDirection: 'column'}}>
-                    <Header isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar}/>
-                    <main style={{flex: 1, padding: '20px', backgroundColor: '#f7f7f7'}}>
+            <div style={{ display: 'flex', minHeight: '100vh' }}>
+                <Sidebar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />
+                    <main style={{ flex: 1, padding: '20px', backgroundColor: '#f7f7f7' }}>
                         <Routes>
-                            <Route path="/" element={<Dashboard/>}/>
+                            <Route path="/" element={<Dashboard />} />
 
 
-                            <Route path="/calculationPage" element={<CalculationPage/>}/>
-                            <Route path="/login" element={<LoginSignUp/>}/>
+                            <Route path="/calculationPage" element={<CalculationPage />} />
+                            <Route path="/login" element={<LoginSignUp />} />
 
-                            <Route path="/producerCatalogo" element={<CatalogPage/>}/>
-                            <Route path="/producerCatalogoBE" element={<CatalogPageBE/>}/>
-                            <Route path="/producerOrders" element={<ProducerOrders/>}/>
-                            <Route path="/producerOffer" element={<OfferPage/>}/>
-                            <Route path="/producerOfferBE" element={<OfferPageBE/>}/>
+                            <Route path="/producerCatalogo" element={<CatalogPage />} />
+                            <Route path="/producerCatalogoBE" element={<CatalogPageBE />} />
+                            <Route path="/producerOrders" element={<ProducerOrders />} />
+                            <Route path="/producerOffer" element={<OfferPage />} />
+                            <Route path="/producerOfferBE" element={<OfferPageBE />} />
 
-                            <Route path="/amapSubscriptionPeriod" element={< AmapSubscription/>}/>
-                            <Route path="/amapSubscriptionPeriodBE" element={< AMAPSubscriptionPageBE/>}/>
-                            <Route path="/amapCalculationPage" element={<CalculationPage/>}/>
-                            <Route path="/amapOrders" element={<AmapManagerOrderScreen/>}/>
-                            <Route path="/amapKPI" element={<AmapKPIPage/>}/>
+                            <Route path="/amapSubscriptionPeriod" element={< AmapSubscription />} />
+                            <Route path="/amapSubscriptionPeriodBE" element={< AMAPSubscriptionPageBE />} />
+                            <Route path="/amapCalculationPage" element={<CalculationPage />} />
+                            <Route path="/amapOrders" element={<AmapManagerOrderScreen />} />
+                            <Route path="/amapKPI" element={<AmapKPIPage />} />
 
-                            <Route path="/coProducerMainScreen" element={< SalePage/>}/>
+                            <Route path="/coProducerMainScreen" element={< SalePage />} />
 
-                            <Route path='/pagamento' element={< Payment/>}/>
+                            <Route path='/pagamento' element={< Payment />} />
 
                         </Routes>
                     </main>
