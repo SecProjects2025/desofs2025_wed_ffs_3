@@ -46,15 +46,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnityOfWork>();
-builder.Services.AddScoped<ISubscriptionBc, SubscriptionBc>();
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
-{
-    // Password settings
-  
+// Add all business components
 builder.Services.AddScoped<IProductBc, ProductBc>();
 builder.Services.AddScoped<ISubscriptionPeriodBc, SubscriptionPeriodBc>();
 builder.Services.AddScoped<IProductOfferBc, ProductOfferBc>();
@@ -63,68 +56,39 @@ builder.Services.AddScoped<IPaymentBc, PaymentBc>();
 builder.Services.AddScoped<ICatalogBc, CatalogBc>();
 builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
+
+// Configure database context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configure Identity with password requirements
-builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
-    options.Password.RequiredLength = 12; // Min length 12 chars
+    // Password settings
+    options.Password.RequiredLength = 12;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequiredLength = 8;
-})
-.AddEntityFrameworkStores<AppDbContext>()
-.AddDefaultTokenProviders();
 
-// Configure password hasher with explicit salt size and security parameters
-builder.Services.Configure<PasswordHasherOptions>(options =>
-{
-    // Salt size is 128 bits (16 bytes) - exceeds OWASP requirement of minimum 32 bits
-    // Each user gets a unique random salt to prevent salt collisions
-    options.IterationCount = 100000; // OWASP C6: PBKDF2 iteration count set to 100,000 as recommended
-    options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3; // Uses PBKDF2 with HMAC-SHA256
-});
-
-//builder.Services.AddAuthentication(options =>
-//{
-//    options.DefaultAuthenticateScheme =
-//    options.DefaultChallengeScheme =
-//    options.DefaultForbidScheme =
-//    options.DefaultScheme =
-//    options.DefaultSignInScheme =
-//    options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
-
-//}).AddJwtBearer(options =>
-//{
-//    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-//    {
-//        ValidateIssuer = true,
-//        ValidIssuer = builder.Configuration["JWT:Issuer"],
-//        ValidateAudience = true,
-//        ValidAudience = builder.Configuration["JWT:Audience"],
-//        ValidateIssuerSigningKey = true,
-//        IssuerSigningKey = new SymmetricSecurityKey(
-//            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
-//        )
-//    };
-//});
-
-// Configura��o do cookie de autentica��o
-    
     // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
-    
+
     // User settings
     options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders()
-.AddPasswordValidator<CustomPasswordValidator<AppUser>>(); // Custom validator
+.AddPasswordValidator<CustomPasswordValidator<AppUser>>();
+
+// Configure password hasher
+builder.Services.Configure<PasswordHasherOptions>(options =>
+{
+    options.IterationCount = 100000;
+    options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3;
+});
 
 // Configurao do cookie de autenticao
 builder.Services.ConfigureApplicationCookie(options =>
@@ -157,7 +121,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 
-// Configura��o das roles de autoriza��o
 // Configurao das roles de autorizao
 builder.Services.AddAuthorization(options =>
 {
@@ -170,8 +133,6 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expira��o da sess�o
-
     options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expirao da sessao
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
@@ -188,14 +149,14 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Inicializar roles e usu�rios
+// Inicializar roles e usuários
 // Inicializar roles e utilizadores apenas se necessário
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
+
     // Verifica se há alguma migração pendente antes de inicializar
     if (dbContext.Database.GetPendingMigrations().Any())
     {

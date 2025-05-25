@@ -24,38 +24,72 @@ namespace AMAP.Business.Components
         public Subscription CreateSubscription(Subscription subscription, string coProducerId)
         {
             if (subscription == null)
-                throw new ArgumentException("Invalid subscription data.");
+            {
+                throw new ArgumentException("Invalid data.");
+            }
 
-            // Validate ProductOffer
+            if (string.IsNullOrEmpty(coProducerId))
+            {
+                throw new UnauthorizedAccessException("Invalid CoProducer.");
+            }
+
+            if (subscription.ExpectedQuantity <= 0)
+            {
+                throw new ArgumentException("Quantity must be greater than zero.");
+            }
+
+            if (!Enum.IsDefined(typeof(PaymentType), subscription.PaymentType) || subscription.PaymentType == 0)
+            {
+                throw new ArgumentException("Invalid payment type.");
+            }
+
             var productOffer = _unitOfWork.ProductOffer.Get(po => po.Id == subscription.ProductOfferId);
             if (productOffer == null)
+            {
                 throw new KeyNotFoundException("Product offer not found.");
+            }
 
-            // Validate CoProducer
-            var coProducer = _unitOfWork.AppUser.Get(u => u.Id == coProducerId);
-            if (coProducer == null)
-                throw new KeyNotFoundException("Co-producer not found.");
+            if (productOffer.SubscriptionPeriod?.EndDate < DateTime.Now)
+            {
+                throw new InvalidOperationException("Subscription period has ended.");
+            }
 
-            // Generate confirmation token
-            subscription.ConfirmationToken = GenerateConfirmationToken();
+            var existingSubscriptions = _unitOfWork.Subscription.GetAll(s => s.ProductOfferId == subscription.ProductOfferId && s.CoProducerId == coProducerId);
+            var totalSubscribedQuantity = existingSubscriptions?.Sum(s => s.ExpectedQuantity) ?? 0;
+
+            if (totalSubscribedQuantity + subscription.ExpectedQuantity > productOffer.Quantity)
+            {
+                throw new InvalidOperationException("Requested quantity exceeds available stock.");
+            }
+
+            subscription.CoProducerId = coProducerId;
             subscription.EmailConfirmed = false;
-            subscription.TermsAccepted = false;
-            subscription.TermsAcceptedAt = DateTime.UtcNow;
-
-            // Generate digital signature
-            subscription.DigitalSignature = GenerateDigitalSignature(subscription);
+            subscription.TermsAccepted = true;
+            subscription.ConfirmationToken = GenerateConfirmationToken();
 
             _unitOfWork.Subscription.Add(subscription);
+
+            try
+            {
+                SendConfirmationEmail(subscription, coProducerId).Wait();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error sending confirmation email: {ex.Message}");
+                // Não lançamos a exceção aqui para permitir que a subscrição seja criada mesmo se o email falhar
+            }
+
             _unitOfWork.Save();
-
-            // Send confirmation email
-            SendConfirmationEmail(subscription, coProducer.Email);
-
             return subscription;
         }
 
         public async Task<bool> ConfirmSubscriptionEmail(string token)
         {
+            if (string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
             var subscription = _unitOfWork.Subscription.Get(s => s.ConfirmationToken == token);
             if (subscription == null)
                 return false;
@@ -69,9 +103,19 @@ namespace AMAP.Business.Components
 
         public async Task<bool> AcceptTerms(int subscriptionId)
         {
+            if (subscriptionId <= 0)
+            {
+                throw new ArgumentException("Invalid subscription ID.");
+            }
+
             var subscription = _unitOfWork.Subscription.Get(s => s.Id == subscriptionId);
             if (subscription == null)
                 return false;
+
+            if (!subscription.EmailConfirmed)
+            {
+                throw new InvalidOperationException("Email must be confirmed before accepting terms.");
+            }
 
             subscription.TermsAccepted = true;
             subscription.TermsAcceptedAt = DateTime.UtcNow;
@@ -100,38 +144,13 @@ namespace AMAP.Business.Components
             }
         }
 
-        private async Task SendConfirmationEmail(Subscription subscription, string email)
+        private async Task SendConfirmationEmail(Subscription subscription, string coProducerId)
         {
             try
             {
-                var subject = "Confirm Your AMAP Subscription";
-                var confirmationUrl = $"http://localhost:3000/confirm-subscription?token={subscription.ConfirmationToken}";
-
-                var body = $@"
-                    <h2>Welcome to AMAP!</h2>
-                    <p>Dear Co-producer,</p>
-                    <p>Please confirm your subscription by clicking the link below:</p>
-                    <p><a href='{confirmationUrl}' style='background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Confirm Subscription</a></p>
-                    
-                    <h3>Subscription Details:</h3>
-                    <ul>
-                        <li>Product Offer ID: {subscription.ProductOfferId}</li>
-                        <li>Expected Quantity: {subscription.ExpectedQuantity}</li>
-                        <li>Payment Type: {subscription.PaymentType}</li>
-                    </ul>
-                    
-                    <p><strong>Confirmation Token:</strong> {subscription.ConfirmationToken}</p>
-                    
-                    <p>By confirming this subscription, you agree to our terms and conditions.</p>
-                    <p>If you did not create this subscription, please ignore this email.</p>
-                    
-                    <hr>
-                    <p style='color: #000000; font-size: 12px;'>This is an automated message, please do not reply.</p>
-                ";
-
-                _logger.LogInformation($"Sending confirmation email to {email} with token: {subscription.ConfirmationToken}");
-                await _emailSender.SendEmailAsync(email, subject, body);
-                _logger.LogInformation($"Confirmation email sent successfully to {email}");
+                var subject = "Confirm Your Subscription";
+                var body = $"Please confirm your subscription by clicking the following link: {subscription.ConfirmationToken}";
+                await _emailSender.SendEmailAsync(coProducerId, subject, body);
             }
             catch (Exception ex)
             {
@@ -142,11 +161,15 @@ namespace AMAP.Business.Components
 
         public Subscription GetSubscriptionById(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("Invalid subscription ID (Parameter 'id')");
             return _unitOfWork.Subscription.Get(s => s.Id == id);
         }
 
         public IEnumerable<Subscription> GetSubscriptionsByCoProducer(string coProducerId)
         {
+            if (string.IsNullOrEmpty(coProducerId))
+                throw new ArgumentException("CoProducer ID cannot be empty. (Parameter 'coProducerId')");
             return _unitOfWork.Subscription.GetAll(s => s.CoProducerId == coProducerId);
         }
     }

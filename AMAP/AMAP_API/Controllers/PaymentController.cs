@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using AMAP.Business.Interfaces;
 
 namespace AMAP_API.Controllers
 {
@@ -14,116 +16,177 @@ namespace AMAP_API.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<PaymentController> _logger;
+        private readonly IPaymentBc _paymentBc;
 
-        public PaymentController(IUnitOfWork unitOfWork)
+        public PaymentController(IUnitOfWork unitOfWork, ILogger<PaymentController> logger, IPaymentBc paymentBc)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
+            _paymentBc = paymentBc;
         }
 
         [HttpPost]
         [Authorize(Roles = nameof(UserType.CoProducer))]
         public IActionResult CreatePayment([FromBody] Payment payment)
         {
-            if (payment is null)
+            if (payment == null)
             {
                 return BadRequest("Invalid payment data.");
             }
 
-            // Verificar se a subscrição associada existe
-            var subscription = _unitOfWork.Subscription.Get(s => s.Id == payment.SubscriptionId);
-            if (subscription is null)
+            try
             {
-                return NotFound($"Subscription with ID {payment.SubscriptionId} not found.");
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    return Unauthorized();
+                }
+
+                var result = _paymentBc.CreatePayment(payment, currentUserId);
+                return CreatedAtAction(nameof(GetPaymentById), new { id = result.Id }, result);
             }
-
-            payment.PaymentDate = DateTime.UtcNow;
-            payment.Validated = false;
-            payment.ValidationDate = null;
-            payment.ValidatedByProducerId = null;
-
-            _unitOfWork.Payment.Add(payment);
-            _unitOfWork.Save();
-
-            return CreatedAtAction(nameof(CreatePayment), new { id = payment.Id }, payment);
+            catch (ArgumentException)
+            {
+                return BadRequest("Invalid payment data.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return new ObjectResult("Forbidden") { StatusCode = 403 };
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("Subscription not found.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating payment");
+                return StatusCode(500, "An error occurred while creating the payment.");
+            }
         }
 
         [HttpPut("{id}/validate")]
         [Authorize(Roles = nameof(UserType.Producer))]
         public IActionResult ValidatePayment(int id)
         {
-            var payment = _unitOfWork.Payment.Get(p => p.Id == id);
-            if (payment == null)
+            try
             {
-                return NotFound($"Payment with ID {id} not found.");
+                var payment = _unitOfWork.Payment.Get(p => p.Id == id);
+                if (payment == null)
+                {
+                    return NotFound($"Payment with ID {id} not found.");
+                }
+
+                if (payment.Validated)
+                {
+                    return BadRequest("Payment is already validated.");
+                }
+
+                var producerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(producerId))
+                {
+                    return Unauthorized("User identity not found or invalid.");
+                }
+
+                var historyEntry = new PaymentValidationHistory
+                {
+                    PaymentId = payment.Id,
+                    ProducerId = producerId,
+                    ValidationTimestamp = DateTime.UtcNow
+                };
+
+                _unitOfWork.PaymentValidationHistory.Add(historyEntry);
+
+                payment.Validated = true;
+                payment.ValidationDate = DateTime.UtcNow;
+                payment.ValidatedByProducerId = producerId;
+
+                _unitOfWork.Payment.Update(payment);
+                _unitOfWork.Save();
+
+                return Ok(payment);
             }
-
-            if (payment.Validated)
+            catch (Exception ex)
             {
-                return BadRequest("Payment is already validated.");
+                _logger.LogError(ex, "Error validating payment");
+                return new ObjectResult("An error occurred while validating the payment.")
+                {
+                    StatusCode = 500
+                };
             }
-
-            // Get the Producer's user ID from the claims
-            var producerIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            string? producerId = producerIdClaim?.Value;
-
-            if (string.IsNullOrEmpty(producerId))
-            {
-                return Unauthorized("User identity not found or invalid.");
-            }
-
-            // Create a history entry before updating the payment status
-            var historyEntry = new PaymentValidationHistory
-            {
-                PaymentId = payment.Id,
-                // Assign the string producerId directly as the type in PaymentValidationHistory is now string?
-                ProducerId = producerId,
-                ValidationTimestamp = DateTime.UtcNow
-            };
-
-            _unitOfWork.PaymentValidationHistory.Add(historyEntry);
-
-            // Update the payment status
-            payment.Validated = true;
-            payment.ValidationDate = DateTime.UtcNow;
-            payment.ValidatedByProducerId = producerId;
-
-            _unitOfWork.Payment.Update(payment);
-            _unitOfWork.Save();
-
-            return Ok(payment);
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = nameof(UserType.Manager))]
-        public async Task<IActionResult> UpdatePayment(int id, [FromBody] Payment updatedPayment)
+        public IActionResult UpdatePayment(int id, [FromBody] Payment updatedPayment)
         {
-            var existingPayment = await _unitOfWork.Payment.GetById(id);
-            if (existingPayment == null)
-                return NotFound("Payment not found");
+            try
+            {
+                var existingPayment = _unitOfWork.Payment.Get(p => p.Id == id);
+                if (existingPayment == null)
+                    return NotFound("Payment not found");
 
-            // Atualiza apenas os campos necessários, mantendo o ID original
-            existingPayment.PaymentMethod = updatedPayment.PaymentMethod;
-            existingPayment.AmountPaid = updatedPayment.AmountPaid;
-            existingPayment.Validated = updatedPayment.Validated;
-            existingPayment.ValidationDate = updatedPayment.ValidationDate;
-            existingPayment.ValidatedByProducerId = updatedPayment.ValidatedByProducerId;
+                existingPayment.PaymentMethod = updatedPayment.PaymentMethod;
+                existingPayment.AmountPaid = updatedPayment.AmountPaid;
+                existingPayment.Validated = updatedPayment.Validated;
+                existingPayment.ValidationDate = updatedPayment.ValidationDate;
+                existingPayment.ValidatedByProducerId = updatedPayment.ValidatedByProducerId;
 
-            await _unitOfWork.Payment.Update(existingPayment);
-            _unitOfWork.Save();
-            return Ok("Payment updated successfully");
+                _unitOfWork.Payment.Update(existingPayment);
+                _unitOfWork.Save();
+                return Ok("Payment updated successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating payment");
+                return new ObjectResult("An error occurred while updating the payment.")
+                {
+                    StatusCode = 500
+                };
+            }
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = nameof(UserType.Manager))]
-        public async Task<IActionResult> DeletePayment(int id)
+        public IActionResult DeletePayment(int id)
         {
-            var payment = await _unitOfWork.Payment.GetById(id);
-            if (payment == null)
-                return NotFound("Payment not found");
+            try
+            {
+                var payment = _unitOfWork.Payment.Get(p => p.Id == id);
+                if (payment == null)
+                    return NotFound("Payment not found");
 
-            await _unitOfWork.Payment.Delete(payment);
-            _unitOfWork.Save();
-            return Ok("Payment deleted successfully");
+                _unitOfWork.Payment.Delete(payment);
+                _unitOfWork.Save();
+                return Ok("Payment deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting payment");
+                return new ObjectResult("An error occurred while deleting the payment.")
+                {
+                    StatusCode = 500
+                };
+            }
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult GetPaymentById(int id)
+        {
+            try
+            {
+                var payment = _paymentBc.GetPaymentById(id);
+                if (payment == null)
+                {
+                    return NotFound();
+                }
+                return Ok(payment);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting payment by id");
+                return StatusCode(500, "An error occurred while retrieving the payment.");
+            }
         }
     }
 }
