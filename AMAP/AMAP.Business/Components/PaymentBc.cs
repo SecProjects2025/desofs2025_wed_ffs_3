@@ -60,5 +60,12 @@ namespace AMAP.Business.Components
 
             return payment;
         }
+
+        public Payment GetPaymentById(int id)
+        {
+            if (id <= 0)
+                throw new ArgumentException("Invalid payment ID.", nameof(id));
+            return _unitOfWork.Payment.Get(p => p.Id == id);
+        }
     }
 }

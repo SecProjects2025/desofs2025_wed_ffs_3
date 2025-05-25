@@ -1,13 +1,14 @@
-﻿using AMAP.Entities;
+using AMAP.Entities;
+using System.Threading.Tasks;
 
 namespace AMAP.Business.Interfaces
 {
     public interface ISubscriptionBc
     {
         Subscription CreateSubscription(Subscription subscription, string coProducerId);
-
-        Subscription? GetSubscriptionById(int id);
-
+        Task<bool> ConfirmSubscriptionEmail(string token);
+        Task<bool> AcceptTerms(int id);
+        Subscription GetSubscriptionById(int id);
         IEnumerable<Subscription> GetSubscriptionsByCoProducer(string coProducerId);
     }
 }

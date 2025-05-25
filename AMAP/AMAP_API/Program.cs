@@ -6,10 +6,15 @@ using Microsoft.AspNetCore.Identity;
 using AMAP.Entities;
 using AMAP.DataAccess.DbInitializer;
 using AMAP.Entities.Utilities;
+using AMAP.Business.Components;
+using AMAP.Business.Interfaces;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
 using AMAP.Business.Components;
 using AMAP.Api.Validators;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using AMAP.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +48,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnityOfWork>();
+
+// Add all business components
 builder.Services.AddScoped<IProductBc, ProductBc>();
 builder.Services.AddScoped<ISubscriptionPeriodBc, SubscriptionPeriodBc>();
 builder.Services.AddScoped<IProductOfferBc, ProductOfferBc>();
@@ -51,36 +58,48 @@ builder.Services.AddScoped<IPaymentBc, PaymentBc>();
 builder.Services.AddScoped<ICatalogBc, CatalogBc>();
 builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
+
+builder.Services.AddScoped<AccountLockoutService>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configure Identity with password requirements
-builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
-    options.Password.RequiredLength = 12; // Min length 12 chars
+    // Password settings
+    options.Password.RequiredLength = 12;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
     
-    // Lockout settings
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.AllowedForNewUsers = true;
+    // Progressive lockout after failed login attempts
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15); // Initial 15-minute lockout
+    options.Lockout.MaxFailedAccessAttempts = 5; // Lock after 5 failed attempts
+    options.Lockout.AllowedForNewUsers = true; // Enable lockout for new users
     
     // User settings
     options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders()
-.AddPasswordValidator<CustomPasswordValidator<AppUser>>(); // Custom validator
+.AddPasswordValidator<CustomPasswordValidator<AppUser>>();
 
-// Configurao do cookie de autenticao
+// Configure password hasher
+builder.Services.Configure<PasswordHasherOptions>(options =>
+{
+    options.IterationCount = 100000;
+    options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3;
+});
+
+// Authentication cookie configuration
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/api/account/login";
     options.LogoutPath = "/api/account/logout";
     options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Authentication cookie expiration time: 30 minutes
 
     // Settings that apply to ALL environments
     options.Cookie.HttpOnly = true;
@@ -89,13 +108,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     // Environment-specific settings
     if (builder.Environment.IsDevelopment())
     {
-        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir HTTP
-        options.Cookie.SameSite = SameSiteMode.None; // Permitir cross-origin
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
+        options.Cookie.SameSite = SameSiteMode.None; // Allow cross-origin
     }
     else
     {
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Apenas HTTPS
-        options.Cookie.SameSite = SameSiteMode.Strict; // Mais seguro
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HTTPS only
+        options.Cookie.SameSite = SameSiteMode.Strict; // More secure
     }
 
     options.Events.OnRedirectToLogin = context =>
@@ -105,7 +124,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-// Configurao das roles de autorizao
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
@@ -117,10 +136,10 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expirao da sessao
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Session expiration time: 30 minutes
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir envio em HTTP
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
     options.Cookie.SameSite = SameSiteMode.None;
 });
 
@@ -133,13 +152,14 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Inicializar roles e usuários
 // Inicializar roles e utilizadores apenas se necessário
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
+
     // Verifica se há alguma migração pendente antes de inicializar
     if (dbContext.Database.GetPendingMigrations().Any())
     {
@@ -166,6 +186,7 @@ app.UseHsts();
 
 app.UseAuthentication();
 app.UseSession();
+app.UseMfaMiddleware();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

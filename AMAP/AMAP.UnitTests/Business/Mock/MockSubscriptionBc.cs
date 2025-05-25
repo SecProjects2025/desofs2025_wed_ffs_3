@@ -60,7 +60,7 @@ namespace AMAP.UnitTests.Business.Mock
                     Arg.Is<Subscription>(s => s != null && s.ProductOfferId == 999),
                     Arg.Any<string>()
                 )
-                .Throws(new KeyNotFoundException("ProductOffer not found."));
+                .Throws(new KeyNotFoundException("Product offer not found."));
 
             // Invalid operation (e.g., subscription period ended)
             mockSubscriptionBc
@@ -135,7 +135,7 @@ namespace AMAP.UnitTests.Business.Mock
             // Invalid co-producer ID
             mockSubscriptionBc
                 .GetSubscriptionsByCoProducer(Arg.Is<string>(id => string.IsNullOrEmpty(id)))
-                .Throws(new ArgumentException("CoProducer ID is required.", "coProducerId"));
+                .Throws(new ArgumentException("Invalid CoProducer.", "coProducerId"));
         }
     }
 }

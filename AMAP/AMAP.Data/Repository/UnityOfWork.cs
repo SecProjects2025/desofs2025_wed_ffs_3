@@ -26,6 +26,8 @@ namespace AMAP.DataAccess.Repository
 
         public IPaymentRepository Payment { get; private set; }
 
+        public IPaymentValidationHistoryRepository PaymentValidationHistory { get; private set; }
+
         public UnityOfWork(AppDbContext context)
         {
             _context = context;
@@ -38,6 +40,7 @@ namespace AMAP.DataAccess.Repository
             Subscription = new SubscriptionRepository(_context);
             Delivery = new DeliveryRepository(_context);
             Payment = new PaymentRepository(_context);
+            PaymentValidationHistory = new PaymentValidationHistoryRepository(_context);
         }
 
         public void Save()

@@ -1,8 +1,13 @@
 ﻿using AMAP.Entities;
 using AMAP.Entities.Models.ViewModel;
+using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using System.Linq;
+using System;
+using AMAP.Entities.ViewModel;
 
 namespace AMAP.Api.Controllers
 {
@@ -14,16 +19,22 @@ namespace AMAP.Api.Controllers
         private readonly SignInManager<AppUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AccountController> _logger;
+        private readonly EmailSender _emailSender;
+        private readonly AccountLockoutService _lockoutService;
 
         public AccountController(UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
             RoleManager<IdentityRole> roleManager,
-            ILogger<AccountController> logger)
+            ILogger<AccountController> logger,
+            EmailSender emailSender,
+            AccountLockoutService lockoutService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _logger = logger;
+            _emailSender = emailSender;
+            _lockoutService = lockoutService;
         }
 
         [HttpPost("register")]
@@ -72,17 +83,75 @@ namespace AMAP.Api.Controllers
         {
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(loginViewModel.Email, loginViewModel.Password, loginViewModel.RememberMe, lockoutOnFailure: true);
+                // Check if the user exists before attempting to log in
+                var user = await _userManager.FindByEmailAsync(loginViewModel.Email);
+                if (user == null)
+                {
+                    _logger.LogWarning("Login attempt with non-existent email: {Email}", loginViewModel.Email);
+                    return Unauthorized(new { message = "Invalid login attempt" });
+                }
+
+                // Check if the account is locked
+                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTimeOffset.UtcNow)
+                {
+                    var remainingLockoutTime = lockoutEnd.Value - DateTimeOffset.UtcNow;
+                    _logger.LogWarning("Login attempt for locked account: {Email}, remaining lockout time: {RemainingTime} minutes", 
+                        loginViewModel.Email, remainingLockoutTime.TotalMinutes.ToString("0.0"));
+                    
+                    return StatusCode(423, new { 
+                        message = "Account locked", 
+                        remainingMinutes = (int)Math.Ceiling(remainingLockoutTime.TotalMinutes) 
+                    });
+                }
+
+                var result = await _signInManager.PasswordSignInAsync(loginViewModel.Email, loginViewModel.Password, loginViewModel.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    var user = await _userManager.FindByEmailAsync(loginViewModel.Email);
-                    if (user == null)
+                    // Reset failed login attempts counter
+                    await _lockoutService.ResetFailedLoginAttemptsAsync(user);
+
+                    // Get user roles
+                    var roles = await _userManager.GetRolesAsync(user);
+                    
+                    // Check if user is a Manager and requires MFA
+                    if (roles.Contains("Manager"))
                     {
-                        return Unauthorized(new { message = "User not found" });
+                        // If MFA is enabled, require verification
+                        if (user.TwoFactorEnabled)
+                        {
+                            // Sign out the user since MFA is required
+                            await _signInManager.SignOutAsync();
+                            
+                            return Ok(new
+                            {
+                                requiresMfa = true,
+                                userId = user.Id,
+                                message = "MFA verification required"
+                            });
+                        }
+                        // If MFA setup is required but not yet completed
+                        else if (user.TwoFactorSetupRequired)
+                        {
+                            return Ok(new
+                            {
+                                requiresMfaSetup = true,
+                                userId = user.Id,
+                                message = "MFA setup required"
+                            });
+                        }
+                        // If MFA is not set up for this manager, mark it as required for next login
+                        else
+                        {
+                            user.TwoFactorSetupRequired = true;
+                            await _userManager.UpdateAsync(user);
+                        }
                     }
 
-                    // Obtem as roles dos users
-                    var roles = await _userManager.GetRolesAsync(user);
+                    // Send login notification email
+                    await SendLoginNotificationAsync(user);
+
+                    _logger.LogInformation("User {UserId} ({UserEmail}) logged in successfully", user.Id, user.Email);
 
                     return Ok(new
                     {
@@ -91,13 +160,31 @@ namespace AMAP.Api.Controllers
                         role = roles.FirstOrDefault()
                     });
                 }
-                if (result.IsLockedOut)
-                {
-                    return StatusCode(423, new { message = "Account locked" });
-                }
                 else
                 {
-                    return Unauthorized(new { message = "Invalid login attempt" });
+                    // Manage progressive lockout
+                    var (isLocked, lockoutDuration, failedAttempts) = await _lockoutService.HandleFailedLoginAttemptAsync(user);
+                    
+                    if (isLocked)
+                    {
+                        _logger.LogWarning("User account locked out after failed login: {Email}, attempts: {Attempts}, duration: {Duration} minutes", 
+                            loginViewModel.Email, failedAttempts, lockoutDuration?.TotalMinutes.ToString("0.0"));
+                        
+                        return StatusCode(423, new { 
+                            message = "Account locked", 
+                            remainingMinutes = lockoutDuration.HasValue ? (int)Math.Ceiling(lockoutDuration.Value.TotalMinutes) : 15,
+                            failedAttempts = failedAttempts
+                        });
+                    }
+
+                    _logger.LogWarning("Invalid login attempt for user: {Email}, failed attempts: {Attempts}", 
+                        loginViewModel.Email, failedAttempts);
+                    
+                    return Unauthorized(new { 
+                        message = "Invalid login attempt", 
+                        failedAttempts = failedAttempts,
+                        attemptsRemaining = 5 - (failedAttempts % 5) // Shows how many attempts remain until next lockout
+                    });
                 }
             }
             return BadRequest(ModelState);
@@ -106,8 +193,82 @@ namespace AMAP.Api.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> LogOff()
         {
+            // Get user information before logging out
+            var user = await _userManager.GetUserAsync(User);
+            
+            // Log out
             await _signInManager.SignOutAsync();
+            
+            // Explicitly clear the session
+            HttpContext.Session.Clear();
+            
+            if (user != null)
+            {
+                _logger.LogInformation("User {UserId} ({UserEmail}) logged out", user.Id, user.Email);
+            }
+            
             return Ok(new { message = "Logged off successfully" });
+        }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                // Don't reveal that the user doesn't exist
+                return Ok(new { message = "If your email is registered, you will receive a password reset token." });
+            }
+
+            // Generate password reset token only for existing users
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            return Ok(new
+            {
+                message = "Password reset token generated successfully",
+                token = token,
+                email = model.Email
+            });
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                // Don't reveal that the user doesn't exist
+                return Ok(new { message = "If your email is registered, your password has been reset." });
+            }
+
+            // Verify the token is valid for this user
+            var isValid = await _userManager.VerifyUserTokenAsync(
+                user,
+                _userManager.Options.Tokens.PasswordResetTokenProvider,
+                UserManager<AppUser>.ResetPasswordTokenPurpose,
+                model.Token
+            );
+
+            if (!isValid)
+            {
+                return BadRequest(new { message = "Invalid token." });
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+            if (result.Succeeded)
+            {
+                return Ok(new { message = "Your password has been reset successfully." });
+            }
+
+            return BadRequest(new { message = "Password reset failed. Please ensure your new password meets the requirements." });
         }
 
         [HttpPost("change-password")]
@@ -131,21 +292,21 @@ namespace AMAP.Api.Controllers
 
             // Change the password
             var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
-            
+
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
-                    _logger.LogWarning("Password change failed for user {UserId}: {ErrorCode} - {ErrorDescription}", 
+                    _logger.LogWarning("Password change failed for user {UserId}: {ErrorCode} - {ErrorDescription}",
                         user.Id, error.Code, error.Description);
                 }
-                
+
                 // Log potential brute force attempts
                 var failedPasswordChangeAttempts = await _userManager.GetAccessFailedCountAsync(user);
-                _logger.LogWarning("User {UserId} has {FailedAttempts} failed password change attempts", 
+                _logger.LogWarning("User {UserId} has {FailedAttempts} failed password change attempts",
                     user.Id, failedPasswordChangeAttempts);
-                
+
                 return BadRequest(ModelState);
             }
 
@@ -156,6 +317,41 @@ namespace AMAP.Api.Controllers
             await _signInManager.SignInAsync(user, isPersistent: false);
 
             return Ok(new { message = "Password changed successfully" });
+        }
+
+        private async Task SendLoginNotificationAsync(AppUser user)
+        {
+            try
+            {
+                // Get device and location information
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
+                var loginTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                var subject = "AMAP Security Alert: New Login Detected";
+                var body = $@"
+                    <h2>New Login Alert</h2>
+                    <p>Dear {user.Name},</p>
+                    <p>We detected a new login to your AMAP account.</p>
+                    <p><strong>Login Details:</strong></p>
+                    <ul>
+                        <li>Date and Time: {loginTime}</li>
+                        <li>IP Address: {ipAddress}</li>
+                        <li>Device: {userAgent}</li>
+                    </ul>
+                    <p>If this was you, you can ignore this message. If you didn't log in recently, please secure your account immediately by changing your password.</p>
+                    <p>Thank you for helping keep your account secure.</p>
+                    <p>AMAP Security Team</p>
+                ";
+
+                await _emailSender.SendEmailAsync(user.Email, subject, body);
+                _logger.LogInformation("Login notification email sent to {Email}", user.Email);
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't prevent login
+                _logger.LogError(ex, "Failed to send login notification email to {Email}", user.Email);
+            }
         }
     }
 }
