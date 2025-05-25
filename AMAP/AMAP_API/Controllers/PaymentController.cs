@@ -3,6 +3,8 @@ using AMAP.Entities;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Security.Claims;
 
 namespace AMAP.Api.Controllers
 {
@@ -35,6 +37,8 @@ namespace AMAP.Api.Controllers
 
             payment.PaymentDate = DateTime.UtcNow;
             payment.Validated = false;
+            payment.ValidationDate = null;
+            payment.ValidatedByProducerId = null;
 
             _unitOfWork.Payment.Add(payment);
             _unitOfWork.Save();
@@ -57,7 +61,30 @@ namespace AMAP.Api.Controllers
                 return BadRequest("Payment is already validated.");
             }
 
+            // Get the Producer's user ID from the claims
+            var producerIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            string? producerId = producerIdClaim?.Value;
+
+            if (string.IsNullOrEmpty(producerId))
+            {
+                return Unauthorized("User identity not found or invalid.");
+            }
+
+            // Create a history entry before updating the payment status
+            var historyEntry = new PaymentValidationHistory
+            {
+                PaymentId = payment.Id,
+                // Assign the string producerId directly as the type in PaymentValidationHistory is now string?
+                ProducerId = producerId,
+                ValidationTimestamp = DateTime.UtcNow
+            };
+
+            _unitOfWork.PaymentValidationHistory.Add(historyEntry);
+
+            // Update the payment status
             payment.Validated = true;
+            payment.ValidationDate = DateTime.UtcNow;
+            payment.ValidatedByProducerId = producerId;
 
             _unitOfWork.Payment.Update(payment);
             _unitOfWork.Save();

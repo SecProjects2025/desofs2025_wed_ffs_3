@@ -29,6 +29,8 @@ namespace AMAP.DataAccess.Data
 
         public DbSet<SubscriptionPeriod> SubscriptionPeriods { get; set; }
 
+        public DbSet<PaymentValidationHistory> PaymentValidationHistory { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -140,6 +142,20 @@ namespace AMAP.DataAccess.Data
 
             modelBuilder.Entity<Payment>()
                 .HasQueryFilter(p => p.Subscription == null || !p.Subscription.ProductOffer.Product.IsDeleted);
+
+            // Configure relationship for PaymentValidationHistory with Payment
+            modelBuilder.Entity<PaymentValidationHistory>()
+                .HasOne(h => h.Payment)
+                .WithMany()
+                .HasForeignKey(h => h.PaymentId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascade delete history if payment is deleted
+
+            // Optional: Configure relationship for PaymentValidationHistory with Producer (AppUser)
+            // modelBuilder.Entity<PaymentValidationHistory>()
+            //     .HasOne(h => h.Producer)
+            //     .WithMany()
+            //     .HasForeignKey(h => h.ProducerId)
+            //     .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
