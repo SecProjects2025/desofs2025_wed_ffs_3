@@ -119,12 +119,9 @@ jobs:
         docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
 
     - name: Set up SSH agent
-      uses: appleboy/ssh-action@master
+      uses: webfactory/ssh-agent@v0.9.0
       with:
-        host: ${{ env.VM_HOST }}
-        username: ${{ env.VM_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ env.VM_PORT }}
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: Create deploy directory on VM
       run: ssh ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
@@ -133,14 +130,7 @@ jobs:
       run: scp -O -P ${{ env.VM_PORT }} docker-compose-staging.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose-staging.yml
 
     - name: Run Docker Compose on VM via SSH
-      id: deploy
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ env.VM_HOST }}
-        username: ${{ env.VM_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ env.VM_PORT }}
-        script: |
+      run: |
           # Navega para o diretório de deploy
           cd ${{ env.VM_DEPLOY_PATH }}
           # Define a variável de ambiente IMAGE_TAG para o docker compose
