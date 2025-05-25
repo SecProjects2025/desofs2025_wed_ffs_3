@@ -1,10 +1,20 @@
-# Sistema de Repúdio - AMAP
+# Sistema de Repúdio e Integridade - AMAP
 
-Este documento descreve as funcionalidades do sistema de repúdio implementado no AMAP, garantindo autenticidade, não-repúdio e integridade das operações de subscrição e pagamento.
+Este documento descreve as funcionalidades do sistema de repúdio e integridade implementado no AMAP, garantindo autenticidade, não-repúdio e integridade das operações de subscrição e pagamento, com foco nas mitigações das ameaças identificadas.
 
 ---
 
-## 1. Repúdio: Negação de ter realizado subscrição
+## 1. Repúdio - Negação de ter realizado subscrição (4.3 R)
+
+Esta seção aborda as mitigações implementadas para a ameaça de um co-produtor negar que realizou uma subscrição.
+
+**Mitigações Implementadas:**
+
+*   **Termos e condições explícitos:** A aceitação dos termos é uma etapa obrigatória no fluxo de subscrição (`/api/subscription/{id}/accept-terms`).
+*   **Confirmação por email obrigatória:** A subscrição só se torna ativa após a confirmação do email pelo co-produtor, utilizando um token único (`/api/Subscription/confirm`).
+*   **Assinaturas digitais básicas:** O campo `DigitalSignature` existe no modelo `Subscription`, embora a descrição detalhada do seu uso no fluxo de repúdio possa ser adicionada no futuro, se aplicável.
+*   **Comprovativo de subscrição:** A criação bem-sucedida de uma subscrição (`POST /api/subscription`) e a possibilidade de a obter por ID (`GET /api/subscription/{id}`) servem como registo da subscrição.
+*   **Registos de auditoria detalhados:** Campos como `TermsAcceptedAt` e `EmailConfirmedAt` no modelo `Subscription` registam datas e horas importantes das ações do co-produtor, servindo como evidência.
 
 ### 1.1 Criação de Assinatura
 
@@ -90,7 +100,7 @@ public class Subscription
 
 ---
 
-### 1.5 Fluxo de Repúdio
+### 1.5 Fluxo de Repúdio de Subscrição
 
 1. Criação da assinatura (gera token, envia email, inicializa campos)
 2. Confirmação de email (valida token, marca como confirmado)
@@ -98,7 +108,16 @@ public class Subscription
 
 ---
 
-## 2. Repúdio: Negação de ter realizado um pagamento
+## 2. Repúdio - Negação de ter realizado um pagamento (1.6 R)
+
+Esta seção detalha as mitigações implementadas para a ameaça de um co-produtor negar que realizou um pagamento.
+
+**Mitigações Implementadas:**
+
+*   **Comprovativo detalhado de intenção de pagamento:** A criação do registo de pagamento (`POST /api/payment`) na aplicação serve como um comprovativo da intenção de pagamento e seus detalhes.
+*   **Registo seguro do método de pagamento:** O método de pagamento (`PaymentMethod`) é registado no modelo `Payment`.
+*   **Interface para confirmação manual por parte do Gestor (Validado por Produtor):** O endpoint `/api/payment/{id}/validate`, acessível a utilizadores com o papel `Producer`, permite a validação manual do pagamento, servindo como uma forma de confirmação secundária.
+*   **Histórico de verificações de pagamento:** A entidade `PaymentValidationHistory` regista cada validação bem-sucedida, fornecendo um histórico claro de quem validou o pagamento e quando.
 
 ### 2.1 Criação de Pagamento
 
@@ -189,7 +208,16 @@ public class Payment
 
 ---
 
-## 3. Integridade: Alteração não autorizada de registos de pagamentos
+## 3. Integridade - Alteração não autorizada de registos de pagamentos (3.3 T)
+
+Esta seção descreve as mitigações implementadas para prevenir a alteração não autorizada dos registos de pagamento.
+
+**Mitigações Implementadas:**
+
+*   **Segregação de funções:** O acesso e as permissões para operações de pagamento (criação, validação, gestão) são baseados nos papéis do utilizador (`CoProducer`, `Producer`, `Manager`).
+*   **Logs imutáveis de verificação:** A entidade `PaymentValidationHistory` atua como um registo imutável de cada evento de validação, fornecendo uma trilha de auditoria confiável.
+*   **Histórico de verificações:** A entidade `PaymentValidationHistory` mantém um histórico de quem validou o pagamento e quando.
+*   **Aprovação:** O processo de validação por um `Producer` (`PUT /api/payment/{id}/validate`), distinto da criação do pagamento pelo `CoProducer`, serve como uma forma de aprovação secundária e rastreável.
 
 ### 3.1 Histórico de Validações de Pagamento
 
@@ -202,7 +230,8 @@ Regista cada evento de validação de pagamento:
 - Inclui ID do pagamento, ID do Produtor e timestamp
 - Garante trilha de auditoria e integridade
 
-**Modelo:**  
+### 3.2 Modelo: PaymentValidationHistory
+
 ```csharp
 public class PaymentValidationHistory
 {
