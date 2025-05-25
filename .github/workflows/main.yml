@@ -8,6 +8,13 @@ on:
 
 env:
   DOTNET_VERSION: '9.0.x'
+  DOCKER_IMAGE_NAME: 'amap-api'
+  DOCKER_REGISTRY: 'diogocosta0307/desofs'
+  DOCKER_TAG: v1.0.0-${{ github.sha }}
+  VM_HOST: 'vsgate-ssh.dei.isep.ipp.pt'
+  VM_USER: 'root'
+  VM_PORT: '10381'
+  VM_DEPLOY_PATH: '/root/desofs-app'
 
 jobs:
   build-and-test:
@@ -23,17 +30,20 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
+    - name: Install ReportGenerator tool
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
     - name: Restore dependencies
       run: dotnet restore AMAP/AMAP.sln
 
     - name: Build
       run: dotnet build AMAP/AMAP.sln --no-restore
 
+    - name: Run tests
+      run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
+
     - name: Run tests with coverage
       run: dotnet test AMAP/AMAP.sln --no-build --collect:"XPlat Code Coverage"
-
-    - name: Install ReportGenerator tool
-      run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
     - name: Convert coverage report to opencover format
       run: |
@@ -41,9 +51,6 @@ jobs:
           -reports:**/coverage.cobertura.xml \
           -targetdir:coverage-report \
           -reporttypes:opencover
-
-    - name: Run tests
-      run: dotnet test AMAP/AMAP.sln --no-build --verbosity normal
 
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
@@ -97,6 +104,73 @@ jobs:
         format: 'HTML'
         out: 'reports'
 
+    - name: Build Docker Image
+      if: github.ref == 'refs/heads/main'
+      run: docker build . -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+
+    - name: Log in to Docker Hub
+      if: github.ref == 'refs/heads/main'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Tag and Push Docker Image
+      if: github.ref == 'refs/heads/main'
+      run: |
+        docker tag ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+        docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+
+    - name: Set up SSH agent
+      if: github.ref == 'refs/heads/main'
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Create deploy directory on VM
+      if: github.ref == 'refs/heads/main'
+      run: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
+      
+    - name: Copy docker-compose file to VM via SCP
+      if: github.ref == 'refs/heads/main'
+      run: scp -O -P ${{ env.VM_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose-staging.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose-staging.yml
+
+    - name: Run Docker Compose on VM via SSH
+      if: github.ref == 'refs/heads/main'
+      id: deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ env.VM_HOST }}
+        username: ${{ env.VM_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ env.VM_PORT }}
+        script: |
+          # Navega para o diretório de deploy na VM
+          cd ${{ env.VM_DEPLOY_PATH }}
+          # Define a variável de ambiente IMAGE_TAG para o docker compose
+          export IMAGE_TAG=${{ env.DOCKER_TAG }}
+
+          # --- Debugging: Verificar status do Docker ---
+          echo "--- Docker Info ---"
+          docker info
+          echo "--- Docker PS -a ---"
+          docker ps -a
+          echo "--- Fim Debugging ---"
+          # --- Fim Debugging ---
+
+          # Para e remove contêineres antigos e inicia novos
+          docker-compose -f docker-compose-staging.yml down
+          docker-compose -f docker-compose-staging.yml up -d
+          
+    - name: Output Deployment Information
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "Application deployed successfully!"
+        echo "Deployment Gateway: ${{ env.VM_HOST }}:${{ env.VM_PORT }}"
+        echo "Application running on VM internal port: 8080"
+        echo "deployment_url=${{ env.VM_HOST }}:${{ env.VM_PORT }} (Gateway - Access app on VM port 8080)" >> $GITHUB_OUTPUT
+        echo "deployment_status=success" >> $GITHUB_OUTPUT
+
     - name: Upload SCA Report
       uses: actions/upload-artifact@v4
       with:
@@ -110,34 +184,5 @@ jobs:
     - name: Upload HTML coverage report
       uses: actions/upload-artifact@v4
       with:
-          name: html-coverage-report
-          path: AMAP/AMAP.UnitTests/html-coverage-report
-
-    - name: Deploy to Staging
-      if: github.ref == 'refs/heads/main'
-      id: deploy
-      run: |
-        echo "Deploying to staging environment"
-        # Add your deployment commands here
-        # For example:
-        # dotnet publish -c Release
-        # Copy files to staging server
-        echo "deployment_url=https://staging.AMAP.com" >> $GITHUB_OUTPUT
-        echo "deployment_status=success" >> $GITHUB_OUTPUT
-
-    - name: Output Deployment Information
-      if: github.ref == 'refs/heads/main'
-      run: |
-        echo "Application deployed successfully!"
-        echo "Deployment URL: ${{ steps.deploy.outputs.deployment_url }}"
-        echo "Deployment Status: ${{ steps.deploy.outputs.deployment_status }}"
-
-    - name: Verify Deployment
-      if: github.ref == 'refs/heads/main'
-      run: |
-        echo "Verifying deployment..."
-        # Add deployment verification steps
-        # For example:
-        # curl -f https://staging.your-app.com/health
-        # Run smoke tests
-        # Check application logs
+        name: html-coverage-report
+        path: AMAP/AMAP.UnitTests/html-coverage-report

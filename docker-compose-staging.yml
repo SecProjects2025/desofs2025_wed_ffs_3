@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  amap-api:
+    image: diogocosta0307/desofs:${IMAGE_TAG}
+    container_name: amap-api
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    networks:
+      - amap-network
+
+networks:
+  amap-network:
+    driver: bridge 
