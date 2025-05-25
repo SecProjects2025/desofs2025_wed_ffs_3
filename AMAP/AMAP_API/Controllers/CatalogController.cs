@@ -1,8 +1,6 @@
-﻿using AMAP.DataAccess.Repository.IRepository;
-using AMAP.Entities;
+﻿using AMAP.Business.Interfaces;
 using AMAP.Entities.Utilities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AMAP.Api.Controllers
@@ -11,88 +9,24 @@ namespace AMAP.Api.Controllers
     [ApiController]
     public class CatalogController : BaseController
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly UserManager<AppUser> _userManager;
+        private readonly ICatalogBc _catalogBc;
 
-        public CatalogController(IUnitOfWork unitOfWork, UserManager<AppUser> userManager)
+        public CatalogController(ICatalogBc catalogBc)
         {
-            _unitOfWork = unitOfWork;
-            _userManager = userManager;
+            _catalogBc = catalogBc;
         }
 
         [HttpGet("GetAllCatalogs")]
         public async Task<IActionResult> GetAllCatalogs()
         {
-            // Obter todos os produtores
-            var producers = _userManager.Users.ToList();
+            var catalogsData = await _catalogBc.GetAllCatalogs();
 
-            if (producers.Count == 0)
+            if (catalogsData.Count == 0)
             {
                 return NotFound("No producers found.");
             }
 
-            var catalogs = new List<object>();
-
-            foreach (var producer in producers)
-            {
-                // Obter todos os produtos não deletados do produtor
-                var products = _unitOfWork.Product.GetAll(
-                    p => p.ProducerId == producer.Id && !p.IsDeleted,
-                    includeProperties: "Composites.SubProduct" // Incluir Composites e SubProduct dentro de Composites
-                ).ToList(); // Materializa a consulta
-
-                if (products.Any())
-                {
-                    // Criar o catálogo para cada produtor
-                    var producerCatalog = new
-                    {
-                        ProducerName = producer.Name,
-                        Products = new List<object>(), // Inicializar como uma lista vazia
-                    };
-
-                    foreach (var product in products)
-                    {
-                        // Verificar se o produto é composto
-                        var components = product.Composites?.Where(c => !c.SubProduct.IsDeleted).ToList();
-
-                        if (components != null && components.Any())
-                        {
-                            // Produto composto
-                            producerCatalog.Products.Add(new
-                            {
-                                product.Name,
-                                product.Description,
-                                product.Photo,
-                                product.ReferencePrice,
-                                product.DeliveryUnits,
-                                Type = "Composite",
-                                Components = components.Select(c => new
-                                {
-                                    SubProductName = c.SubProduct.Name,
-                                    c.Quantity
-                                }).ToList(),
-                            });
-                        }
-                        else
-                        {
-                            // Produto simples
-                            producerCatalog.Products.Add(new
-                            {
-                                product.Name,
-                                product.Description,
-                                product.Photo,
-                                product.ReferencePrice,
-                                product.DeliveryUnits,
-                                Type = "Simple",
-                            });
-                        }
-                    }
-
-                    catalogs.Add(producerCatalog); // Adiciona o catálogo ao final
-                }
-            }
-
-            return Ok(catalogs);
+            return Ok(catalogsData);
         }
 
         [HttpGet("GetCatalog")]
@@ -105,75 +39,25 @@ namespace AMAP.Api.Controllers
                 return NotFound("Producer not logged in.");
             }
 
-            return await GetCatalogByProducer(producerId);
+            var catalogData = await _catalogBc.GetCatalogByProducer(producerId);
+            if (catalogData.Count == 0)
+            {
+                return NotFound("Producer not found.");
+            }
+
+            return Ok(catalogData);
         }
 
         [HttpGet("GetCatalog/{producerId}")]
         public async Task<IActionResult> GetCatalogByProducer(string producerId)
         {
-            // Obter o produtor pelo ProducerId utilizando o UserManager
-            var producer = await _userManager.FindByIdAsync(producerId);
-
-            if (producer == null)
+            var catalogData = await _catalogBc.GetCatalogByProducer(producerId);
+            if (catalogData.Count == 0)
             {
                 return NotFound("Producer not found.");
             }
 
-            // Obter todos os produtos do produtor com o ProducerId, não deletados
-            var products = _unitOfWork.Product.GetAll(p => p.ProducerId == producerId && !p.IsDeleted,
-                includeProperties: "Composites.SubProduct").ToList();
-
-            var catalog = new List<object>();
-
-            var producerCatalog = new
-            {
-                ProducerName = producer.Name,
-                Products = new List<object>(), // Inicializar como uma lista vazia
-            };
-
-            foreach (var product in products)
-            {
-                // Verificar se o produto é composto
-                var components = product.Composites?.Where(c => !c.SubProduct.IsDeleted).ToList();
-
-                if (components != null && components.Any())
-                {
-                    // Produto composto
-                    producerCatalog.Products.Add(new
-                    {
-                        product.Id,
-                        product.Name,
-                        product.Description,
-                        product.Photo,
-                        ReferencePrice = $"{product.ReferencePrice} €",
-                        product.DeliveryUnits,
-                        Type = "Composite",
-                        Components = components.Select(c => new
-                        {
-                            SubProductName = c.SubProduct.Name,
-                            c.Quantity
-                        }).ToList(),
-                    });
-                }
-                else
-                {
-                    // Produto simples
-                    producerCatalog.Products.Add(new
-                    {
-                        product.Id,
-                        product.Name,
-                        product.Description,
-                        product.Photo,
-                        ReferencePrice = $"{product.ReferencePrice} €",
-                        product.DeliveryUnits,
-                        Type = "Simple",
-                    });
-                }
-            }
-
-            catalog.Add(producerCatalog);
-
-            return Ok(catalog);
+            return Ok(catalogData);
         }
     }
 }
