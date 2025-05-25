@@ -140,8 +140,8 @@ jobs:
         script: |
           cd ${{ env.VM_DEPLOY_PATH }}
           export IMAGE_TAG=${{ env.DOCKER_TAG }}
-          docker compose -f docker-compose-staging.yml down
-          docker compose -f docker-compose-staging.yml up -d
+          docker-compose -f docker-compose-staging.yml down
+          docker-compose -f docker-compose-staging.yml up -d
           
     - name: Output Deployment Information
       run: |
