@@ -1,24 +1,20 @@
 # Sistema de Repúdio - AMAP
 
-Este documento descreve as funcionalidades do sistema de repúdio implementado no AMAP, que garante a autenticidade e não-repúdio das assinaturas através de termos e condições e confirmação de email.
+Este documento descreve as funcionalidades do sistema de repúdio implementado no AMAP, garantindo autenticidade, não-repúdio e integridade das operações de subscrição e pagamento.
 
-## Funcionalidades
+---
 
-### 1. Repúdio - Negação de ter realizado subscrição ou pagamento
-#### 1. Criação de Assinatura
+## 1. Repúdio: Negação de ter realizado subscrição
 
-##### Endpoint
-```
-POST /api/subscription
-```
+### 1.1 Criação de Assinatura
 
-##### Descrição
-Cria uma nova assinatura com suporte ao sistema de repúdio. O sistema:
-- Gera um token único de confirmação
-- Envia email de confirmação ao co-produtor
-- Inicializa os campos de repúdio
+**Endpoint:**  
+`POST /api/subscription`
 
-##### Parâmetros
+**Descrição:**  
+Cria uma nova assinatura, gerando um token de confirmação, enviando email ao co-produtor e inicializando campos de repúdio.
+
+**Parâmetros:**  
 ```json
 {
     "productOfferId": 1,
@@ -27,7 +23,7 @@ Cria uma nova assinatura com suporte ao sistema de repúdio. O sistema:
 }
 ```
 
-##### Resposta
+**Resposta:**  
 ```json
 {
     "id": 2,
@@ -44,59 +40,34 @@ Cria uma nova assinatura com suporte ao sistema de repúdio. O sistema:
 }
 ```
 
-#### 2. Confirmação de Email
+---
 
-##### Endpoint
-```
-POST https://localhost:7262/api/Subscription/confirm
-```
+### 1.2 Confirmação de Email
 
-##### Descrição
-Confirma o email do co-produtor através de um token único gerado durante a criação da assinatura. O sistema:
-- Valida o token de confirmação
-- Marca o email como confirmado
-- Registra a data e hora da confirmação
-- Remove o token após uso
+**Endpoint:**  
+`POST /api/Subscription/confirm`
 
-##### Parâmetros
-```json
-"vKeAQGXwMvpeim/crxxr5+oWy/Fl86BGETYfctNpLPQ="
-```
+**Descrição:**  
+Confirma o email do co-produtor através do token gerado na criação da assinatura.
 
-##### Teste
-Para testar a confirmação:
-1. Copie o token de confirmação da resposta da criação da assinatura
-2. Faça uma requisição POST para `https://localhost:7262/api/Subscription/confirm`
-3. Cole o token como corpo da requisição (apenas o token, sem aspas)
-4. O sistema retornará:
-   - 200 OK: "Subscription confirmed successfully"
-   - 404 Not Found: "Invalid confirmation token"
-   - 500 Internal Server Error: "An error occurred while confirming the subscription"
+**Como testar:**  
+1. Copie o token da resposta da criação.
+2. Faça POST para `/api/Subscription/confirm` com o token no corpo.
 
-#### 3. Aceitação de Termos e Condições
+---
 
-##### Endpoint
-```
-POST /api/subscription/{id}/accept-terms
-```
+### 1.3 Aceitação de Termos e Condições
 
-##### Descrição
-Permite que um co-produtor aceite os termos e condições de uma assinatura. O sistema registra:
-- Data e hora da aceitação
-- Assinatura digital do co-produtor
-- Status de aceitação
+**Endpoint:**  
+`POST /api/subscription/{id}/accept-terms`
 
-##### Parâmetros
-- `id`: ID da assinatura
+**Descrição:**  
+Permite ao co-produtor aceitar os termos, registando data/hora e assinatura digital.
 
-##### Resposta
-- 200 OK: "Terms accepted successfully"
-- 404 Not Found: "Subscription not found"
-- 500 Internal Server Error: "An error occurred while accepting the terms"
+---
 
-### Modelo de Dados
+### 1.4 Modelo de Dados: Subscription
 
-#### Subscription
 ```csharp
 public class Subscription
 {
@@ -105,44 +76,127 @@ public class Subscription
     public int ProductOfferId { get; set; }
     public int ExpectedQuantity { get; set; }
     public PaymentType PaymentType { get; set; }
-    
     [Required]
     public bool TermsAccepted { get; set; }
-    
     [Required]
     public DateTime TermsAcceptedAt { get; set; }
-    
     [Required]
     public bool EmailConfirmed { get; set; }
-    
     public DateTime? EmailConfirmedAt { get; set; }
-    
     public string? ConfirmationToken { get; set; }
-    
     public string? DigitalSignature { get; set; }
 }
 ```
 
-### Fluxo de Repúdio
+---
 
-1. **Criação da Assinatura**
-   - Sistema gera token único
-   - Envia email de confirmação
-   - Inicializa campos de repúdio como false
+### 1.5 Fluxo de Repúdio
 
-2. **Confirmação de Email**
-   - Co-produtor recebe email com link de confirmação
-   - Sistema valida token e marca email como confirmado
-   - Token é removido após uso
+1. Criação da assinatura (gera token, envia email, inicializa campos)
+2. Confirmação de email (valida token, marca como confirmado)
+3. Aceitação de termos (regista data/hora e assinatura digital)
 
-3. **Aceitação de Termos**
-   - Co-produtor aceita termos e condições
-   - Sistema registra data/hora e assinatura digital
-   - Assinatura é marcada como completa
+---
 
-### Configuração de Email
+## 2. Repúdio: Negação de ter realizado um pagamento
 
-O sistema utiliza o Mailtrap para envio de emails em ambiente de desenvolvimento:
+### 2.1 Criação de Pagamento
+
+**Endpoint:**  
+`POST /api/payment`
+
+**Descrição:**  
+Cria um pagamento, registando o método de pagamento (`Money`, `MBway`, `BankTransfer`) e inicializando o campo `Validated` como `false`.  
+Campos `ValidationDate` e `ValidatedByProducerId` começam nulos.
+
+---
+
+### 2.2 Validação de Pagamento
+
+**Endpoint:**  
+`PUT /api/payment/{id}/validate`
+
+**Descrição:**  
+Permite a um Produtor validar um pagamento:
+- Só pode ser feito por utilizadores com role `Producer`
+- Marca `Validated` como `true`
+- Regista data/hora da validação e o ID do Produtor
+
+**Como testar:**  
+1. Crie um pagamento (token de CoProducer)
+2. Obtenha o ID do pagamento
+3. Autentique-se como Producer
+4. Faça PUT para `/api/payment/{id}/validate` com token de Producer
+
+**Respostas possíveis:**  
+- 200 OK: Pagamento validado
+- 404 Not Found: Pagamento não encontrado
+- 401/403: Não autorizado
+- 400: Já validado
+
+---
+
+### 2.3 Modelo de Dados: Payment
+
+```csharp
+public class Payment
+{
+    public int Id { get; set; }
+    public string? CoProducerId { get; set; }
+    public int SubscriptionId { get; set; }
+    public PaymentType PaymentMethod { get; set; }
+    public bool Validated { get; set; }
+    public DateTime? ValidationDate { get; set; }
+    public string? ValidatedByProducerId { get; set; }
+}
+```
+
+---
+
+## 3. Integridade: Alteração não autorizada de registos de pagamentos
+
+### 3.1 Histórico de Validações de Pagamento
+
+**Entidade:**  
+`PaymentValidationHistory`
+
+**Descrição:**  
+Regista cada evento de validação de pagamento:
+- Uma entrada por validação bem-sucedida
+- Inclui ID do pagamento, ID do Produtor e timestamp
+- Garante trilha de auditoria e integridade
+
+**Modelo:**  
+```csharp
+public class PaymentValidationHistory
+{
+    public int Id { get; set; }
+    [Required]
+    public int PaymentId { get; set; }
+    [ForeignKey("PaymentId")]
+    public Payment Payment { get; set; }
+    [Required]
+    public string? ProducerId { get; set; } // Stores the Producer's user ID (string GUID)
+    [Required]
+    public DateTime ValidationTimestamp { get; set; }
+}
+```
+
+---
+
+## 4. Segurança e Implementação
+
+- Tokens de confirmação são únicos e de uso único
+- Assinaturas digitais para aceitação de termos
+- Datas/horas em UTC
+- Validação e sanitização de campos sensíveis
+- Entity Framework Core para persistência
+- Migrações automáticas
+- Tratamento de exceções e logs de auditoria
+
+---
+
+## 5. Configuração de Email
 
 ```json
 "MailSettings": {
@@ -154,56 +208,5 @@ O sistema utiliza o Mailtrap para envio de emails em ambiente de desenvolvimento
     "FromName": "AMAP Notifications"
 }
 ```
-
-### Segurança
-
-- Tokens de confirmação são únicos e de uso único
-- Assinaturas digitais são geradas para cada aceitação de termos
-- Datas e horários são registrados em UTC
-- Campos sensíveis são validados e sanitizados
-
-### Notas de Implementação
-
-- O sistema utiliza Entity Framework Core para persistência
-- Migrações automáticas para atualização da base de dados
-- Tratamento de exceções em todos os endpoints
-- Logs de auditoria para ações importantes 
-
-### 5. Negação de ter realizado um pagamento
-
-#### 1. Validação e Registo de Pagamento
-
-##### Endpoint de Criação (atualizado)
-```
-POST /api/payment
-```
-
-##### Descrição da Criação
-Atualização do endpoint de criação de pagamento para incluir o método de pagamento e inicializar o estado de validação.
-- Regista o método de pagamento escolhido (Money, MBway, BankTransfer).
-- Inicializa o campo `Validated` como `false`.
-
-##### Endpoint de Validação
-```
-PUT /api/payment/{id}/validate
-```
-
-##### Descrição da Validação
-Permite a um Produtor validar um pagamento específico.
-- Verifica se o pagamento existe e não foi previamente validado.
-- Marca o campo `Validated` como `true`.
-- Garante que apenas utilizadores com a role 'Producer' podem realizar esta operação (via autorização no endpoint).
-
-##### Teste de Validação
-Para testar a validação:
-1. Crie um pagamento usando o endpoint POST /api/payment (necessita de token de CoProducer).
-2. Obtenha o ID do pagamento criado.
-3. Obtenha um token de autenticação para um utilizador com a role 'Producer'.
-4. Faça uma requisição PUT para `/api/payment/{id}/validate`, substituindo `{id}` pelo ID do pagamento criado.
-5. O sistema retornará:
-   - 200 OK: Pagamento validado com sucesso.
-   - 404 Not Found: Pagamento não encontrado.
-   - 401 Unauthorized / 403 Forbidden: Utilizador não autorizado a validar pagamentos.
-   - 400 Bad Request: Pagamento já validado.
 
 
