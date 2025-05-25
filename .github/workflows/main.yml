@@ -97,10 +97,11 @@ jobs:
       run: snyk test --severity-threshold=high --all-projects
 
     - name: Run SCA (OWASP Dependency Check)
+      if: github.ref == 'refs/heads/main'
       uses: dependency-check/Dependency-Check_Action@main
       with:
         project: 'diogoc0307_desofs'
-        path: '.'
+        path: 'AMAP/'
         format: 'HTML'
         out: 'reports'
 
