@@ -117,8 +117,8 @@ jobs:
         export ASPNETCORE_ENVIRONMENT="Pipeline"
         export ConnectionStrings__DefaultConnection="Data Source=AMAP.db"
         
-        dotnet ef migrations add InitialCreate --context AppDbContext
-        dotnet ef database update
+        dotnet ef migrations add InitialCreate --context AppDbContext --project ../AMAP.DataAccess
+        dotnet ef database update --project ../AMAP.DataAccess
         
         dotnet run
         sleep 30
