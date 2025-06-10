@@ -15,7 +15,12 @@ O repositório está organizado da seguinte forma:
     - Arquivos `.json` dos DFDs (Diagramas de Fluxo de Dados), que podem ser abertos no programa **Threat Dragon**.  
     - Checklist do **ASVS** com os requisitos de segurança.  
     - Relatório (`README`) em formato **Markdown** e **PDF** referente à Fase 1.  
-  - **`Fase2 Sprint1/`**: (ainda vazia).  
+  - **`Fase2 Sprint1/`**:
+    - `dependency-check-report.html`: Relatório de verificação de vulnerabilidades nas                 dependências.
+    - `coverage-report.html`: Relatório de cobertura de testes.
+    - `README.md`: Relatório técnico em formato Markdown.
+    - `README.pdf`: Relatório técnico em formato PDF.
+    - `v4-ASVS-checklist-en.xlsx`: Checklist atualizada com os requisitos ASVS.
   - **`Fase2 Sprint2/`**: (ainda vazia).  
 - **`Imagens/`**: Contém todas as imagens utilizadas no relatório.  
 - **`README.md`**: Este arquivo, que contém a estrutura do repositório e o passo a passo para configurar o backend.

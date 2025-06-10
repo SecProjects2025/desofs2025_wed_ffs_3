@@ -8,5 +8,10 @@ namespace AMAP.Entities
         public string? Name { get; set; }
 
         public UserType UserType { get; set; }
+        
+        // MFA Properties
+        public bool TwoFactorEnabled { get; set; } = false;
+        public string? TwoFactorSecretKey { get; set; }
+        public bool TwoFactorSetupRequired { get; set; } = false;
     }
 }

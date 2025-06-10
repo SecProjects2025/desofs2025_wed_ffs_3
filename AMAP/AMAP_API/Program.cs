@@ -8,7 +8,6 @@ using AMAP.DataAccess.DbInitializer;
 using AMAP.Entities.Utilities;
 using AMAP.Business.Components;
 using AMAP.Business.Interfaces;
-using AMAP.Business.Interfaces;
 using AMAP.Business;
 using AMAP.Business.Components;
 using System.Text.RegularExpressions;
@@ -76,7 +75,8 @@ builder.Services.AddScoped<ICatalogBc, CatalogBc>();
 builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 
-// Configure database context
+builder.Services.AddScoped<AccountLockoutService>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -109,12 +109,13 @@ builder.Services.Configure<PasswordHasherOptions>(options =>
     options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3;
 });
 
-// Configurao do cookie de autenticao
+// Authentication cookie configuration
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/api/account/login";
     options.LogoutPath = "/api/account/logout";
     options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Authentication cookie expiration time: 30 minutes
 
     // Settings that apply to ALL environments
     options.Cookie.HttpOnly = true;
@@ -123,13 +124,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     // Environment-specific settings
     if (builder.Environment.IsDevelopment())
     {
-        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir HTTP
-        options.Cookie.SameSite = SameSiteMode.None; // Permitir cross-origin
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
+        options.Cookie.SameSite = SameSiteMode.None; // Allow cross-origin
     }
     else
     {
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Apenas HTTPS
-        options.Cookie.SameSite = SameSiteMode.Strict; // Mais seguro
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HTTPS only
+        options.Cookie.SameSite = SameSiteMode.Strict; // More secure
     }
 
     options.Events.OnRedirectToLogin = context =>
@@ -140,7 +141,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 
-// Configurao das roles de autorizao
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Manager", policy => policy.RequireRole("Manager"));
@@ -152,10 +152,10 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(100); // Tempo de expirao da sessao
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Session expiration time: 30 minutes
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Permitir envio em HTTP
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
     options.Cookie.SameSite = SameSiteMode.None;
 });
 
@@ -202,42 +202,11 @@ app.UseHsts();
 
 app.UseAuthentication();
 app.UseSession();
+app.UseMfaMiddleware();
 app.UseAuthorization();
 
 // Adicionar o middleware de Rate Limiting ANTES de MapControllers
 app.UseRateLimiter();
 
 app.MapControllers();
-
 app.Run();
-
-// Custom password validator
-public class CustomPasswordValidator<TUser> : IPasswordValidator<TUser> where TUser : class
-{
-    public Task<IdentityResult> ValidateAsync(UserManager<TUser> manager, TUser user, string password)
-    {
-        var errors = new List<IdentityError>();
-
-        if (password.Length > 128)
-        {
-            errors.Add(new IdentityError
-            {
-                Code = "PasswordTooLong",
-                Description = "Password must not exceed 128 characters."
-            });
-        }
-
-
-        var normalizedPassword = Regex.Replace(password, @"\s+", " ");
-        if (normalizedPassword.Length < 12)
-        {
-            errors.Add(new IdentityError
-            {
-                Code = "PasswordTooShort",
-                Description = "Password must be at least 12 characters long after normalizing spaces."
-            });
-        }
-
-        return Task.FromResult(errors.Count == 0 ? IdentityResult.Success : IdentityResult.Failed(errors.ToArray()));
-    }
-}

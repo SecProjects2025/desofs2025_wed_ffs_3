@@ -118,6 +118,12 @@ namespace AMAP.Api.Controllers
                 return BadRequest(new { message = "No file was uploaded" });
             }
 
+            const long MaxFileSize = 5 * 1024 * 1024;
+            if (file.Length > MaxFileSize)
+            {
+                return BadRequest(new { message = $"File size exceeds the maximum limit of {MaxFileSize / 1024 / 1024}MB" });
+            }
+
             if (!file.ContentType.Contains("text"))
             {
                 return BadRequest(new { message = "File must be text format" });
