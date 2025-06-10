@@ -105,6 +105,9 @@ jobs:
         out: 'reports'
 
     - name: Start Application
+      env:
+        ASPNETCORE_ENVIRONMENT: Testing
+        ConnectionStrings__DefaultConnection: ${{ secrets.TEST_DB_CONNECTION }}
       run: |
         cd AMAP/AMAP_API
         dotnet run --urls="https://localhost:7262" &
