@@ -111,7 +111,8 @@ jobs:
     - name: Start Application
       run: |
         cd AMAP/AMAP_API
-        dotnet add package Microsoft.EntityFrameworkCore.Sqlite
+        dotnet add package Microsoft.EntityFrameworkCore --version 9.0.6
+        dotnet add package Microsoft.EntityFrameworkCore.Sqlite --version 9.0.6
         
         export ASPNETCORE_ENVIRONMENT="Pipeline"
         export ConnectionStrings__DefaultConnection="Data Source=AMAP.db"
