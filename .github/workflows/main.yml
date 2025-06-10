@@ -115,8 +115,8 @@ jobs:
         
         cd AMAP/AMAP_API
         
-        dotnet ef migrations add InitialCreate --context AppDbContext --project ../AMAP.DataAccess
-        dotnet ef database update --project ../AMAP.DataAccess
+        dotnet ef migrations add InitialCreate --context AppDbContext --project ../AMAP.Data
+        dotnet ef database update --project ../AMAP.Data
         
         dotnet run &
         sleep 30
