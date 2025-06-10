@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     FaBoxOpen,
     FaClipboardList,
@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fa';
 
 const Sidebar = ({ isVisible }) => {
-    const userType = localStorage.getItem('userType'); // Obter o tipo de usuário (Manager, Producer, CoProducer)
+    const userType = sessionStorage.getItem('userType'); // Obter o tipo de usuário (Manager, Producer, CoProducer)
 
     console.log("userType:", userType); // Adicionei para verificar se o valor está correto
 
@@ -19,11 +19,11 @@ const Sidebar = ({ isVisible }) => {
     const menuItems = [
 
         //{ path: "/producerCatalogo", label: "Ofertas para coprodutores", icon: <FaCarrot />, roles: ["CoProducer"] },
-        { path: "/coProducerMainScreen", label: "Subscrições para coprodutores", icon: <FaShoppingBasket/>, roles: ["CoProducer"] },
+        { path: "/coProducerMainScreen", label: "Subscrições para coprodutores", icon: <FaShoppingBasket />, roles: ["CoProducer"] },
 
-        { path: "/producerCatalogo", label: "Catálogo de Produtos", icon: <FaAngellist/>, roles: ["Producer"] },
-        { path: "/producerOrders", label: "Catálogo de Produtos", icon: <FaRegCheckSquare/>, roles: ["Producer"] },
-        { path: "/producerOffer", label: "Ofertas de Produtos", icon: <FaList/>, roles: ["Producer"] },
+        { path: "/producerCatalogo", label: "Catálogo de Produtos", icon: <FaAngellist />, roles: ["Producer"] },
+        { path: "/producerOrders", label: "Catálogo de Produtos", icon: <FaRegCheckSquare />, roles: ["Producer"] },
+        { path: "/producerOffer", label: "Ofertas de Produtos", icon: <FaList />, roles: ["Producer"] },
 
         { path: "/amapSubscriptionPeriod", label: "Criação de Subscrições da amap", icon: <FaRegCalendarCheck />, roles: ["Manager"] },
         { path: "/amapOrders", label: "Períodos de Subscrição", icon: <FaClipboardList />, roles: ["Manager"] },
@@ -35,6 +35,30 @@ const Sidebar = ({ isVisible }) => {
     const filteredMenuItems = menuItems.filter((item) => item.roles.includes(userType));
 
     console.log("Filtered Menu Items:", filteredMenuItems); // Verificar quais itens estão a ser filtrados
+
+    const navigate = useNavigate(); // Hook para navegação
+
+    const handleLogout = async () => {
+        try {
+            const response = await fetch('https://localhost:7262/api/Account/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include', // Para enviar o cookie de autenticação
+            });
+
+            if (response.ok) {
+                sessionStorage.clear(); // Limpa o sessionStorage
+                localStorage.clear(); // Limpa também o localStorage para garantir
+                navigate('/'); // Redireciona para a página de login
+            } else {
+                console.error('Logout failed on server:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error during logout:', error);
+        }
+    };
 
     return (
         isVisible && (
@@ -76,6 +100,23 @@ const Sidebar = ({ isVisible }) => {
                             </li>
                         )}
                     </ul>
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            marginTop: '30px',
+                            padding: '10px 20px',
+                            backgroundColor: '#a0522d',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            width: '100%',
+                            textAlign: 'left',
+                        }}
+                    >
+                        Logout
+                    </button>
                 </nav>
             </aside>
         )

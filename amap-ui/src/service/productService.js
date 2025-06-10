@@ -5,9 +5,9 @@ const API_URL = 'https://localhost:7262/api/'; // Altere conforme sua URL da API
 };*/
 
 export const getProducerId = () => {
-  // Recupera o userId do localStorage (que será igual ao producerId após o login)
-  const userId = localStorage.getItem('userId');
-  console.log('User ID no localStorage:', userId);
+  // Recupera o userId do sessionStorage (que será igual ao producerId após o login)
+  const userId = sessionStorage.getItem('userId');
+  console.log('User ID no sessionStorage:', userId);
   if (!userId) {
     throw new Error('Producer ID não encontrado');
   }
@@ -31,39 +31,39 @@ export const getProducts = async (producerId) => {
 
   const products = await response.json();
 
-    // Ajusta os dados para o frontend
-    return products.map((product) => ({
-      ...product,
-      compositeItems: product.components || [], // Transforma components em compositeItems
-    }));
+  // Ajusta os dados para o frontend
+  return products.map((product) => ({
+    ...product,
+    compositeItems: product.components || [], // Transforma components em compositeItems
+  }));
 };
 
 
 export const createProduct = async (productData) => {
-    // Converte o tipo para o formato esperado pelo backend
-    //productData.type = convertTypeForBackend(productData.type);
-    console.log("Enviando os dados do produto para o backend:", productData);
+  // Converte o tipo para o formato esperado pelo backend
+  //productData.type = convertTypeForBackend(productData.type);
+  console.log("Enviando os dados do produto para o backend:", productData);
 
-    const response = await fetch(`${API_URL}Product`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        credentials: 'include',
-        //'Authorization': `Bearer ${localStorage.getItem('token')}`, // Adicionando token de autenticação
-      },
+  const response = await fetch(`${API_URL}Product`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
       credentials: 'include',
-      body: JSON.stringify(productData),
-    });
+      //'Authorization': `Bearer ${localStorage.getItem('token')}`, // Adicionando token de autenticação
+    },
+    credentials: 'include',
+    body: JSON.stringify(productData),
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Erro ao criar produto:", errorData);
-      throw new Error(errorData.message || 'Failed to create product');
-    }
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Erro ao criar produto:", errorData);
+    throw new Error(errorData.message || 'Failed to create product');
+  }
 
-    return await response.json();
+  return await response.json();
 
-    
+
 };
 
 export const updateProduct = async (id, updatedData) => {

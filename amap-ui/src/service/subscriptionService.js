@@ -1,8 +1,8 @@
 const API_URL = 'https://localhost:7262/api/subscriptionperiod/'; // Altere conforme a sua URL da API
 
 export const getProducerId = () => {
-  const userId = localStorage.getItem('userId');
-  console.log('User ID no localStorage:', userId);
+  const userId = sessionStorage.getItem('userId');
+  console.log('User ID no sessionStorage:', userId);
   if (!userId) {
     throw new Error('Manager ID não encontrado');
   }

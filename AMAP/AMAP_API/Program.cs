@@ -13,6 +13,7 @@ using AMAP.Business;
 using AMAP.Business.Components;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,24 @@ builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
 builder.Logging.AddFilter("System", LogLevel.Warning);
 builder.Logging.AddFilter("AMAP.Api.Controllers.AccountController", LogLevel.Information);
 builder.Logging.AddFilter("AMAP.Business.Components", LogLevel.Information);
+
+// Configure Rate Limiting
+builder.Services.AddRateLimiter(rateLimiterOptions =>
+{
+    rateLimiterOptions.AddFixedWindowLimiter(policyName: "fixed", options =>
+    {
+        options.PermitLimit = 10;
+        options.Window = TimeSpan.FromSeconds(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 5;
+
+        options.PartitionedBy = httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            policyName: "ip_limit",
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
+        );
+    });
+    rateLimiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -184,6 +203,9 @@ app.UseHsts();
 app.UseAuthentication();
 app.UseSession();
 app.UseAuthorization();
+
+// Adicionar o middleware de Rate Limiting ANTES de MapControllers
+app.UseRateLimiter();
 
 app.MapControllers();
 

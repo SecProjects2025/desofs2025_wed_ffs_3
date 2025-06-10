@@ -30,9 +30,9 @@ const AuthPage = () => {
             const { message, userId, role } = response.data;
 
             // Armazenar o papel do user com a chave correta
-            
-            localStorage.setItem('userType', role); // Alterado para 'userType'
-            localStorage.setItem('userId', userId);
+
+            sessionStorage.setItem('userType', role); // Alterado para 'userType'
+            sessionStorage.setItem('userId', userId);
             // Mensagem de sucesso amigável
             setSuccessMessage(message);
 
@@ -55,7 +55,7 @@ const AuthPage = () => {
             setSuccessMessage('');
         }
     };
-    
+
     return (
         <Container>
             <Row className="justify-content-center mt-5">
