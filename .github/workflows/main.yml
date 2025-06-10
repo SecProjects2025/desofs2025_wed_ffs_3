@@ -71,7 +71,22 @@ jobs:
         dotnet run --launch-profile Pipeline > app.log 2>&1 &
         sleep 30
         
-        PORT=$(grep -o "http://localhost:[0-9]*" app.log | head -n 1 | cut -d':' -f3)
+        # Debug: Show the log contents
+        echo "Application log contents:"
+        cat app.log
+        
+        # Extract port using a more specific pattern
+        PORT=$(grep -o "Now listening on: http://localhost:[0-9]*" app.log | head -n 1 | cut -d':' -f3)
+        
+        # Debug: Show the extracted port
+        echo "Extracted port: $PORT"
+        
+        # Validate port
+        if [ -z "$PORT" ]; then
+          echo "Failed to extract port from application log"
+          exit 1
+        fi
+        
         echo "APP_PORT=$PORT" >> $GITHUB_ENV
 
     - name: Cache SonarQube Cloud packages
@@ -128,6 +143,7 @@ jobs:
         out: 'reports'
 
     - name: Start ZAP Scan
+      if: env.APP_PORT != ''
       uses: zaproxy/action-baseline@v0.9.0
       with:
         target: 'http://localhost:${{ env.APP_PORT }}'
