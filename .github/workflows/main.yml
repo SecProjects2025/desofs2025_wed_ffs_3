@@ -74,6 +74,7 @@ jobs:
         dotnet ef database update --project ../AMAP.Data
         
         dotnet run --launch-profile Pipeline &
+        sleep 60
 
     - name: Start ZAP Scan
       uses: zaproxy/action-baseline@v0.9.0
