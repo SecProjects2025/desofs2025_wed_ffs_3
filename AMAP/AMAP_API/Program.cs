@@ -198,6 +198,29 @@ if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Pipel
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Add security headers
+app.Use(async (context, next) =>
+{
+    // Add security headers
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;");
+    context.Response.Headers.Add("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+    
+    // Add cache control headers
+    if (context.Request.Path.StartsWithSegments("/swagger"))
+    {
+        context.Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        context.Response.Headers.Add("Pragma", "no-cache");
+        context.Response.Headers.Add("Expires", "0");
+    }
+    
+    await next();
+});
+
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseHsts();
@@ -206,5 +229,9 @@ app.UseAuthentication();
 app.UseSession();
 app.UseMfaMiddleware();
 app.UseAuthorization();
+
+// Add health check endpoint
+app.MapGet("/", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
 app.MapControllers();
 app.Run();
