@@ -67,7 +67,7 @@ jobs:
         dotnet ef migrations add InitialCreate --context AppDbContext --project ../AMAP.Data
         dotnet ef database update --project ../AMAP.Data
         
-        dotnet run &
+        dotnet run --launch-profile Pipeline &
         sleep 30
 
     - name: Cache SonarQube Cloud packages
