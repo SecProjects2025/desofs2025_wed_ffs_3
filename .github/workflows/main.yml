@@ -106,7 +106,7 @@ jobs:
 
     - name: Start Application
       run: |
-        cd .\AMAP_API\
+        cd AMAP/AMAP_API
         dotnet run
         sleep 30
 
