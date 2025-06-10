@@ -84,7 +84,16 @@ jobs:
         docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
         issue_title: 'ZAP Scan Baseline Report'
         allow_issue_writing: false
-        artifact_name: 'zapResults'
+
+    - name: Upload ZAP Scan Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-scan-results
+        path: |
+          report_json.json
+          report_md.md
+          report_html.html
+        retention-days: 30
 
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
@@ -206,13 +215,6 @@ jobs:
       with:
         name: dependency-check-report
         path: reports
-
-    - name: Upload ZAP Report
-      if: github.ref == 'refs/heads/main'
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-report
-        path: zap-report.html
 
     - name: Generate HTML coverage report
       working-directory: AMAP/AMAP.UnitTests
