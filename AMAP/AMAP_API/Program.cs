@@ -203,19 +203,27 @@ if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Pipel
     });
 }
 
-// Add security headers
+// Add security headers middleware
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Add("X-Frame-Options", "DENY");
-    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
-    context.Response.Headers.Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-    context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;");
-    context.Response.Headers.Add("Permissions-Policy", "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()");
-    context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
-    context.Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-    context.Response.Headers.Add("Pragma", "no-cache");
-    context.Response.Headers.Add("Expires", "0");
+    // Set security headers for all responses
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["X-Frame-Options"] = "DENY";
+        context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+        context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+        context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;";
+        context.Response.Headers["Permissions-Policy"] = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()";
+        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        
+        // Set cache control headers
+        context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate";
+        context.Response.Headers["Pragma"] = "no-cache";
+        context.Response.Headers["Expires"] = "0";
+        
+        return Task.CompletedTask;
+    });
 
     await next();
 });
