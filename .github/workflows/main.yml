@@ -19,6 +19,9 @@ env:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      ASPNETCORE_ENVIRONMENT: Pipeline
+      ConnectionStrings__DefaultConnection: "Data Source=AMAP.db"
     
     steps:
     - uses: actions/checkout@v3
@@ -56,11 +59,10 @@ jobs:
           -reporttypes:opencover
 
     - name: Start Application
-      env:
-        ASPNETCORE_ENVIRONMENT: Pipeline
-        ConnectionStrings__DefaultConnection: "Data Source=AMAP.db"
       run: |
         cd AMAP/AMAP_API
+        
+        touch AMAP.db
         
         dotnet ef migrations add InitialCreate --context AppDbContext --project ../AMAP.Data
         dotnet ef database update --project ../AMAP.Data
