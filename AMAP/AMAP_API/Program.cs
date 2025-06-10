@@ -2,6 +2,7 @@ using AMAP.DataAccess.Repository.IRepository;
 using AMAP.DataAccess.Repository;
 using AMAP.DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Sqlite;
 using Microsoft.AspNetCore.Identity;
 using AMAP.Entities;
 using AMAP.DataAccess.DbInitializer;
@@ -61,8 +62,17 @@ builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 
 builder.Services.AddScoped<AccountLockoutService>();
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Configure database based on environment
+if (builder.Environment.EnvironmentName == "Pipeline")
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
 
 // Configure Identity with password requirements
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
