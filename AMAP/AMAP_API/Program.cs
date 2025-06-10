@@ -158,7 +158,15 @@ builder.Services.AddSingleton<EmailSender>();
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "AMAP API",
+        Version = "v1",
+        Description = "AMAP API for managing products, subscriptions, and payments"
+    });
+});
 
 var app = builder.Build();
 
@@ -185,7 +193,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Pipeline")
 {
     app.UseSwagger();
     app.UseSwaggerUI();
