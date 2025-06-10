@@ -55,6 +55,19 @@ jobs:
           -targetdir:coverage-report \
           -reporttypes:opencover
 
+    - name: Start Application
+      env:
+        ASPNETCORE_ENVIRONMENT: Pipeline
+        ConnectionStrings__DefaultConnection: "Data Source=AMAP.db"
+      run: |
+        cd AMAP/AMAP_API
+        
+        dotnet ef migrations add InitialCreate --context AppDbContext --project ../AMAP.Data
+        dotnet ef database update --project ../AMAP.Data
+        
+        dotnet run &
+        sleep 30
+
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
       with:
@@ -107,19 +120,6 @@ jobs:
         path: 'AMAP/'
         format: 'HTML'
         out: 'reports'
-
-    - name: Start Application
-      run: |
-        export ASPNETCORE_ENVIRONMENT=Pipeline
-        export ConnectionStrings__DefaultConnection="Data Source=AMAP.db"
-        
-        cd AMAP/AMAP_API
-        
-        dotnet ef migrations add InitialCreate --context AppDbContext --project ../AMAP.Data
-        dotnet ef database update --project ../AMAP.Data
-        
-        dotnet run &
-        sleep 30
 
     - name: Start ZAP Scan
       uses: zaproxy/action-baseline@v0.9.0
