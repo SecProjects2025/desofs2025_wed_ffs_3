@@ -75,20 +75,8 @@ jobs:
         
         dotnet run --launch-profile Pipeline &
         
-        # Wait for application to start
         echo "Waiting for application to start..."
         sleep 60
-        
-        # Try to access the application endpoints
-        echo "Checking if application is responding..."
-        echo "Checking root endpoint..."
-        curl -k -v https://localhost:7262 || true
-        echo "Checking Swagger UI..."
-        curl -k -v https://localhost:7262/swagger/index.html || true
-        echo "Checking Swagger JSON..."
-        curl -k -v https://localhost:7262/swagger/v1/swagger.json || true
-        echo "Checking API endpoint..."
-        curl -k -v https://localhost:7262/api/health || true
 
     - name: Start ZAP Scan
       uses: zaproxy/action-baseline@v0.9.0

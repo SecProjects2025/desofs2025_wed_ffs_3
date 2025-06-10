@@ -258,8 +258,8 @@ app.UseAuthorization();
 
 // Add health check endpoint
 app.MapGet("/", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
-=======
-// Adicionar o middleware de Rate Limiting ANTES de MapControllers
+
+// Add rate limiting middleware
 app.UseRateLimiter();
 
 app.MapControllers();
