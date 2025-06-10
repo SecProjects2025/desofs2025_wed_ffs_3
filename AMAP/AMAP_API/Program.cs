@@ -9,10 +9,10 @@ using AMAP.Entities.Utilities;
 using AMAP.Business.Components;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
-using AMAP.Business.Components;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+using AMAP.Api.Validators;
+using AMAP.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,11 +41,14 @@ builder.Services.AddRateLimiter(rateLimiterOptions =>
         options.Window = TimeSpan.FromSeconds(1);
         options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         options.QueueLimit = 5;
+    });
 
-        options.PartitionedBy = httpContext => RateLimitPartition.GetFixedWindowLimiter(
-            policyName: "ip_limit",
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous"
-        );
+    rateLimiterOptions.AddFixedWindowLimiter(policyName: "ip_limit", options =>
+    {
+        options.PermitLimit = 10;
+        options.Window = TimeSpan.FromSeconds(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 5;
     });
     rateLimiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
