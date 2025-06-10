@@ -106,7 +106,7 @@ jobs:
 
     - name: Start Application
       run: |
-        cd AMAP/AMAP.API
+        cd AMAP/AMAP_API
         dotnet run --urls="https://localhost:7262" &
         sleep 30
 
