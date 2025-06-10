@@ -8,11 +8,13 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using AMAP.Business.Interfaces;
+using AMAP.DataAccess.Repository;
 
 namespace AMAP_API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
     public class PaymentController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;

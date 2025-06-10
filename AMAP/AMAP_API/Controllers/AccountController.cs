@@ -13,6 +13,7 @@ namespace AMAP.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
     public class AccountController : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager;

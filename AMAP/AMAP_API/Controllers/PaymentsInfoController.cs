@@ -10,6 +10,7 @@ namespace AMAP.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = nameof(UserType.Manager))]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
     public class PaymentsInfoController : Controller
     {
         private readonly IPaymentsInfoBc _paymentsInfoBc;
@@ -190,7 +191,7 @@ namespace AMAP.Api.Controllers
                 kvp => new PaymentInfoDto
                 {
                     User = new UserInfoDto { Name = kvp.Value.Item1.Name },
-                    Subscriptions = kvp.Value.Item2.Select(s => new SubscriptionDto 
+                    Subscriptions = kvp.Value.Item2.Select(s => new SubscriptionDto
                     {
                         ProductOfferId = s.ProductOfferId,
                         ExpectedQuantity = s.ExpectedQuantity,
