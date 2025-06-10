@@ -110,9 +110,13 @@ jobs:
 
     - name: Start Application
       run: |
-        export ConnectionStrings__DefaultConnection="Data Source=AMAP.db"
-      
         cd AMAP/AMAP_API
+        dotnet add package Microsoft.EntityFrameworkCore.Sqlite
+        
+        export ASPNETCORE_ENVIRONMENT="Pipeline"
+        export ConnectionStrings__DefaultConnection="Data Source=AMAP.db"
+        
+        dotnet ef migrations add InitialCreate --context AppDbContext
         dotnet ef database update
         
         dotnet run
