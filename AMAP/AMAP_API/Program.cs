@@ -186,7 +186,7 @@ using (var scope = app.Services.CreateScope())
         dbInitializer.Initialize();
     }
     // Verifica se existem roles
-    else if (!roleManager.Roles.Any())
+    else if (!(await roleManager.Roles.AnyAsync()))
     {
         var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
         dbInitializer.Initialize();
@@ -212,4 +212,4 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapControllers();
-app.Run();
+await app.RunAsync();

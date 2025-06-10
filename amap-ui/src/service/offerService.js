@@ -1,8 +1,8 @@
 const API_URL = 'https://localhost:7262/api'; // Ajuste a URL conforme necessário
 
-export const getDeliveryDates = async () => {
+export const getDeliveryDates = async (subscriptionPeriodId) => {
   try {
-    const response = await fetch(`${API_URL}/subscriptionperiod/DeliveryDate/1`, {
+    const response = await fetch(`${API_URL}/subscriptionperiod/DeliveryDate/${subscriptionPeriodId}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
