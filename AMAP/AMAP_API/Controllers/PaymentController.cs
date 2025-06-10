@@ -8,8 +8,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using AMAP.Business.Interfaces;
-using AMAP.DataAccess.UnitOfWork;
-using AMAP.Entities.Models.DTO.Payment;
+using AMAP.DataAccess.Repository;
 
 namespace AMAP_API.Controllers
 {
