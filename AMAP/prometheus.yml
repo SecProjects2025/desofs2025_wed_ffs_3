@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'amap-backend'
+    metrics_path: /metrics
+    scheme: https
+    static_configs:
+      - targets: ['localhost:7262']
+    tls_config:
+      insecure_skip_verify: true # Permite HTTPS self-signed/local 
