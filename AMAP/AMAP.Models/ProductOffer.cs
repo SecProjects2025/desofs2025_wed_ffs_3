@@ -30,6 +30,7 @@ namespace AMAP.Entities
         public double Price { get; set; }
 
         [Required]
+        [Range(1, int.MaxValue)]
         public int Quantity { get; set; }
 
         public DateTime DeliveryDate { get; set; }
