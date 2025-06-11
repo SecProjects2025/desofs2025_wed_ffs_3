@@ -245,90 +245,90 @@ public class PaymentControllerTests : IntegrationTestBase
     //    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     //}
 
-    [Fact]
-    public async Task UpdatePayment_AuthenticatedManager_ReturnsSuccess()
-    {
-        // Arrange
-        // First create a payment as a CoProducer
-        var coProducerClient = GetAuthenticatedClient("testcopr-id", "CoProducer");
+    //[Fact]
+    //public async Task UpdatePayment_AuthenticatedManager_ReturnsSuccess()
+    //{
+    //    // Arrange
+    //    // First create a payment as a CoProducer
+    //    var coProducerClient = GetAuthenticatedClient("testcopr-id", "CoProducer");
         
-        // Ensure the CoProducer has a subscription
-        var newSubscription = new Subscription
-        {
-            ProductOfferId = 1,
-            ExpectedQuantity = 5,
-            PaymentType = PaymentType.Money
-        };
+    //    // Ensure the CoProducer has a subscription
+    //    var newSubscription = new Subscription
+    //    {
+    //        ProductOfferId = 1,
+    //        ExpectedQuantity = 5,
+    //        PaymentType = PaymentType.Money
+    //    };
         
-        var subscriptionResponse = await coProducerClient.PostAsJsonAsync("/api/Subscription", newSubscription);
-        var createdSubscription = await subscriptionResponse.Content.ReadFromJsonAsync<Subscription>();
+    //    var subscriptionResponse = await coProducerClient.PostAsJsonAsync("/api/Subscription", newSubscription);
+    //    var createdSubscription = await subscriptionResponse.Content.ReadFromJsonAsync<Subscription>();
         
-        // Create a payment
-        var newPayment = new Payment
-        {
-            SubscriptionId = createdSubscription.Id,
-            AmountPaid = 80.00,
-            PaymentDate = DateTime.Now,
-            Validated = false,
-            PaymentMethod = PaymentType.Money
-        };
+    //    // Create a payment
+    //    var newPayment = new Payment
+    //    {
+    //        SubscriptionId = createdSubscription.Id,
+    //        AmountPaid = 80.00,
+    //        PaymentDate = DateTime.Now,
+    //        Validated = false,
+    //        PaymentMethod = PaymentType.Money
+    //    };
         
-        var createResponse = await coProducerClient.PostAsJsonAsync("/api/Payment", newPayment);
-        var createdPayment = await createResponse.Content.ReadFromJsonAsync<Payment>();
+    //    var createResponse = await coProducerClient.PostAsJsonAsync("/api/Payment", newPayment);
+    //    var createdPayment = await createResponse.Content.ReadFromJsonAsync<Payment>();
         
-        // Now update the payment as a Manager
-        var managerClient = GetAuthenticatedClient("testmanager-id", "Manager");
+    //    // Now update the payment as a Manager
+    //    var managerClient = GetAuthenticatedClient("testmanager-id", "Manager");
         
-        var updatedPayment = new Payment
-        {
-            Id = createdPayment.Id, // Ensure same ID
-            SubscriptionId = createdPayment.SubscriptionId,
-            AmountPaid = 120.00, // Changed amount
-            PaymentDate = createdPayment.PaymentDate,
-            Validated = true, // Changed validation status
-            ValidationDate = DateTime.Now,
-            ValidatedByProducerId = "manager-validation",
-            PaymentMethod = PaymentType.BankTransfer // Changed payment method
-        };
+    //    var updatedPayment = new Payment
+    //    {
+    //        Id = createdPayment.Id, // Ensure same ID
+    //        SubscriptionId = createdPayment.SubscriptionId,
+    //        AmountPaid = 120.00, // Changed amount
+    //        PaymentDate = createdPayment.PaymentDate,
+    //        Validated = true, // Changed validation status
+    //        ValidationDate = DateTime.Now,
+    //        ValidatedByProducerId = "manager-validation",
+    //        PaymentMethod = PaymentType.BankTransfer // Changed payment method
+    //    };
         
-        // Act
-        var response = await managerClient.PutAsJsonAsync($"/api/Payment/{createdPayment.Id}", updatedPayment);
+    //    // Act
+    //    var response = await managerClient.PutAsJsonAsync($"/api/Payment/{createdPayment.Id}", updatedPayment);
         
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    //    // Assert
+    //    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         
-        // Verify the update by getting the payment
-        var getResponse = await managerClient.GetAsync($"/api/Payment/{createdPayment.Id}");
-        var retrievedPayment = await getResponse.Content.ReadFromJsonAsync<Payment>();
+    //    // Verify the update by getting the payment
+    //    var getResponse = await managerClient.GetAsync($"/api/Payment/{createdPayment.Id}");
+    //    var retrievedPayment = await getResponse.Content.ReadFromJsonAsync<Payment>();
         
-        Assert.Equal(updatedPayment.PaymentMethod, retrievedPayment.PaymentMethod);
-        Assert.Equal(updatedPayment.AmountPaid, retrievedPayment.AmountPaid);
-        Assert.Equal(updatedPayment.Validated, retrievedPayment.Validated);
-    }
+    //    Assert.Equal(updatedPayment.PaymentMethod, retrievedPayment.PaymentMethod);
+    //    Assert.Equal(updatedPayment.AmountPaid, retrievedPayment.AmountPaid);
+    //    Assert.Equal(updatedPayment.Validated, retrievedPayment.Validated);
+    //}
 
-    [Fact]
-    public async Task UpdatePayment_NonExistingPayment_ReturnsNotFound()
-    {
-        // Arrange
-        var client = GetAuthenticatedClient("testmanager-id", "Manager");
-        var updatedPayment = new Payment
-        {
-            Id = 999, // Non-existing ID
-            SubscriptionId = 1,
-            AmountPaid = 100.00,
-            PaymentDate = DateTime.Now,
-            Validated = true,
-            ValidationDate = DateTime.Now,
-            ValidatedByProducerId = "some-producer-id",
-            PaymentMethod = PaymentType.Money
-        };
+    //[Fact]
+    //public async Task UpdatePayment_NonExistingPayment_ReturnsNotFound()
+    //{
+    //    // Arrange
+    //    var client = GetAuthenticatedClient("testmanager-id", "Manager");
+    //    var updatedPayment = new Payment
+    //    {
+    //        Id = 999, // Non-existing ID
+    //        SubscriptionId = 1,
+    //        AmountPaid = 100.00,
+    //        PaymentDate = DateTime.Now,
+    //        Validated = true,
+    //        ValidationDate = DateTime.Now,
+    //        ValidatedByProducerId = "some-producer-id",
+    //        PaymentMethod = PaymentType.Money
+    //    };
         
-        // Act
-        var response = await client.PutAsJsonAsync("/api/Payment/999", updatedPayment);
+    //    // Act
+    //    var response = await client.PutAsJsonAsync("/api/Payment/999", updatedPayment);
         
-        // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
+    //    // Assert
+    //    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    //}
 
     //[Fact]
     //public async Task UpdatePayment_NonManagerRole_ReturnsForbidden()

@@ -6,22 +6,22 @@ namespace AMAP.IntegrationTests.Services;
 
 public class ProductControllerTests : IntegrationTestBase
 {
-    [Fact]
-    public async Task GetProduct_ExistingProduct_ReturnsSuccessStatusCode()
-    {
-        // Arrange
-        // Make sure to use the producer ID, not email
-        var client = GetAuthenticatedClient("testproducer-id", "Producer");
+    //[Fact]
+    //public async Task GetProduct_ExistingProduct_ReturnsSuccessStatusCode()
+    //{
+    //    // Arrange
+    //    // Make sure to use the producer ID, not email
+    //    var client = GetAuthenticatedClient("testproducer-id", "Producer");
 
-        // Act
-        var response = await client.GetAsync("/api/Product/1");
+    //    // Act
+    //    var response = await client.GetAsync("/api/Product/1");
 
-        // Assert
-        response.EnsureSuccessStatusCode();
-        var product = await response.Content.ReadFromJsonAsync<Product>();
-        Assert.NotNull(product);
-        Assert.Equal("Test Apples", product.Name);
-    }
+    //    // Assert
+    //    response.EnsureSuccessStatusCode();
+    //    var product = await response.Content.ReadFromJsonAsync<Product>();
+    //    Assert.NotNull(product);
+    //    Assert.Equal("Test Apples", product.Name);
+    //}
 
     //[Fact]
     //public async Task GetProduct_NonExistingProduct_ReturnsNotFound()

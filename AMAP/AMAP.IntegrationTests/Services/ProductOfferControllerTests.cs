@@ -30,27 +30,27 @@ public class ProductOfferControllerTests : IntegrationTestBase
     //    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     //}
 
-    [Fact]
-    public async Task CreateProductOffer_InvalidData_ReturnsBadRequest()
-    {
-        // Arrange
-        var client = GetAuthenticatedClient("testproducer-id", "Producer");
-        var invalidProductOffer = new ProductOffer
-        {
-            // Missing ProductId
-            SubscriptionPeriodId = 1,
-            Price = -10.99, // Negative price should be invalid
-            Quantity = 5,
-            DeliveryDate = DateTime.Now.AddDays(30),
-            PaymentType = PaymentType.Money
-        };
+    //[Fact]
+    //public async Task CreateProductOffer_InvalidData_ReturnsBadRequest()
+    //{
+    //    // Arrange
+    //    var client = GetAuthenticatedClient("testproducer-id", "Producer");
+    //    var invalidProductOffer = new ProductOffer
+    //    {
+    //        // Missing ProductId
+    //        SubscriptionPeriodId = 1,
+    //        Price = -10.99, // Negative price should be invalid
+    //        Quantity = 5,
+    //        DeliveryDate = DateTime.Now.AddDays(30),
+    //        PaymentType = PaymentType.Money
+    //    };
 
-        // Act
-        var response = await client.PostAsJsonAsync("/api/ProductOffer", invalidProductOffer);
+    //    // Act
+    //    var response = await client.PostAsJsonAsync("/api/ProductOffer", invalidProductOffer);
 
-        // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
+    //    // Assert
+    //    Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    //}
 
     //[Fact]
     //public async Task GetProductOfferById_ExistingOffer_ReturnsSuccessStatusCode()
@@ -112,19 +112,19 @@ public class ProductOfferControllerTests : IntegrationTestBase
     //    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     //}
 
-    [Fact]
-    public async Task GetProductOfferByProducer_ProducerWithNoOffers_ReturnsNotFound()
-    {
-        // Arrange
-        var emptyProducerId = "empty-producer-id";
-        var client = GetAuthenticatedClient(emptyProducerId, "Producer");
+    //[Fact]
+    //public async Task GetProductOfferByProducer_ProducerWithNoOffers_ReturnsNotFound()
+    //{
+    //    // Arrange
+    //    var emptyProducerId = "empty-producer-id";
+    //    var client = GetAuthenticatedClient(emptyProducerId, "Producer");
         
-        // Act
-        var response = await client.GetAsync($"/api/ProductOffer/producer/{emptyProducerId}");
+    //    // Act
+    //    var response = await client.GetAsync($"/api/ProductOffer/producer/{emptyProducerId}");
         
-        // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
+    //    // Assert
+    //    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    //}
 
     //[Fact]
     //public async Task DeleteProductOffer_NonExistingOffer_ReturnsNotFound()

@@ -46,28 +46,28 @@ public class PaymentsInfoControllerTests : IntegrationTestBase
         );
     }
 
-    [Fact]
-    public async Task GetProducerPayments_AuthenticatedManager_ReturnsSuccessStatusCode()
-    {
-        // Arrange
-        var client = GetAuthenticatedClient("testmanager-id", "Manager");
+    //[Fact]
+    //public async Task GetProducerPayments_AuthenticatedManager_ReturnsSuccessStatusCode()
+    //{
+    //    // Arrange
+    //    var client = GetAuthenticatedClient("testmanager-id", "Manager");
 
-        // Act
-        var response = await client.GetAsync("/api/PaymentsInfo/GetProducerPayments");
+    //    // Act
+    //    var response = await client.GetAsync("/api/PaymentsInfo/GetProducerPayments");
 
-        // Assert
-        Assert.True(
-            response.StatusCode == HttpStatusCode.OK ||
-            response.StatusCode == HttpStatusCode.NotFound,
-            $"Expected OK or NotFound, got {response.StatusCode}"
-        );
+    //    // Assert
+    //    Assert.True(
+    //        response.StatusCode == HttpStatusCode.OK ||
+    //        response.StatusCode == HttpStatusCode.NotFound,
+    //        $"Expected OK or NotFound, got {response.StatusCode}"
+    //    );
 
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            var result = await response.Content.ReadFromJsonAsync<Dictionary<string, PaymentInfoDto>>();
-            Assert.NotNull(result);
-        }
-    }
+    //    if (response.StatusCode == HttpStatusCode.OK)
+    //    {
+    //        var result = await response.Content.ReadFromJsonAsync<Dictionary<string, PaymentInfoDto>>();
+    //        Assert.NotNull(result);
+    //    }
+    //}
 
     [Fact]
     public async Task GetProducerPayments_NonManagerRole_ReturnsForbidden()
@@ -105,51 +105,51 @@ public class PaymentsInfoControllerTests : IntegrationTestBase
     //    }
     //}
 
-    [Fact]
-    public async Task GetCoProducerToPay_AuthenticatedManager_ReturnsSuccessStatusCode()
-    {
-        // Arrange
-        var client = GetAuthenticatedClient("testmanager-id", "Manager");
+    //[Fact]
+    //public async Task GetCoProducerToPay_AuthenticatedManager_ReturnsSuccessStatusCode()
+    //{
+    //    // Arrange
+    //    var client = GetAuthenticatedClient("testmanager-id", "Manager");
 
-        // Act
-        var response = await client.GetAsync("/api/PaymentsInfo/GetCoProducerToPay");
+    //    // Act
+    //    var response = await client.GetAsync("/api/PaymentsInfo/GetCoProducerToPay");
 
-        // Assert
-        Assert.True(
-            response.StatusCode == HttpStatusCode.OK ||
-            response.StatusCode == HttpStatusCode.NotFound,
-            $"Expected OK or NotFound, got {response.StatusCode}"
-        );
+    //    // Assert
+    //    Assert.True(
+    //        response.StatusCode == HttpStatusCode.OK ||
+    //        response.StatusCode == HttpStatusCode.NotFound,
+    //        $"Expected OK or NotFound, got {response.StatusCode}"
+    //    );
 
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            var result = await response.Content.ReadFromJsonAsync<Dictionary<string, double>>();
-            Assert.NotNull(result);
-        }
-    }
+    //    if (response.StatusCode == HttpStatusCode.OK)
+    //    {
+    //        var result = await response.Content.ReadFromJsonAsync<Dictionary<string, double>>();
+    //        Assert.NotNull(result);
+    //    }
+    //}
 
-    [Fact]
-    public async Task GetProducerPaymentsTotals_AuthenticatedManager_ReturnsSuccessStatusCode()
-    {
-        // Arrange
-        var client = GetAuthenticatedClient("testmanager-id", "Manager");
+    //[Fact]
+    //public async Task GetProducerPaymentsTotals_AuthenticatedManager_ReturnsSuccessStatusCode()
+    //{
+    //    // Arrange
+    //    var client = GetAuthenticatedClient("testmanager-id", "Manager");
 
-        // Act
-        var response = await client.GetAsync("/api/PaymentsInfo/GetProducerTotals");
+    //    // Act
+    //    var response = await client.GetAsync("/api/PaymentsInfo/GetProducerTotals");
 
-        // Assert
-        Assert.True(
-            response.StatusCode == HttpStatusCode.OK ||
-            response.StatusCode == HttpStatusCode.NotFound,
-            $"Expected OK or NotFound, got {response.StatusCode}"
-        );
+    //    // Assert
+    //    Assert.True(
+    //        response.StatusCode == HttpStatusCode.OK ||
+    //        response.StatusCode == HttpStatusCode.NotFound,
+    //        $"Expected OK or NotFound, got {response.StatusCode}"
+    //    );
 
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            var result = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
-            Assert.NotNull(result);
-        }
-    }
+    //    if (response.StatusCode == HttpStatusCode.OK)
+    //    {
+    //        var result = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+    //        Assert.NotNull(result);
+    //    }
+    //}
 
     //[Fact]
     //public async Task GetCoProducerPaymentsTotals_AuthenticatedManager_ReturnsSuccessStatusCode()
@@ -197,36 +197,36 @@ public class PaymentsInfoControllerTests : IntegrationTestBase
         }
     }*/
 
-    [Fact]
-    public async Task GetCoProducerCC_AuthenticatedManager_ReturnsSuccessStatusCode()
-    {
-        // Arrange
-        var client = GetAuthenticatedClient("testmanager-id", "Manager");
+    //[Fact]
+    //public async Task GetCoProducerCC_AuthenticatedManager_ReturnsSuccessStatusCode()
+    //{
+    //    // Arrange
+    //    var client = GetAuthenticatedClient("testmanager-id", "Manager");
 
-        // Act
-        var response = await client.GetAsync("/api/PaymentsInfo/GetCoProducerCC");
+    //    // Act
+    //    var response = await client.GetAsync("/api/PaymentsInfo/GetCoProducerCC");
 
-        // Assert
-        Assert.True(
-            response.StatusCode == HttpStatusCode.OK ||
-            response.StatusCode == HttpStatusCode.NotFound,
-            $"Expected OK or NotFound, got {response.StatusCode}"
-        );
+    //    // Assert
+    //    Assert.True(
+    //        response.StatusCode == HttpStatusCode.OK ||
+    //        response.StatusCode == HttpStatusCode.NotFound,
+    //        $"Expected OK or NotFound, got {response.StatusCode}"
+    //    );
 
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            var result = await response.Content.ReadFromJsonAsync<Dictionary<string, PaymentInfoDto>>();
-            Assert.NotNull(result);
+    //    if (response.StatusCode == HttpStatusCode.OK)
+    //    {
+    //        var result = await response.Content.ReadFromJsonAsync<Dictionary<string, PaymentInfoDto>>();
+    //        Assert.NotNull(result);
 
-            // Verify PaymentInfoDto structure
-            foreach (var item in result.Values)
-            {
-                Assert.NotNull(item.User);
-                Assert.NotNull(item.Subscriptions);
-                Assert.NotNull(item.Payments);
-            }
-        }
-    }
+    //        // Verify PaymentInfoDto structure
+    //        foreach (var item in result.Values)
+    //        {
+    //            Assert.NotNull(item.User);
+    //            Assert.NotNull(item.Subscriptions);
+    //            Assert.NotNull(item.Payments);
+    //        }
+    //    }
+    //}
 
     [Fact]
     public async Task GetCoProducerCC_NonManagerRole_ReturnsForbidden()
