@@ -211,7 +211,6 @@ jobs:
   deploy-staging:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     env:
       VM_HOST: 'vsgate-ssh.dei.isep.ipp.pt'
       VM_USER: 'root'
@@ -263,7 +262,6 @@ jobs:
   deploy-production:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     env:
       VM_HOST: 'vsgate-ssh.dei.isep.ipp.pt'
       VM_USER: 'root'
