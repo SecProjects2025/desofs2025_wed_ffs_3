@@ -12,12 +12,21 @@ namespace AMAP.DataAccess.Data
             IConfigurationRoot configuration = new ConfigurationBuilder()
                 .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../AMAP_API"))
                 .AddJsonFile("appsettings.json")
+                .AddEnvironmentVariables()
                 .Build();
 
             var builder = new DbContextOptionsBuilder<AppDbContext>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
+            var environment = configuration["ASPNETCORE_ENVIRONMENT"];
 
-            builder.UseSqlServer(connectionString);
+            if (environment == "Pipeline")
+            {
+                builder.UseSqlite(connectionString);
+            }
+            else
+            {
+                builder.UseSqlServer(connectionString);
+            }
 
             return new AppDbContext(builder.Options);
         }

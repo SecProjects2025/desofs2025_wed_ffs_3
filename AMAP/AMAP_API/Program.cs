@@ -2,6 +2,7 @@ using AMAP.DataAccess.Repository.IRepository;
 using AMAP.DataAccess.Repository;
 using AMAP.DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Sqlite;
 using Microsoft.AspNetCore.Identity;
 using AMAP.Entities;
 using AMAP.DataAccess.DbInitializer;
@@ -84,14 +85,14 @@ builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 builder.Services.AddScoped<AccountLockoutService>();
 builder.Services.AddScoped<SecurityMonitoringService>();
 
-// Replace this section in Program.cs with the conditional registration
+// Configure database based on environment
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    if (builder.Environment.IsEnvironment("Testing"))
+    if (builder.Environment.IsEnvironment("Pipeline"))
     {
-        // Don't configure any database here - will be overridden by CustomWebApplicationFactory
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
     }
-    else
+    else if (!builder.Environment.IsEnvironment("Testing"))
     {
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
     }
@@ -225,7 +226,15 @@ builder.Services.AddSingleton<EmailSender>();
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "AMAP API",
+        Version = "v1",
+        Description = "AMAP API for managing products, subscriptions, and payments"
+    });
+});
 
 var app = builder.Build();
 
@@ -252,11 +261,41 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Pipeline")
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AMAP API v1");
+        c.RoutePrefix = "swagger";
+    });
 }
+
+// Add security headers middleware
+app.Use(async (context, next) =>
+{
+    // Set security headers for all responses
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["X-Frame-Options"] = "DENY";
+        context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+        context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+        context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;";
+        context.Response.Headers["Permissions-Policy"] = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()";
+        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        
+        // Set cache control headers
+        context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate";
+        context.Response.Headers["Pragma"] = "no-cache";
+        context.Response.Headers["Expires"] = "0";
+        
+        return Task.CompletedTask;
+    });
+
+    await next();
+});
+
 app.UseCors("AllowFrontend");
 
 if (!app.Environment.IsEnvironment("Testing"))
@@ -274,7 +313,10 @@ app.UseMfaMiddleware();
 app.UseAuthorization();
 app.UseHttpMetrics(); // Exposes HTTP request metrics for Prometheus
 
-// Adicionar o middleware de Rate Limiting ANTES de MapControllers
+// Add health check endpoint
+app.MapGet("/", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+// Add rate limiting middleware
 app.UseRateLimiter();
 
 app.MapControllers();
