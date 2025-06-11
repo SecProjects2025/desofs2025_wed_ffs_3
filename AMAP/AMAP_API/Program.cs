@@ -9,8 +9,13 @@ using AMAP.Entities.Utilities;
 using AMAP.Business.Components;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
+
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+
 using AMAP.Api.Validators;
 using AMAP.Api.Middleware;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +34,27 @@ builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
 builder.Logging.AddFilter("System", LogLevel.Warning);
 builder.Logging.AddFilter("AMAP.Api.Controllers.AccountController", LogLevel.Information);
 builder.Logging.AddFilter("AMAP.Business.Components", LogLevel.Information);
+
+// Configure Rate Limiting
+builder.Services.AddRateLimiter(rateLimiterOptions =>
+{
+    rateLimiterOptions.AddFixedWindowLimiter(policyName: "fixed", options =>
+    {
+        options.PermitLimit = 10;
+        options.Window = TimeSpan.FromSeconds(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 5;
+    });
+
+    rateLimiterOptions.AddFixedWindowLimiter(policyName: "ip_limit", options =>
+    {
+        options.PermitLimit = 10;
+        options.Window = TimeSpan.FromSeconds(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 5;
+    });
+    rateLimiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -124,12 +150,12 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
-    
-    // Progressive lockout after failed login attempts
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15); // Initial 15-minute lockout
-    options.Lockout.MaxFailedAccessAttempts = 5; // Lock after 5 failed attempts
-    options.Lockout.AllowedForNewUsers = true; // Enable lockout for new users
-    
+
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+
     // User settings
     options.User.RequireUniqueEmail = true;
 })
@@ -218,7 +244,7 @@ using (var scope = app.Services.CreateScope())
         dbInitializer.Initialize();
     }
     // Verifica se existem roles
-    else if (!roleManager.Roles.Any())
+    else if (!(await roleManager.Roles.AnyAsync()))
     {
         var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
         dbInitializer.Initialize();
@@ -239,8 +265,16 @@ app.UseAuthentication();
 app.UseSession();
 app.UseMfaMiddleware();
 app.UseAuthorization();
+app.UseHttpMetrics(); // Exposes HTTP request metrics for Prometheus
+
+// Adicionar o middleware de Rate Limiting ANTES de MapControllers
+app.UseRateLimiter();
+
 app.MapControllers();
+
 app.Run();
 
-public partial class Program { }
+app.MapMetrics(); // Exposes /metrics endpoint for Prometheus
+await app.RunAsync();
 
+public partial class Program { }

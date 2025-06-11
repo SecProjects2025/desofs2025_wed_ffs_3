@@ -19,7 +19,6 @@ public class ProductOfferRepository : Repository<ProductOffer>, IProductOfferRep
 
         if (productOfferFromDb != null)
         {
-            productOfferFromDb.Quantity = productOfferFromDb.Quantity;
         }
     }
 }

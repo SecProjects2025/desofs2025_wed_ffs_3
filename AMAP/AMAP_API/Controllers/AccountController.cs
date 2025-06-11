@@ -13,6 +13,7 @@ namespace AMAP.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None, Duration = 0)]
     public class AccountController : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager;
@@ -85,7 +86,7 @@ namespace AMAP.Api.Controllers
 
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody] LoginViewModel loginViewModel)
+        public async Task<IActionResult> Login([FromBody] LoginViewModel loginViewModel, [FromHeader(Name = "User-Agent")] string userAgent)
         {
             if (ModelState.IsValid)
             {
@@ -102,16 +103,17 @@ namespace AMAP.Api.Controllers
                 if (lockoutEnd.HasValue && lockoutEnd.Value > DateTimeOffset.UtcNow)
                 {
                     var remainingLockoutTime = lockoutEnd.Value - DateTimeOffset.UtcNow;
-                    _logger.LogWarning("Login attempt for locked account: {Email}, remaining lockout time: {RemainingTime} minutes", 
+                    _logger.LogWarning("Login attempt for locked account: {Email}, remaining lockout time: {RemainingTime} minutes",
                         loginViewModel.Email, remainingLockoutTime.TotalMinutes.ToString("0.0"));
-                    
-                    return StatusCode(423, new { 
-                        message = "Account locked", 
-                        remainingMinutes = (int)Math.Ceiling(remainingLockoutTime.TotalMinutes) 
+
+                    return StatusCode(423, new
+                    {
+                        message = "Account locked",
+                        remainingMinutes = (int)Math.Ceiling(remainingLockoutTime.TotalMinutes)
                     });
                 }
 
-                var result = await _signInManager.PasswordSignInAsync(loginViewModel.Email, loginViewModel.Password, loginViewModel.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(loginViewModel.Email, loginViewModel.Password, loginViewModel.RememberMe, lockoutOnFailure: true);
                 if (result.Succeeded)
                 {
                     // Reset failed login attempts counter
@@ -119,7 +121,7 @@ namespace AMAP.Api.Controllers
 
                     // Get user roles
                     var roles = await _userManager.GetRolesAsync(user);
-                    
+
                     // Check if user is a Manager and requires MFA
                     if (roles.Contains("Manager"))
                     {
@@ -128,7 +130,7 @@ namespace AMAP.Api.Controllers
                         {
                             // Sign out the user since MFA is required
                             await _signInManager.SignOutAsync();
-                            
+
                             return Ok(new
                             {
                                 requiresMfa = true,
@@ -161,7 +163,6 @@ namespace AMAP.Api.Controllers
 
                     // Registrar atividade de login no serviço de monitoramento
                     var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
-                    var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
                     await _securityMonitoring.RecordAuthActivityAsync(user.Id, ipAddress, userAgent, AuthActivityType.Login);
 
                     return Ok(new
@@ -175,29 +176,30 @@ namespace AMAP.Api.Controllers
                 {
                     // Manage progressive lockout
                     var (isLocked, lockoutDuration, failedAttempts) = await _lockoutService.HandleFailedLoginAttemptAsync(user);
-                    
+
                     // Registrar tentativa de login falhada no serviço de monitoramento
                     var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
-                    var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
                     await _securityMonitoring.RecordAuthActivityAsync(user.Id, ipAddress, userAgent, AuthActivityType.FailedLogin);
-                    
+
                     if (isLocked)
                     {
-                        _logger.LogWarning("User account locked out after failed login: {Email}, attempts: {Attempts}, duration: {Duration} minutes", 
+                        _logger.LogWarning("User account locked out after failed login: {Email}, attempts: {Attempts}, duration: {Duration} minutes",
                             loginViewModel.Email, failedAttempts, lockoutDuration?.TotalMinutes.ToString("0.0"));
-                        
-                        return StatusCode(423, new { 
-                            message = "Account locked", 
+
+                        return StatusCode(423, new
+                        {
+                            message = "Account locked",
                             remainingMinutes = lockoutDuration.HasValue ? (int)Math.Ceiling(lockoutDuration.Value.TotalMinutes) : 15,
                             failedAttempts = failedAttempts
                         });
                     }
 
-                    _logger.LogWarning("Invalid login attempt for user: {Email}, failed attempts: {Attempts}", 
+                    _logger.LogWarning("Invalid login attempt for user: {Email}, failed attempts: {Attempts}",
                         loginViewModel.Email, failedAttempts);
-                    
-                    return Unauthorized(new { 
-                        message = "Invalid login attempt", 
+
+                    return Unauthorized(new
+                    {
+                        message = "Invalid login attempt",
                         failedAttempts = failedAttempts,
                         attemptsRemaining = 5 - (failedAttempts % 5) // Shows how many attempts remain until next lockout
                     });
@@ -207,27 +209,26 @@ namespace AMAP.Api.Controllers
         }
 
         [HttpPost("logout")]
-        public async Task<IActionResult> LogOff()
+        public async Task<IActionResult> LogOff([FromHeader(Name = "User-Agent")] string userAgent)
         {
             // Get user information before logging out
             var user = await _userManager.GetUserAsync(User);
-            
+
             // Log out
             await _signInManager.SignOutAsync();
-            
+
             // Explicitly clear the session
             HttpContext.Session.Clear();
-            
+
             if (user != null)
             {
                 _logger.LogInformation("User {UserId} ({UserEmail}) logged out", user.Id, user.Email);
-                
+
                 // Registrar atividade de logout no serviço de monitoramento
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
-                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
                 await _securityMonitoring.RecordAuthActivityAsync(user.Id, ipAddress, userAgent, AuthActivityType.Logout);
             }
-            
+
             return Ok(new { message = "Logged off successfully" });
         }
 
@@ -294,7 +295,7 @@ namespace AMAP.Api.Controllers
 
         [HttpPost("change-password")]
         [Authorize]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordViewModel model)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordViewModel model, [FromHeader(Name = "User-Agent")] string userAgent)
         {
             if (!ModelState.IsValid)
             {
@@ -339,7 +340,6 @@ namespace AMAP.Api.Controllers
 
             // Registrar atividade de troca de senha no serviço de monitoramento
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
-            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
             await _securityMonitoring.RecordAuthActivityAsync(user.Id, ipAddress, userAgent, AuthActivityType.PasswordChange);
 
             // Sign in the user again to refresh the authentication cookie
