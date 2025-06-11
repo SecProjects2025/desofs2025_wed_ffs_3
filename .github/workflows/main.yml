@@ -10,11 +10,6 @@ env:
   DOTNET_VERSION: '9.0.x'
   DOCKER_IMAGE_NAME: 'amap-api'
   DOCKER_REGISTRY: 'diogocosta0307/desofs'
-  DOCKER_TAG: v1.0.0-${{ github.sha }}
-  VM_HOST: 'vsgate-ssh.dei.isep.ipp.pt'
-  VM_USER: 'root'
-  VM_PORT: '10381'
-  VM_DEPLOY_PATH: '/root/desofs-app'
 
 permissions:
   contents: read
@@ -146,64 +141,6 @@ jobs:
       run: |
         pkill -f "dotnet run"
 
-    - name: Build Docker Image
-      if: github.ref == 'refs/heads/main'
-      run: docker build . -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
-
-    - name: Log in to Docker Hub
-      if: github.ref == 'refs/heads/main'
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Tag and Push Docker Image
-      if: github.ref == 'refs/heads/main'
-      run: |
-        docker tag ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
-        docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
-
-    - name: Set up SSH agent
-      if: github.ref == 'refs/heads/main'
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-    - name: Create deploy directory on VM
-      if: github.ref == 'refs/heads/main'
-      run: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
-      
-    - name: Copy docker-compose file to VM via SCP
-      if: github.ref == 'refs/heads/main'
-      run: scp -O -P ${{ env.VM_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose-staging.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose-staging.yml
-
-    - name: Run Docker Compose on VM via SSH
-      if: github.ref == 'refs/heads/main'
-      id: deploy
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ env.VM_HOST }}
-        username: ${{ env.VM_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ env.VM_PORT }}
-        script: |
-          # Navega para o diretório de deploy na VM
-          cd ${{ env.VM_DEPLOY_PATH }}
-          # Define a variável de ambiente IMAGE_TAG para o docker compose
-          export IMAGE_TAG=${{ env.DOCKER_TAG }}
-
-          # --- Debugging: Verificar status do Docker ---
-          echo "--- Docker Info ---"
-          docker info
-          echo "--- Docker PS -a ---"
-          docker ps -a
-          echo "--- Fim Debugging ---"
-          # --- Fim Debugging ---
-
-          # Para e remove contêineres antigos e inicia novos
-          docker-compose -f docker-compose-staging.yml down
-          docker-compose -f docker-compose-staging.yml up -d
-
     - name: Upload SCA Report
       uses: actions/upload-artifact@v4
       with:
@@ -219,3 +156,158 @@ jobs:
       with:
         name: html-coverage-report
         path: AMAP/AMAP.UnitTests/html-coverage-report
+
+  deploy-development:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    env:
+      VM_HOST: 'vsgate-ssh.dei.isep.ipp.pt'
+      VM_USER: 'root'
+      VM_PORT: '10381'
+      VM_DEPLOY_PATH: '/root/desofs-app-dev'
+      DOCKER_TAG: 'dev'
+      ASPNETCORE_ENVIRONMENT: Development
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image (Development)
+        run: docker build AMAP/. -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+
+      - name: Push Docker Image (Development)
+        run: docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Create deploy directory on VM (Development)
+        run: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
+        
+      - name: Copy docker-compose file to VM via SCP (Development)
+        run: scp -O -P ${{ env.VM_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.development.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose.development.yml
+
+      - name: Run Docker Compose on VM via SSH (Development)
+        id: deploy_dev
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.VM_HOST }}
+          username: ${{ env.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ env.VM_PORT }}
+          script: |
+            cd ${{ env.VM_DEPLOY_PATH }}
+            export IMAGE_TAG=${{ env.DOCKER_TAG }}
+            docker-compose -f docker-compose.development.yml down
+            docker-compose -f docker-compose.development.yml pull
+            docker-compose -f docker-compose.development.yml up -d
+
+  deploy-staging:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      VM_HOST: 'vsgate-ssh.dei.isep.ipp.pt'
+      VM_USER: 'root'
+      VM_PORT: '10381'
+      VM_DEPLOY_PATH: '/root/desofs-app-staging'
+      DOCKER_TAG: 'staging'
+      ASPNETCORE_ENVIRONMENT: Staging
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image (Staging)
+        run: docker build AMAP/. -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+
+      - name: Push Docker Image (Staging)
+        run: docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Create deploy directory on VM (Staging)
+        run: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
+        
+      - name: Copy docker-compose file to VM via SCP (Staging)
+        run: scp -O -P ${{ env.VM_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.staging.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose.staging.yml
+
+      - name: Run Docker Compose on VM via SSH (Staging)
+        id: deploy_staging
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.VM_HOST }}
+          username: ${{ env.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ env.VM_PORT }}
+          script: |
+            cd ${{ env.VM_DEPLOY_PATH }}
+            export IMAGE_TAG=${{ env.DOCKER_TAG }}
+            docker-compose -f docker-compose.staging.yml down
+            docker-compose -f docker-compose.staging.yml pull
+            docker-compose -f docker-compose.staging.yml up -d
+
+  deploy-production:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      VM_HOST: 'vsgate-ssh.dei.isep.ipp.pt'
+      VM_USER: 'root'
+      VM_PORT: '10381'
+      VM_DEPLOY_PATH: '/root/desofs-app-prod'
+      DOCKER_TAG: 'prod'
+      ASPNETCORE_ENVIRONMENT: Production
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image (Production)
+        run: docker build AMAP/. -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+
+      - name: Push Docker Image (Production)
+        run: docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Create deploy directory on VM (Production)
+        run: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VM_USER }}@${{ env.VM_HOST }} -p ${{ env.VM_PORT }} "mkdir -p ${{ env.VM_DEPLOY_PATH }}"
+        
+      - name: Copy docker-compose file to VM via SCP (Production)
+        run: scp -O -P ${{ env.VM_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.production.yml ${{ env.VM_USER }}@${{ env.VM_HOST }}:${{ env.VM_DEPLOY_PATH }}/docker-compose.production.yml
+
+      - name: Run Docker Compose on VM via SSH (Production)
+        id: deploy_prod
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.VM_HOST }}
+          username: ${{ env.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ env.VM_PORT }}
+          script: |
+            cd ${{ env.VM_DEPLOY_PATH }}
+            export IMAGE_TAG=${{ env.DOCKER_TAG }}
+            docker-compose -f docker-compose.production.yml down
+            docker-compose -f docker-compose.production.yml pull
+            docker-compose -f docker-compose.production.yml up -d
