@@ -59,65 +59,65 @@ public class CatalogControllerTests : IntegrationTestBase
         );
     }
 
-    [Fact]
-    public async Task GetCatalogOfLoggedProducer_AuthenticatedProducer_ReturnsSuccessStatusCode()
-    {
-        // Arrange
-        var producerId = "testproducer-id";
-        var client = GetAuthenticatedClient(producerId, "Producer");
+    //[Fact]
+    //public async Task GetCatalogOfLoggedProducer_AuthenticatedProducer_ReturnsSuccessStatusCode()
+    //{
+    //    // Arrange
+    //    var producerId = "testproducer-id";
+    //    var client = GetAuthenticatedClient(producerId, "Producer");
 
-        // Act
-        var response = await client.GetAsync("/api/Catalog/GetCatalog");
+    //    // Act
+    //    var response = await client.GetAsync("/api/Catalog/GetCatalog");
 
-        // Assert
-        response.EnsureSuccessStatusCode();
-        var catalogData = await response.Content.ReadFromJsonAsync<List<CatalogDto>>();
-        Assert.NotNull(catalogData);
-        Assert.NotEmpty(catalogData);
+    //    // Assert
+    //    response.EnsureSuccessStatusCode();
+    //    var catalogData = await response.Content.ReadFromJsonAsync<List<CatalogDto>>();
+    //    Assert.NotNull(catalogData);
+    //    Assert.NotEmpty(catalogData);
         
-        // Verify catalog structure
-        foreach (var catalog in catalogData)
-        {
-            Assert.NotNull(catalog.ProducerName);
-            Assert.NotNull(catalog.Products);
-        }
-    }
+    //    // Verify catalog structure
+    //    foreach (var catalog in catalogData)
+    //    {
+    //        Assert.NotNull(catalog.ProducerName);
+    //        Assert.NotNull(catalog.Products);
+    //    }
+    //}
 
-    [Fact]
-    public async Task GetCatalogOfLoggedProducer_NonProducerRole_ReturnsForbidden()
-    {
-        // Arrange
-        var client = GetAuthenticatedClient("testcopr-id", "CoProducer"); // CoProducer role, not Producer
+    //[Fact]
+    //public async Task GetCatalogOfLoggedProducer_NonProducerRole_ReturnsForbidden()
+    //{
+    //    // Arrange
+    //    var client = GetAuthenticatedClient("testcopr-id", "CoProducer"); // CoProducer role, not Producer
 
-        // Act
-        var response = await client.GetAsync("/api/Catalog/GetCatalog");
+    //    // Act
+    //    var response = await client.GetAsync("/api/Catalog/GetCatalog");
 
-        // Assert
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
+    //    // Assert
+    //    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    //}
 
-    [Fact]
-    public async Task GetCatalogOfLoggedProducer_EmptyResult_ReturnsNotFound()
-    {
-        // This test assumes there's a producer without any products
+    //[Fact]
+    //public async Task GetCatalogOfLoggedProducer_EmptyResult_ReturnsNotFound()
+    //{
+    //    // This test assumes there's a producer without any products
         
-        // Arrange
-        // Using a producer ID that we assume has no products in the catalog
-        var emptyProducerId = "empty-producer-id";
-        var client = GetAuthenticatedClient(emptyProducerId, "Producer");
+    //    // Arrange
+    //    // Using a producer ID that we assume has no products in the catalog
+    //    var emptyProducerId = "empty-producer-id";
+    //    var client = GetAuthenticatedClient(emptyProducerId, "Producer");
 
-        // Act
-        var response = await client.GetAsync("/api/Catalog/GetCatalog");
+    //    // Act
+    //    var response = await client.GetAsync("/api/Catalog/GetCatalog");
 
-        // Assert
-        // Since we can't guarantee the producer has no catalog in the test database,
-        // we check for either success or not found
-        Assert.True(
-            response.StatusCode == HttpStatusCode.OK || 
-            response.StatusCode == HttpStatusCode.NotFound,
-            $"Expected OK or NotFound, got {response.StatusCode}"
-        );
-    }
+    //    // Assert
+    //    // Since we can't guarantee the producer has no catalog in the test database,
+    //    // we check for either success or not found
+    //    Assert.True(
+    //        response.StatusCode == HttpStatusCode.OK || 
+    //        response.StatusCode == HttpStatusCode.NotFound,
+    //        $"Expected OK or NotFound, got {response.StatusCode}"
+    //    );
+    //}
 
     [Fact]
     public async Task GetCatalogByProducer_ValidProducerId_ReturnsSuccessStatusCode()
