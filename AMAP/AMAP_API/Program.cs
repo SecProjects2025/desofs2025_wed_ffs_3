@@ -13,6 +13,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using AMAP.Api.Validators;
 using AMAP.Api.Middleware;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -207,9 +208,11 @@ app.UseAuthentication();
 app.UseSession();
 app.UseMfaMiddleware();
 app.UseAuthorization();
+app.UseHttpMetrics(); // Exposes HTTP request metrics for Prometheus
 
 // Adicionar o middleware de Rate Limiting ANTES de MapControllers
 app.UseRateLimiter();
 
 app.MapControllers();
+app.MapMetrics(); // Exposes /metrics endpoint for Prometheus
 await app.RunAsync();
