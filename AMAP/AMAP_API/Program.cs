@@ -272,7 +272,7 @@ app.UseRateLimiter();
 
 app.MapControllers();
 
-app.Run();
+//app.Run();
 
 app.MapMetrics(); // Exposes /metrics endpoint for Prometheus
 await app.RunAsync();
