@@ -1,5 +1,0 @@
-   Name;Description;Photo;ReferencePrice;DeliveryUnits
-   Apple;Fresh red apple;apple.jpg;1.50;kg
-   Orange;Juicy orange;orange.jpg;2.00;unit
-   Carrot;Organic carrot;carrot.jpg;0.75;kg
-   
