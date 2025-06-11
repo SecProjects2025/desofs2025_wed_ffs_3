@@ -10,10 +10,13 @@ using AMAP.Entities.Utilities;
 using AMAP.Business.Components;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
+
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+
 using AMAP.Api.Validators;
 using AMAP.Api.Middleware;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +83,7 @@ builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 
 builder.Services.AddScoped<AccountLockoutService>();
+builder.Services.AddScoped<SecurityMonitoringService>();
 
 // Configure database based on environment
 if (builder.Environment.EnvironmentName == "Pipeline")
@@ -91,6 +95,62 @@ else
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Replace this section in Program.cs with the conditional registration
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    if (builder.Environment.IsEnvironment("Testing"))
+    {
+        // Don't configure any database here - will be overridden by CustomWebApplicationFactory
+    }
+    else
+    {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
+});
+
+// Replace this section
+builder.Services.AddAuthentication(options =>
+{
+    // Don't override these options in Testing environment to allow our TestAuthHandler to work
+    if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+    }
+})
+.AddCookie();
+
+// And this part after adding Identity
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.ConfigureApplicationCookie(options =>
+    {
+        options.LoginPath = "/api/account/login";
+        options.LogoutPath = "/api/account/logout";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+
+        // Environment-specific settings
+        if (builder.Environment.IsDevelopment())
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+            options.Cookie.SameSite = SameSiteMode.None;
+        }
+        else
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+        }
+
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        };
+    });
 }
 
 // Configure Identity with password requirements
@@ -204,7 +264,7 @@ using (var scope = app.Services.CreateScope())
         dbInitializer.Initialize();
     }
     // Verifica se existem roles
-    else if (!roleManager.Roles.Any())
+    else if (!(await roleManager.Roles.AnyAsync()))
     {
         var dbInitializer = new DbInitializer(userManager, roleManager, dbContext);
         dbInitializer.Initialize();
@@ -248,6 +308,13 @@ app.Use(async (context, next) =>
 });
 
 app.UseCors("AllowFrontend");
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
 app.UseHttpsRedirection();
 app.UseHsts();
 
@@ -255,6 +322,7 @@ app.UseAuthentication();
 app.UseSession();
 app.UseMfaMiddleware();
 app.UseAuthorization();
+app.UseHttpMetrics(); // Exposes HTTP request metrics for Prometheus
 
 // Add health check endpoint
 app.MapGet("/", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
@@ -263,4 +331,10 @@ app.MapGet("/", () => Results.Ok(new { status = "healthy", timestamp = DateTime.
 app.UseRateLimiter();
 
 app.MapControllers();
-app.Run();
+
+//app.Run();
+
+app.MapMetrics(); // Exposes /metrics endpoint for Prometheus
+await app.RunAsync();
+
+public partial class Program { }

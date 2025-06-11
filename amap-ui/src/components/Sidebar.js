@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import {
     FaBoxOpen,
     FaClipboardList,
@@ -121,6 +122,10 @@ const Sidebar = ({ isVisible }) => {
             </aside>
         )
     );
+};
+
+Sidebar.propTypes = {
+    isVisible: PropTypes.bool.isRequired,
 };
 
 export default Sidebar;
