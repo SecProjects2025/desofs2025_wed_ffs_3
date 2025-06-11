@@ -2,6 +2,7 @@ using AMAP.DataAccess.Repository.IRepository;
 using AMAP.DataAccess.Repository;
 using AMAP.DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Sqlite;
 using Microsoft.AspNetCore.Identity;
 using AMAP.Entities;
 using AMAP.DataAccess.DbInitializer;
@@ -9,10 +10,13 @@ using AMAP.Entities.Utilities;
 using AMAP.Business.Components;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
+
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+
 using AMAP.Api.Validators;
 using AMAP.Api.Middleware;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,9 +83,64 @@ builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 
 builder.Services.AddScoped<AccountLockoutService>();
+builder.Services.AddScoped<SecurityMonitoringService>();
 
+// Configure database based on environment
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (builder.Environment.IsEnvironment("Pipeline"))
+    {
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
+    else if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
+});
+
+// Replace this section
+builder.Services.AddAuthentication(options =>
+{
+    // Don't override these options in Testing environment to allow our TestAuthHandler to work
+    if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+    }
+})
+.AddCookie();
+
+// And this part after adding Identity
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.ConfigureApplicationCookie(options =>
+    {
+        options.LoginPath = "/api/account/login";
+        options.LogoutPath = "/api/account/logout";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+
+        // Environment-specific settings
+        if (builder.Environment.IsDevelopment())
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+            options.Cookie.SameSite = SameSiteMode.None;
+        }
+        else
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+        }
+
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        };
+    });
+}
 
 // Configure Identity with password requirements
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
@@ -167,7 +226,15 @@ builder.Services.AddSingleton<EmailSender>();
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "AMAP API",
+        Version = "v1",
+        Description = "AMAP API for managing products, subscriptions, and payments"
+    });
+});
 
 var app = builder.Build();
 
@@ -194,12 +261,61 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Pipeline")
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AMAP API v1");
+        c.RoutePrefix = "swagger";
+    });
 }
+
+// Add security headers middleware
+app.Use(async (context, next) =>
+{
+    // Set security headers for all responses
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["X-Frame-Options"] = "DENY";
+        context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+        context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+
+        // More restrictive CSP while maintaining necessary functionality
+        context.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; " +
+            "script-src 'self'; " +                      // Removed unsafe-inline and unsafe-eval
+            "style-src 'self'; " +                       // Removed unsafe-inline
+            "img-src 'self'; " +                         // Removed data: scheme
+            "font-src 'self'; " +                        // Removed data: scheme
+            "connect-src 'self'; " +                     // Restrict API connections
+            "frame-src 'none'; " +                       // Disallow frames
+            "object-src 'none'; " +                      // Disallow plugins
+            "base-uri 'self';";                          // Restrict base URIs
+
+        context.Response.Headers["Permissions-Policy"] = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()";
+        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+
+        // Set cache control headers
+        context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate";
+        context.Response.Headers["Pragma"] = "no-cache";
+        context.Response.Headers["Expires"] = "0";
+
+        return Task.CompletedTask;
+    });
+
+    await next();
+});
+
 app.UseCors("AllowFrontend");
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
 app.UseHttpsRedirection();
 app.UseHsts();
 
@@ -207,9 +323,19 @@ app.UseAuthentication();
 app.UseSession();
 app.UseMfaMiddleware();
 app.UseAuthorization();
+app.UseHttpMetrics(); // Exposes HTTP request metrics for Prometheus
 
-// Adicionar o middleware de Rate Limiting ANTES de MapControllers
+// Add health check endpoint
+app.MapGet("/", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+// Add rate limiting middleware
 app.UseRateLimiter();
 
 app.MapControllers();
+
+//app.Run();
+
+app.MapMetrics(); // Exposes /metrics endpoint for Prometheus
 await app.RunAsync();
+
+public partial class Program { }

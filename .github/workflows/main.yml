@@ -16,12 +16,21 @@ env:
   VM_PORT: '10381'
   VM_DEPLOY_PATH: '/root/desofs-app'
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  security-events: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      ASPNETCORE_ENVIRONMENT: Pipeline
+      ConnectionStrings__DefaultConnection: "Data Source=AMAP.db"
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -32,6 +41,12 @@ jobs:
 
     - name: Install ReportGenerator tool
       run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+    - name: Install Entity Framework Core tools
+      run: dotnet tool install --global dotnet-ef
+
+    - name: Install dotnet-coverage tool
+      run: dotnet tool install --global dotnet-coverage
 
     - name: Restore dependencies
       run: dotnet restore AMAP/AMAP.sln
@@ -51,6 +66,28 @@ jobs:
           -reports:**/coverage.cobertura.xml \
           -targetdir:coverage-report \
           -reporttypes:opencover
+
+    - name: Start Application
+      id: start-app
+      run: |
+        cd AMAP/AMAP_API
+        
+        touch AMAP.db
+        
+        dotnet ef migrations add InitialCreate --context AppDbContext --project ../AMAP.Data
+        dotnet ef database update --project ../AMAP.Data
+        
+        dotnet run --launch-profile Pipeline &
+        sleep 60
+
+    - name: Start ZAP Scan
+      uses: zaproxy/action-baseline@v0.14.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
+        target: 'https://localhost:7262/swagger/index.html'
+        cmd_options: '-a'
+        allow_issue_writing: true
 
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
@@ -77,8 +114,9 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
-        ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/coverage-report/opencover.xml" /d:sonar.cs.vstest.reportsPaths="${{ github.workspace }}/**/*.trx" /d:sonar.cs.vstest.coverage.enabled=true /d:sonar.security.enabled=true /d:sonar.security.sources.javasecurity=true /d:sonar.security.sources.pythonsecurity=true /d:sonar.security.sources.phpsecurity=true /d:sonar.security.sources.roslynsecurity=true /d:sonar.scanner.skipJreProvisioning=true /d:sonar.exclusions="**/*.html,**/html-coverage-report/**" /d:sonar.coverage.exclusions="**/*.html,**/html-coverage-report/**"
-        dotnet build AMAP/AMAP.sln
+        ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" /d:sonar.cs.vstest.reportsPaths="${{ github.workspace }}/**/*.trx" /d:sonar.cs.vstest.coverage.enabled=true /d:sonar.security.enabled=true /d:sonar.security.sources.javasecurity=true /d:sonar.security.sources.pythonsecurity=true /d:sonar.security.sources.phpsecurity=true /d:sonar.security.sources.roslynsecurity=true /d:sonar.scanner.skipJreProvisioning=true /d:sonar.exclusions="**/*.html,**/html-coverage-report/**" /d:sonar.coverage.exclusions="**/*.html,**/html-coverage-report/**"
+        dotnet build AMAP/AMAP.sln --no-incremental
+        dotnet-coverage collect "dotnet test AMAP/AMAP.sln" -f xml -o "coverage.xml"
         ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Install Snyk CLI
@@ -103,6 +141,10 @@ jobs:
         path: 'AMAP/'
         format: 'HTML'
         out: 'reports'
+
+    - name: Stop Application
+      run: |
+        pkill -f "dotnet run"
 
     - name: Build Docker Image
       if: github.ref == 'refs/heads/main'
