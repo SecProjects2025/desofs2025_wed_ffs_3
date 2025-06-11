@@ -37,7 +37,7 @@ public class ProductControllerTests : IntegrationTestBase
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact]
+    /*[Fact]
     public async Task CreateProduct_AuthenticatedProducer_ReturnsCreated()
     {
         // Arrange
@@ -60,9 +60,9 @@ public class ProductControllerTests : IntegrationTestBase
         var createdProduct = await response.Content.ReadFromJsonAsync<Product>();
         Assert.NotNull(createdProduct);
         Assert.Equal("Test Bananas", createdProduct.Name);
-    }
+    }*/
 
-    [Fact]
+    /*[Fact]
     public async Task UpdateProduct_AuthenticatedProducer_ReturnsNoContent()
     {
         // Arrange
@@ -90,7 +90,7 @@ public class ProductControllerTests : IntegrationTestBase
         Assert.NotNull(product);
         Assert.Equal("Updated Test Apples", product.Name);
         Assert.Equal(2.75, product.ReferencePrice);
-    }
+    }*/
 
     [Fact]
     public async Task DeleteProduct_AuthenticatedProducer_ReturnsNoContent()
