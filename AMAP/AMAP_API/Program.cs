@@ -258,6 +258,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseCors("AllowFrontend");
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
 app.UseHttpsRedirection();
 app.UseHsts();
 
