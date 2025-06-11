@@ -281,15 +281,27 @@ app.Use(async (context, next) =>
         context.Response.Headers["X-Frame-Options"] = "DENY";
         context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
         context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
-        context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;";
+
+        // More restrictive CSP while maintaining necessary functionality
+        context.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; " +
+            "script-src 'self'; " +                      // Removed unsafe-inline and unsafe-eval
+            "style-src 'self'; " +                       // Removed unsafe-inline
+            "img-src 'self'; " +                         // Removed data: scheme
+            "font-src 'self'; " +                        // Removed data: scheme
+            "connect-src 'self'; " +                     // Restrict API connections
+            "frame-src 'none'; " +                       // Disallow frames
+            "object-src 'none'; " +                      // Disallow plugins
+            "base-uri 'self';";                          // Restrict base URIs
+
         context.Response.Headers["Permissions-Policy"] = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()";
         context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-        
+
         // Set cache control headers
         context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate";
         context.Response.Headers["Pragma"] = "no-cache";
         context.Response.Headers["Expires"] = "0";
-        
+
         return Task.CompletedTask;
     });
 
