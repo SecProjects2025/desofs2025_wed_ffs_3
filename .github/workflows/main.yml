@@ -116,7 +116,7 @@ jobs:
       run: |
         ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner begin /k:"diogoc0307_desofs" /o:"diogoc0307" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.branch.name="main" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/coverage-report/opencover.xml" /d:sonar.cs.vstest.reportsPaths="${{ github.workspace }}/**/*.trx" /d:sonar.cs.vstest.coverage.enabled=true /d:sonar.security.enabled=true /d:sonar.security.sources.javasecurity=true /d:sonar.security.sources.pythonsecurity=true /d:sonar.security.sources.phpsecurity=true /d:sonar.security.sources.roslynsecurity=true /d:sonar.scanner.skipJreProvisioning=true /d:sonar.exclusions="**/*.html,**/html-coverage-report/**" /d:sonar.coverage.exclusions="**/*.html,**/html-coverage-report/**"
         dotnet build AMAP/AMAP.sln
-        dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
+        dotnet-coverage collect "dotnet test  AMAP/AMAP.sln" -f xml -o "coverage.xml"
         ${{ github.workspace }}/.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Install Snyk CLI
