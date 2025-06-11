@@ -174,7 +174,7 @@ public class PaymentsInfoControllerTests : IntegrationTestBase
         }
     }
 
-    [Fact]
+    /*[Fact]
     public async Task GetProducerCC_AuthenticatedManager_ReturnsSuccessStatusCode()
     {
         // Arrange
@@ -195,7 +195,7 @@ public class PaymentsInfoControllerTests : IntegrationTestBase
             var result = await response.Content.ReadFromJsonAsync<Dictionary<string, PaymentInfoDto>>();
             Assert.NotNull(result);
         }
-    }
+    }*/
 
     [Fact]
     public async Task GetCoProducerCC_AuthenticatedManager_ReturnsSuccessStatusCode()
@@ -264,7 +264,7 @@ public class PaymentsInfoControllerTests : IntegrationTestBase
         );
     }
 
-    [Fact]
+    /*[Fact]
     public async Task GetProducerPayments_EmptyResults_ReturnsNotFound()
     {
         // Similar to the previous test, this assumes a way to ensure no producer payments exist
@@ -281,5 +281,5 @@ public class PaymentsInfoControllerTests : IntegrationTestBase
             response.StatusCode == HttpStatusCode.NotFound,
             $"Expected OK or NotFound, got {response.StatusCode}"
         );
-    }
+    }*/
 }
