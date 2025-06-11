@@ -86,24 +86,13 @@ builder.Services.AddScoped<AccountLockoutService>();
 builder.Services.AddScoped<SecurityMonitoringService>();
 
 // Configure database based on environment
-if (builder.Environment.EnvironmentName == "Pipeline")
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-}
-else
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Replace this section in Program.cs with the conditional registration
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    if (builder.Environment.IsEnvironment("Testing"))
+    if (builder.Environment.IsEnvironment("Pipeline"))
     {
-        // Don't configure any database here - will be overridden by CustomWebApplicationFactory
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
     }
-    else
+    else if (!builder.Environment.IsEnvironment("Testing"))
     {
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
     }
