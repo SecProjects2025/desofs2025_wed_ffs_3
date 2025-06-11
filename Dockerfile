@@ -7,6 +7,7 @@ COPY AMAP/AMAP.Business/AMAP.Business.csproj AMAP.Business/
 COPY AMAP/AMAP.Data/AMAP.DataAccess.csproj AMAP.Data/
 COPY AMAP/AMAP.Models/AMAP.Entities.csproj AMAP.Models/
 COPY AMAP/AMAP.UnitTests/AMAP.UnitTests.csproj AMAP.UnitTests/
+COPY AMAP/AMAP.IntegrationTests/AMAP.IntegrationTests.csproj AMAP.IntegrationTests/
 COPY AMAP/AMAP_API/AMAP.Api.csproj AMAP_API/
 
 RUN dotnet restore AMAP.sln
