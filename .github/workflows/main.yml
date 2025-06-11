@@ -177,7 +177,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker Image (Development)
-        run: docker build AMAP/. -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+        run: docker build . -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
 
       - name: Push Docker Image (Development)
         run: docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
@@ -228,7 +228,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker Image (Staging)
-        run: docker build AMAP/. -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+        run: docker build . -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
 
       - name: Push Docker Image (Staging)
         run: docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
@@ -279,7 +279,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker Image (Production)
-        run: docker build AMAP/. -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
+        run: docker build . -t ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
 
       - name: Push Docker Image (Production)
         run: docker push ${{ env.DOCKER_REGISTRY }}:${{ env.DOCKER_TAG }}
