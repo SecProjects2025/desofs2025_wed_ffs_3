@@ -9,8 +9,10 @@ using AMAP.Entities.Utilities;
 using AMAP.Business.Components;
 using AMAP.Business.Interfaces;
 using AMAP.Business;
+
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+
 using AMAP.Api.Validators;
 using AMAP.Api.Middleware;
 using Prometheus;
@@ -80,9 +82,64 @@ builder.Services.AddScoped<IDeliveryBc, DeliveryBc>();
 builder.Services.AddScoped<IPaymentsInfoBc, PaymentsInfoBc>();
 
 builder.Services.AddScoped<AccountLockoutService>();
+builder.Services.AddScoped<SecurityMonitoringService>();
 
+// Replace this section in Program.cs with the conditional registration
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (builder.Environment.IsEnvironment("Testing"))
+    {
+        // Don't configure any database here - will be overridden by CustomWebApplicationFactory
+    }
+    else
+    {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
+});
+
+// Replace this section
+builder.Services.AddAuthentication(options =>
+{
+    // Don't override these options in Testing environment to allow our TestAuthHandler to work
+    if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+    }
+})
+.AddCookie();
+
+// And this part after adding Identity
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.ConfigureApplicationCookie(options =>
+    {
+        options.LoginPath = "/api/account/login";
+        options.LogoutPath = "/api/account/logout";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+
+        // Environment-specific settings
+        if (builder.Environment.IsDevelopment())
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+            options.Cookie.SameSite = SameSiteMode.None;
+        }
+        else
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+        }
+
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        };
+    });
+}
 
 // Configure Identity with password requirements
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
@@ -201,6 +258,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseCors("AllowFrontend");
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
 app.UseHttpsRedirection();
 app.UseHsts();
 
@@ -214,5 +278,10 @@ app.UseHttpMetrics(); // Exposes HTTP request metrics for Prometheus
 app.UseRateLimiter();
 
 app.MapControllers();
+
+//app.Run();
+
 app.MapMetrics(); // Exposes /metrics endpoint for Prometheus
 await app.RunAsync();
+
+public partial class Program { }
