@@ -22,11 +22,16 @@ graph TD
     H --> I(SCA com OWASP)
     I --> J(Parar Aplicação)
     J --> K{Branch main?}
-    K -->|Sim| L(Build Docker)
-    L --> M(Push Docker Hub)
-    M --> N(Deploy via SSH Gateway)
-    K -->|Não| O(Fim)
-    N --> O
+    K -->|Sim| L[Build Docker Images]
+    L --> M[Push Docker Hub]
+    M --> N[Deploy Multi-Ambiente]
+    N --> O1[Deploy Development]
+    N --> O2[Deploy Staging]
+    N --> O3[Deploy Production]
+    O1 --> P(Fim)
+    O2 --> P
+    O3 --> P
+    K -->|Não| P
 ```
 
 ## Tecnologias Utilizadas e Justificações
@@ -214,50 +219,90 @@ Esta fase encerra a aplicação após todas as análises de segurança.
 
     ![StopApp.png](../../Imagens/pipeline/StopApp.png)
 
-### 10. Construção da Imagem Docker
+### 10. Construção das Imagens Docker (Apenas na main branch)
 
-Nesta fase, a aplicação é empacotada numa imagem Docker, pronta para ser executada em qualquer ambiente com Docker.
+Nesta fase, a aplicação é empacotada em três imagens Docker diferentes, uma para cada ambiente (Development, Staging e Production).
 
-*   **Objetivo:** Criar um container leve e portátil contendo a aplicação pronta para ser executada em qualquer ambiente com Docker.
+*   **Objetivo:** Criar containers leves e portáteis contendo a aplicação pronta para ser executada em diferentes ambientes.
 *   **Passos:**
     1.  Configuração do ambiente Docker buildx.
-    2.  Construção da imagem Docker usando o `Dockerfile`.
+    2.  Construção das imagens Docker usando o `Dockerfile`:
+        *   Imagem Development: `diogocosta0307/desofs:dev`
+        *   Imagem Staging: `diogocosta0307/desofs:staging`
+        *   Imagem Production: `diogocosta0307/desofs:prod`
+*   **Visualização:**
 
-### 11. Push da Imagem Docker (Apenas na main branch)
+### 11. Push das Imagens Docker (Apenas na main branch)
 
-Esta fase envia a imagem Docker construída para um registro de containers (Docker Hub), disponibilizando-a para implantação.
+Esta fase envia as imagens Docker construídas para o Docker Hub, disponibilizando-as para implantação em diferentes ambientes.
 
-*   **Objetivo:** Disponibilizar a imagem Docker para ser utilizada em ambientes de implantação (como o staging).
+*   **Objetivo:** Disponibilizar as imagens Docker para serem utilizadas nos diferentes ambientes de implantação.
 *   **Pré-requisitos:** Configuração dos segredos `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN` no GitHub.
 *   **Passos:**
     1.  Login no Docker Hub.
-    2.  Push da imagem Docker para o repositório configurado.
+    2.  Push das imagens Docker para o repositório configurado:
+        *   `diogocosta0307/desofs:dev`
+        *   `diogocosta0307/desofs:staging`
+        *   `diogocosta0307/desofs:prod`
 *   **Visualização:**
-
-    ![DockerPush.png](../../Imagens/pipeline/DockerPush.png)
 
     ![DockerHubBrowser.png](../../Imagens/pipeline/DockerHubBrowser.png)
 
-### 12. Implantação no Ambiente de Staging (Apenas na main branch)
+### 12. Implantação Multi-Ambiente (Apenas na main branch)
 
-Esta fase implanta a nova versão da aplicação no ambiente de staging, atualizando a aplicação rodando na máquina virtual de destino.
+Esta fase implanta a aplicação em três ambientes distintos (Development, Staging e Production), cada um com sua própria configuração e porta de acesso.
 
-*   **Objetivo:** Atualizar a aplicação no ambiente de staging para testes e validação antes de uma possível implantação em produção.
-*   **Pré-requisitos:** Configuração de acesso SSH à VM de staging via gateway, incluindo os segredos `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`, `SSH_PASSPHRASE`, `VM_HOST`, `VM_PORT`, `VM_USER`, `VM_GATEWAY_HOST`, `VM_GATEWAY_PORT`, `VM_GATEWAY_USER`. O Docker e Docker Compose devem estar instalados na VM.
+*   **Objetivo:** Implantar e manter versões da aplicação em diferentes ambientes para desenvolvimento, testes e produção.
+*   **Pré-requisitos:** 
+    *   Configuração de acesso SSH à VM via gateway
+    *   Docker e Docker Compose instalados na VM
+    *   Ficheiros `docker-compose.{environment}.yml` configurados para cada ambiente
 *   **Passos:**
-    1.  Configuração do agente SSH para permitir a conexão segura.
-    2.  Cópia do arquivo `docker-compose-staging.yml` para a VM via SCP, utilizando o gateway SSH.
-    3.  Execução de comandos remotos na VM via SSH (utilizando o gateway) para:
-        *   Navegar até o diretório da aplicação.
-        *   Fazer pull da nova imagem Docker.
-        *   Parar os containers Docker em execução (`docker compose down`).
-        *   Iniciar os novos containers com a nova imagem (`docker compose up -d`).
-    4.  Output do URL de acesso ao ambiente de staging (local da VM, acessível via rede ISEP/VPN).
+    1.  **Ambiente de Development:**
+        *   Deploy na porta 7262
+        *   Diretório na VM: `/root/desofs-app-dev`
+        *   Variável de ambiente: `ASPNETCORE_ENVIRONMENT=Development`
+        *   Imagem: `diogocosta0307/desofs:dev`
+
+    2.  **Ambiente de Staging:**
+        *   Deploy na porta 7263
+        *   Diretório na VM: `/root/desofs-app-staging`
+        *   Variável de ambiente: `ASPNETCORE_ENVIRONMENT=Staging`
+        *   Imagem: `diogocosta0307/desofs:staging`
+
+    3.  **Ambiente de Production:**
+        *   Deploy na porta 7264
+        *   Diretório na VM: `/root/desofs-app-prod`
+        *   Variável de ambiente: `ASPNETCORE_ENVIRONMENT=Production`
+        *   Imagem: `diogocosta0307/desofs:prod`
+
+*   **Configuração dos Ambientes:**
+    *   Cada ambiente utiliza seu próprio ficheiro `docker-compose.{environment}.yml`
+    *   As configurações específicas de cada ambiente são mantidas nos ficheiros `appsettings.{Environment}.json`
+    *   O ficheiro `appsettings.json` base contém as configurações comuns a todos os ambientes
+    *   As portas são mapeadas de forma única para evitar conflitos:
+        *   Development: 7262
+        *   Staging: 7263
+        *   Production: 7264
+
+*   **Verificação do Deploy:**
+    Para verificar se os containers estão rodando corretamente na VM, utilize os seguintes comandos:
+    ```bash
+    # Listar containers em execução
+    docker ps
+
+    # Ver logs de um container específico
+    docker logs amap-api-development
+    docker logs amap-api-staging
+    docker logs amap-api-production
+
+    # Verificar portas em uso
+    sudo netstat -tulnp | grep 726
+    ```
+
 *   **Visualização:**
 
-    ![EnvSetupVm.png](../../Imagens/pipeline/EnvSetupVm.png)
-
-    ![DockerComposeRun.png](../../Imagens/pipeline/DockerComposeRun.png)
+    ![MultiDeployStep.png](../../Imagens/pipeline/DeployResults.png)
 
 ## Gestão de Dependências
 
@@ -396,6 +441,7 @@ Aqui está um resumo da duração média de cada step da pipeline:
     - Duração média: 9sec
 
 11. **Deploy via SSH Gateway**
-    - Duração média: 19sec
+    - Duração média: 50sec
 
-**Duração Total da Pipeline**: 9min 38sec
+**Duração Total da Pipeline**: 7min 38sec
+**Duração Deploy Ambientes**: 1min 48sec
