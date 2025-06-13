@@ -2,13 +2,13 @@ version: '3.8'
 
 services:
   amap-api:
-    image: diogocosta0307/desofs:${IMAGE_TAG}
-    container_name: amap-api
+    image: diogocosta0307/desofs:staging
+    container_name: amap-api-staging
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "7263:80"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Staging
     networks:
       - amap-network
 

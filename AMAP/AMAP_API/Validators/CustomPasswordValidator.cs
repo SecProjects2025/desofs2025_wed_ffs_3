@@ -16,7 +16,7 @@ namespace AMAP.Api.Validators
                     Description = "Password must not exceed 128 characters."
                 });
             }
-            var normalizedPassword = Regex.Replace(password, @"\s+", " ");
+            var normalizedPassword = Regex.Replace(password, @"\s+", " ", RegexOptions.None, TimeSpan.FromSeconds(1));
             if (normalizedPassword.Length < 12)
             {
                 errors.Add(new IdentityError
