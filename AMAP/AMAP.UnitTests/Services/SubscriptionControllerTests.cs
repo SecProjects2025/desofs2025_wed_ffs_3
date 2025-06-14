@@ -246,5 +246,65 @@ namespace AMAP.UnitTests.Services
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             Assert.Equal("No subscriptions found for this co-producer.", notFoundResult.Value);
         }
+
+        #region AcceptTerms Tests
+
+        [Fact]
+        public void AcceptTerms_SuccessfulAcceptance_ReturnsOk()
+        {
+            // Arrange
+            var subscriptionId = 1;
+            var mockSubscriptionBc = Substitute.For<ISubscriptionBc>();
+            mockSubscriptionBc.AcceptTerms(subscriptionId).Returns(Task.FromResult(true));
+
+            var controller = new SubscriptionController(mockSubscriptionBc, _loggerController);
+
+            // Act
+            var result = controller.AcceptTerms(subscriptionId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("Terms accepted successfully.", okResult.Value);
+        }
+
+        [Fact]
+        public void AcceptTerms_SubscriptionNotFound_ReturnsNotFound()
+        {
+            // Arrange
+            var nonExistingId = 999;
+            var mockSubscriptionBc = Substitute.For<ISubscriptionBc>();
+            mockSubscriptionBc.AcceptTerms(nonExistingId).Returns(Task.FromResult(false));
+
+            var controller = new SubscriptionController(mockSubscriptionBc, _loggerController);
+
+            // Act
+            var result = controller.AcceptTerms(nonExistingId);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Subscription not found.", notFoundResult.Value);
+        }
+
+        [Fact]
+        public void AcceptTerms_ServerError_ReturnsInternalServerError()
+        {
+            // Arrange
+            var subscriptionId = 1;
+            var mockSubscriptionBc = Substitute.For<ISubscriptionBc>();
+            mockSubscriptionBc.AcceptTerms(subscriptionId)
+                .Returns(Task.FromException<bool>(new Exception("Database connection error")));
+
+            var controller = new SubscriptionController(mockSubscriptionBc, _loggerController);
+
+            // Act
+            var result = controller.AcceptTerms(subscriptionId);
+
+            // Assert
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            Assert.Equal("An error occurred while accepting the terms.", statusCodeResult.Value);
+        }
+
+        #endregion
     }
 }
