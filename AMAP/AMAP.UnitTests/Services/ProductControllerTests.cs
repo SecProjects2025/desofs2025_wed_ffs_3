@@ -354,17 +354,27 @@ namespace AMAP.UnitTests.Services
             Assert.Equal(400, badRequestResult.StatusCode);
         }
 
+        #region ImportProductsFromFile Tests
+
         [Fact]
-        public void ImportProductsFromFile_InvalidFileFormat_ReturnsBadRequest()
+        public void ImportProductsFromFile_NullFile_ReturnsBadRequest()
+        {
+            // Act
+            var result = _productController.ImportProductsFromFile(null);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+            var value = GetAnonymousValue(badRequestResult.Value);
+            Assert.Equal("No file was uploaded", value["message"]);
+        }
+
+        [Fact]
+        public void ImportProductsFromFile_EmptyFile_ReturnsBadRequest()
         {
             // Arrange
             var mockFile = Substitute.For<IFormFile>();
-            mockFile.Length.Returns(1000);
-            mockFile.ContentType.Returns("text/plain");
-            mockFile.FileName.Returns("products.csv"); // Not a .txt file
-
-            var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes("Test file content"));
-            mockFile.OpenReadStream().Returns(memoryStream);
+            mockFile.Length.Returns(0);
 
             // Act
             var result = _productController.ImportProductsFromFile(mockFile);
@@ -372,19 +382,272 @@ namespace AMAP.UnitTests.Services
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal(400, badRequestResult.StatusCode);
+            var value = GetAnonymousValue(badRequestResult.Value);
+            Assert.Equal("No file was uploaded", value["message"]);
         }
 
         [Fact]
-        public void ExportProductsToFile_ValidRequest_ReturnsFileResult()
+        public void ImportProductsFromFile_FileTooLarge_ReturnsBadRequest()
         {
             // Arrange
+            var mockFile = Substitute.For<IFormFile>();
+            mockFile.Length.Returns(6 * 1024 * 1024); // 6 MB (exceeds 5MB limit)
+            mockFile.ContentType.Returns("text/plain");
 
-            // Setup the export behavior to return a test file
-            var fileContent = Encoding.UTF8.GetBytes("Name,Description,Photo,Price,Units\r\nProduct1,Desc1,photo1.jpg,10.99,kg");
-            var fileName = "products_export.csv";
-            var contentType = "text/csv";
+            // Act
+            var result = _productController.ImportProductsFromFile(mockFile);
 
-            _productBc.ExportProductsToFile("test-producer-id", "/app/root")
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+            var value = GetAnonymousValue(badRequestResult.Value);
+            Assert.Contains("File size exceeds the maximum limit", value["message"].ToString());
+        }
+
+        [Fact]
+        public void ImportProductsFromFile_InvalidFileType_ReturnsBadRequest()
+        {
+            // Arrange
+            var mockFile = Substitute.For<IFormFile>();
+            mockFile.Length.Returns(1000);
+            mockFile.ContentType.Returns("image/jpeg"); // Not a text file
+
+            // Act
+            var result = _productController.ImportProductsFromFile(mockFile);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+            var value = GetAnonymousValue(badRequestResult.Value);
+            Assert.Equal("File must be text format", value["message"]);
+        }
+
+        [Fact]
+        public void ImportProductsFromFile_NoProducerId_ReturnsUnauthorized()
+        {
+            // Arrange
+            var mockFile = Substitute.For<IFormFile>();
+            mockFile.Length.Returns(1000);
+            mockFile.ContentType.Returns("text/plain");
+
+            // Remove producer ID from claims
+            _productController.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+            };
+
+            // Act
+            var result = _productController.ImportProductsFromFile(mockFile);
+
+            // Assert
+            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.Equal(401, unauthorizedResult.StatusCode);
+            var value = GetAnonymousValue(unauthorizedResult.Value);
+            Assert.Equal("Producer not authenticated", value["message"]);
+        }
+
+        [Fact]
+        public void ImportProductsFromFile_ValidFile_ReturnsOkWithImportedData()
+        {
+            // Arrange
+            var mockFile = Substitute.For<IFormFile>();
+            mockFile.Length.Returns(1000);
+            mockFile.ContentType.Returns("text/plain");
+            mockFile.FileName.Returns("products.txt");
+
+            var fileContent = "Name;Description;Photo;ReferencePrice;DeliveryUnits\nProduct1;Description1;photo1.jpg;10.99;kg";
+            var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+            mockFile.OpenReadStream().Returns(memoryStream);
+
+            // Setup the expected return value from the business component
+            var importedProducts = new List<Product>
+            {
+                new Product { Id = 1, Name = "Product1", Description = "Description1",
+                             Photo = "photo1.jpg", ReferencePrice = 10.99, DeliveryUnits = "kg" }
+            };
+            var errors = new List<string>();
+            _productBc.ImportProductsFromFile(Arg.Any<Stream>(), "products.txt", "test-producer-id")
+                .Returns((importedProducts, errors));
+
+            // Act
+            var result = _productController.ImportProductsFromFile(mockFile);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(200, okResult.StatusCode);
+            var value = GetAnonymousValue(okResult.Value);
+            Assert.Contains("Import completed", value["message"].ToString());
+            Assert.Contains("1", value["message"].ToString()); // 1 product imported
+
+            // Check that the imported products info is returned
+            var returnedProducts = (IEnumerable<object>)value["importedProducts"];
+            Assert.Single(returnedProducts);
+
+            // Check the errors array is empty
+            var returnedErrors = (IEnumerable<object>)value["errors"];
+            Assert.Empty(returnedErrors);
+        }
+
+        [Fact]
+        public void ImportProductsFromFile_PartiallySuccessful_ReturnsOkWithErrorsList()
+        {
+            // Arrange
+            var mockFile = Substitute.For<IFormFile>();
+            mockFile.Length.Returns(1000);
+            mockFile.ContentType.Returns("text/plain");
+            mockFile.FileName.Returns("products.txt");
+
+            var fileContent = "Name;Description;Photo;ReferencePrice;DeliveryUnits\nProduct1;Description1;photo1.jpg;10.99;kg\nInvalid;;;";
+            var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+            mockFile.OpenReadStream().Returns(memoryStream);
+
+            // Setup the expected return value from the business component
+            var importedProducts = new List<Product>
+            {
+                new Product { Id = 1, Name = "Product1", Description = "Description1",
+                             Photo = "photo1.jpg", ReferencePrice = 10.99, DeliveryUnits = "kg" }
+            };
+            var errors = new List<string> { "Line 2: Invalid format" };
+            _productBc.ImportProductsFromFile(Arg.Any<Stream>(), "products.txt", "test-producer-id")
+                .Returns((importedProducts, errors));
+
+            // Act
+            var result = _productController.ImportProductsFromFile(mockFile);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(200, okResult.StatusCode);
+            var value = GetAnonymousValue(okResult.Value);
+            Assert.Contains("Import completed", value["message"].ToString());
+
+            // Check that the imported products info is returned
+            var returnedProducts = (IEnumerable<object>)value["importedProducts"];
+            Assert.Single(returnedProducts);
+
+            // Check the errors list contains the expected error
+            var returnedErrors = (IEnumerable<string>)value["errors"];
+            Assert.Single(returnedErrors);
+            Assert.Contains("Line 2: Invalid format", returnedErrors);
+        }
+
+        [Fact]
+        public void ImportProductsFromFile_ArgumentException_ReturnsBadRequest()
+        {
+            // Arrange
+            var mockFile = Substitute.For<IFormFile>();
+            mockFile.Length.Returns(1000);
+            mockFile.ContentType.Returns("text/plain");
+            mockFile.FileName.Returns("products.txt");
+
+            var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes("test content"));
+            mockFile.OpenReadStream().Returns(memoryStream);
+
+            // Setup the business component to throw an ArgumentException
+            _productBc.ImportProductsFromFile(Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<string>())
+                .Throws(new ArgumentException("Invalid file format"));
+
+            // Act
+            var result = _productController.ImportProductsFromFile(mockFile);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+            var value = GetAnonymousValue(badRequestResult.Value);
+            Assert.Equal("Invalid file format", value["message"]);
+        }
+
+        [Fact]
+        public void ImportProductsFromFile_InvalidOperationException_ReturnsBadRequest()
+        {
+            // Arrange
+            var mockFile = Substitute.For<IFormFile>();
+            mockFile.Length.Returns(1000);
+            mockFile.ContentType.Returns("text/plain");
+            mockFile.FileName.Returns("products.txt");
+
+            var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes("test content"));
+            mockFile.OpenReadStream().Returns(memoryStream);
+
+            // Setup the business component to throw an InvalidOperationException
+            var exceptionWithData = new InvalidOperationException("Import operation failed");
+            exceptionWithData.Data["Errors"] = new List<string> { "Error 1", "Error 2" };
+            _productBc.ImportProductsFromFile(Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<string>())
+                .Throws(exceptionWithData);
+
+            // Act
+            var result = _productController.ImportProductsFromFile(mockFile);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+            var value = GetAnonymousValue(badRequestResult.Value);
+            Assert.Equal("Import operation failed", value["message"]);
+
+            // Check that error details are included
+            var returnedErrors = (IEnumerable<string>)value["errors"];
+            Assert.Equal(2, returnedErrors.Count());
+            Assert.Contains("Error 1", returnedErrors);
+            Assert.Contains("Error 2", returnedErrors);
+        }
+
+        [Fact]
+        public void ImportProductsFromFile_UnexpectedException_ReturnsInternalServerError()
+        {
+            // Arrange
+            var mockFile = Substitute.For<IFormFile>();
+            mockFile.Length.Returns(1000);
+            mockFile.ContentType.Returns("text/plain");
+            mockFile.FileName.Returns("products.txt");
+
+            var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes("test content"));
+            mockFile.OpenReadStream().Returns(memoryStream);
+
+            // Setup the business component to throw a general exception
+            _productBc.ImportProductsFromFile(Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<string>())
+                .Throws(new Exception("Unexpected error"));
+
+            // Act
+            var result = _productController.ImportProductsFromFile(mockFile);
+
+            // Assert
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var value = GetAnonymousValue(statusCodeResult.Value);
+            Assert.Contains("Error processing file", value["message"].ToString());
+        }
+
+        #endregion
+
+        #region ExportProductsToFile Tests
+
+        [Fact]
+        public void ExportProductsToFile_NoProducerId_ReturnsUnauthorized()
+        {
+            // Arrange
+            _productController.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+            };
+
+            // Act
+            var result = _productController.ExportProductsToFile();
+
+            // Assert
+            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.Equal(401, unauthorizedResult.StatusCode);
+            var value = GetAnonymousValue(unauthorizedResult.Value);
+            Assert.Equal("Producer not authenticated", value["message"]);
+        }
+
+        [Fact]
+        public void ExportProductsToFile_ValidRequest_ReturnsFileContent()
+        {
+            // Arrange
+            var fileContent = Encoding.UTF8.GetBytes("Name;Description;Photo;ReferencePrice;DeliveryUnits");
+            var fileName = "products_test-producer.txt";
+            var contentType = "text/plain";
+
+            _productBc.ExportProductsToFile("test-producer-id", _webHostEnvironment.ContentRootPath)
                 .Returns((fileContent, fileName, contentType));
 
             // Act
@@ -395,6 +658,90 @@ namespace AMAP.UnitTests.Services
             Assert.Equal(fileContent, fileResult.FileContents);
             Assert.Equal(fileName, fileResult.FileDownloadName);
             Assert.Equal(contentType, fileResult.ContentType);
+        }
+
+        [Fact]
+        public void ExportProductsToFile_ArgumentException_ReturnsBadRequest()
+        {
+            // Arrange
+            _productBc.ExportProductsToFile(Arg.Any<string>(), Arg.Any<string>())
+                .Throws(new ArgumentException("Invalid producer ID"));
+
+            // Act
+            var result = _productController.ExportProductsToFile();
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+            var value = GetAnonymousValue(badRequestResult.Value);
+            Assert.Equal("Invalid producer ID", value["message"]);
+        }
+
+        [Fact]
+        public void ExportProductsToFile_KeyNotFoundException_ReturnsNotFound()
+        {
+            // Arrange
+            _productBc.ExportProductsToFile(Arg.Any<string>(), Arg.Any<string>())
+                .Throws(new KeyNotFoundException("Producer not found"));
+
+            // Act
+            var result = _productController.ExportProductsToFile();
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal(404, notFoundResult.StatusCode);
+            var value = GetAnonymousValue(notFoundResult.Value);
+            Assert.Equal("Producer not found", value["message"]);
+        }
+
+        [Fact]
+        public void ExportProductsToFile_InvalidOperationException_ReturnsNotFound()
+        {
+            // Arrange
+            _productBc.ExportProductsToFile(Arg.Any<string>(), Arg.Any<string>())
+                .Throws(new InvalidOperationException("No products found to export"));
+
+            // Act
+            var result = _productController.ExportProductsToFile();
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal(404, notFoundResult.StatusCode);
+            var value = GetAnonymousValue(notFoundResult.Value);
+            Assert.Equal("No products found to export", value["message"]);
+        }
+
+        [Fact]
+        public void ExportProductsToFile_UnexpectedException_ReturnsInternalServerError()
+        {
+            // Arrange
+            _productBc.ExportProductsToFile(Arg.Any<string>(), Arg.Any<string>())
+                .Throws(new Exception("Database connection error"));
+
+            // Act
+            var result = _productController.ExportProductsToFile();
+
+            // Assert
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var value = GetAnonymousValue(statusCodeResult.Value);
+            Assert.Contains("Error exporting products", value["message"].ToString());
+        }
+
+        #endregion
+
+        // Helper method to safely extract values from anonymous objects
+        private IDictionary<string, object> GetAnonymousValue(object anonymousObject)
+        {
+            var result = new Dictionary<string, object>();
+            var properties = anonymousObject.GetType().GetProperties();
+
+            foreach (var prop in properties)
+            {
+                result[prop.Name] = prop.GetValue(anonymousObject);
+            }
+
+            return result;
         }
     }
 }

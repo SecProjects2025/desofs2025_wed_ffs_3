@@ -11,6 +11,8 @@ using NSubstitute;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace AMAP.UnitTests.Business
 {
@@ -280,5 +282,179 @@ namespace AMAP.UnitTests.Business
                 _subscriptionBc.CreateSubscription(subscription, coProducerId));
             Assert.Equal("Invalid payment type.", exception.Message);
         }
+
+        #region AcceptTerms Tests
+
+        [Fact]
+        public async Task AcceptTerms_ValidSubscriptionWithConfirmedEmail_ReturnsTrue()
+        {
+            // Arrange
+            int subscriptionId = 1;
+            var subscription = new Subscription
+            {
+                Id = subscriptionId,
+                CoProducerId = "coproducer-1",
+                ProductOfferId = 1,
+                ExpectedQuantity = 5,
+                PaymentType = PaymentType.Money,
+                EmailConfirmed = true,
+                TermsAccepted = false,
+                TermsAcceptedAt = default
+            };
+
+            var unitOfWork = Substitute.For<IUnitOfWork>();
+            unitOfWork.Subscription.Get(Arg.Any<Expression<Func<Subscription, bool>>>())
+                .Returns(subscription);
+
+            var subscriptionBc = new SubscriptionBc(unitOfWork, _emailSender, _logger);
+
+            // Act
+            var result = await subscriptionBc.AcceptTerms(subscriptionId);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(subscription.TermsAccepted);
+            Assert.NotEqual(default, subscription.TermsAcceptedAt);
+            unitOfWork.Received(1).Save();
+        }
+
+        [Fact]
+        public async Task AcceptTerms_InvalidSubscriptionId_ThrowsArgumentException()
+        {
+            // Arrange
+            int invalidId = 0;
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                async () => await _subscriptionBc.AcceptTerms(invalidId));
+            Assert.Equal("Invalid subscription ID.", exception.Message);
+        }
+
+        [Fact]
+        public async Task AcceptTerms_NegativeSubscriptionId_ThrowsArgumentException()
+        {
+            // Arrange
+            int negativeId = -5;
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                async () => await _subscriptionBc.AcceptTerms(negativeId));
+            Assert.Equal("Invalid subscription ID.", exception.Message);
+        }
+
+        [Fact]
+        public async Task AcceptTerms_NonExistingSubscription_ReturnsFalse()
+        {
+            // Arrange
+            int nonExistingId = 999;
+
+            var unitOfWork = Substitute.For<IUnitOfWork>();
+            unitOfWork.Subscription.Get(Arg.Any<Expression<Func<Subscription, bool>>>())
+                .Returns((Subscription)null);
+
+            var subscriptionBc = new SubscriptionBc(unitOfWork, _emailSender, _logger);
+
+            // Act
+            var result = await subscriptionBc.AcceptTerms(nonExistingId);
+
+            // Assert
+            Assert.False(result);
+            unitOfWork.DidNotReceive().Save();
+        }
+
+        [Fact]
+        public async Task AcceptTerms_EmailNotConfirmed_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            int subscriptionId = 1;
+            var subscription = new Subscription
+            {
+                Id = subscriptionId,
+                CoProducerId = "coproducer-1",
+                ProductOfferId = 1,
+                ExpectedQuantity = 5,
+                PaymentType = PaymentType.Money,
+                EmailConfirmed = false, // Email not confirmed
+                TermsAccepted = false
+            };
+
+            var unitOfWork = Substitute.For<IUnitOfWork>();
+            unitOfWork.Subscription.Get(Arg.Any<Expression<Func<Subscription, bool>>>())
+                .Returns(subscription);
+
+            var subscriptionBc = new SubscriptionBc(unitOfWork, _emailSender, _logger);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await subscriptionBc.AcceptTerms(subscriptionId));
+            Assert.Equal("Email must be confirmed before accepting terms.", exception.Message);
+            unitOfWork.DidNotReceive().Save();
+        }
+
+        [Fact]
+        public async Task AcceptTerms_TermsAlreadyAccepted_UpdatesTimestampAndReturnsTrue()
+        {
+            // Arrange
+            int subscriptionId = 1;
+            var oldTimestamp = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var subscription = new Subscription
+            {
+                Id = subscriptionId,
+                CoProducerId = "coproducer-1",
+                ProductOfferId = 1,
+                ExpectedQuantity = 5,
+                PaymentType = PaymentType.Money,
+                EmailConfirmed = true,
+                TermsAccepted = true, // Already accepted
+                TermsAcceptedAt = oldTimestamp
+            };
+
+            var unitOfWork = Substitute.For<IUnitOfWork>();
+            unitOfWork.Subscription.Get(Arg.Any<Expression<Func<Subscription, bool>>>())
+                .Returns(subscription);
+
+            var subscriptionBc = new SubscriptionBc(unitOfWork, _emailSender, _logger);
+
+            // Act
+            var result = await subscriptionBc.AcceptTerms(subscriptionId);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(subscription.TermsAccepted);
+            Assert.NotEqual(oldTimestamp, subscription.TermsAcceptedAt);
+            unitOfWork.Received(1).Save();
+        }
+
+        [Fact]
+        public async Task AcceptTerms_DatabaseError_ProperlyHandled()
+        {
+            // Arrange
+            int subscriptionId = 1;
+            var subscription = new Subscription
+            {
+                Id = subscriptionId,
+                CoProducerId = "coproducer-1",
+                ProductOfferId = 1,
+                ExpectedQuantity = 5,
+                PaymentType = PaymentType.Money,
+                EmailConfirmed = true,
+                TermsAccepted = false
+            };
+
+            var unitOfWork = Substitute.For<IUnitOfWork>();
+            unitOfWork.Subscription.Get(Arg.Any<Expression<Func<Subscription, bool>>>())
+                .Returns(subscription);
+
+            // Simulate database error during save
+            unitOfWork.When(u => u.Save())
+                .Do(_ => throw new Exception("Database error"));
+
+            var subscriptionBc = new SubscriptionBc(unitOfWork, _emailSender, _logger);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(async () => await subscriptionBc.AcceptTerms(subscriptionId));
+        }
+
+        #endregion
     }
 }
