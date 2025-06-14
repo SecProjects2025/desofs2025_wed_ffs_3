@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace AMAP_API.Controllers
+namespace AMAP.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

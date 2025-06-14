@@ -1,7 +1,5 @@
-﻿using AMAP_API.Controllers;
-using AMAP.Business.Interfaces;
+﻿using AMAP.Business.Interfaces;
 using AMAP.Entities;
-using AMAP.Entities.Models.DTO.Subscription;
 using AMAP.Entities.Utilities;
 using AMAP.UnitTests.Business.Mock;
 using Microsoft.AspNetCore.Http;
@@ -13,11 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NSubstitute;
-using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
-using Xunit;
+using AMAP.API.Controllers;
 
 namespace AMAP.UnitTests.Services
 {

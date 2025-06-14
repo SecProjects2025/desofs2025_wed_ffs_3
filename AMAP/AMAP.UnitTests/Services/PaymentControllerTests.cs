@@ -4,18 +4,15 @@ using AMAP.DataAccess.Repository.IRepository;
 using AMAP.Entities;
 using AMAP.Entities.Utilities;
 using AMAP.UnitTests.Business.Mock;
-using AMAP_API.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NSubstitute;
 using System.Security.Claims;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
-using Xunit;
+using AMAP.API.Controllers;
 
 namespace AMAP.UnitTests.Services
 {
