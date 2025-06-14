@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using AMAP.Business.Interfaces;
 using AMAP.DataAccess.Repository;
 
-namespace AMAP_API.Controllers
+namespace AMAP.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

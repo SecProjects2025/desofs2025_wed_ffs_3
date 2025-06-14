@@ -1,7 +1,5 @@
-﻿using AMAP_API.Controllers;
-using AMAP.Business.Interfaces;
+﻿using AMAP.Business.Interfaces;
 using AMAP.Entities;
-using AMAP.Entities.Models.DTO.Subscription;
 using AMAP.Entities.Utilities;
 using AMAP.UnitTests.Business.Mock;
 using Microsoft.AspNetCore.Http;
@@ -13,11 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NSubstitute;
-using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
-using Xunit;
+using AMAP.API.Controllers;
 
 namespace AMAP.UnitTests.Services
 {
@@ -246,5 +240,65 @@ namespace AMAP.UnitTests.Services
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             Assert.Equal("No subscriptions found for this co-producer.", notFoundResult.Value);
         }
+
+        #region AcceptTerms Tests
+
+        [Fact]
+        public void AcceptTerms_SuccessfulAcceptance_ReturnsOk()
+        {
+            // Arrange
+            var subscriptionId = 1;
+            var mockSubscriptionBc = Substitute.For<ISubscriptionBc>();
+            mockSubscriptionBc.AcceptTerms(subscriptionId).Returns(Task.FromResult(true));
+
+            var controller = new SubscriptionController(mockSubscriptionBc, _loggerController);
+
+            // Act
+            var result = controller.AcceptTerms(subscriptionId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("Terms accepted successfully.", okResult.Value);
+        }
+
+        [Fact]
+        public void AcceptTerms_SubscriptionNotFound_ReturnsNotFound()
+        {
+            // Arrange
+            var nonExistingId = 999;
+            var mockSubscriptionBc = Substitute.For<ISubscriptionBc>();
+            mockSubscriptionBc.AcceptTerms(nonExistingId).Returns(Task.FromResult(false));
+
+            var controller = new SubscriptionController(mockSubscriptionBc, _loggerController);
+
+            // Act
+            var result = controller.AcceptTerms(nonExistingId);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Subscription not found.", notFoundResult.Value);
+        }
+
+        [Fact]
+        public void AcceptTerms_ServerError_ReturnsInternalServerError()
+        {
+            // Arrange
+            var subscriptionId = 1;
+            var mockSubscriptionBc = Substitute.For<ISubscriptionBc>();
+            mockSubscriptionBc.AcceptTerms(subscriptionId)
+                .Returns(Task.FromException<bool>(new Exception("Database connection error")));
+
+            var controller = new SubscriptionController(mockSubscriptionBc, _loggerController);
+
+            // Act
+            var result = controller.AcceptTerms(subscriptionId);
+
+            // Assert
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            Assert.Equal("An error occurred while accepting the terms.", statusCodeResult.Value);
+        }
+
+        #endregion
     }
 }
