@@ -21,7 +21,16 @@ O repositório está organizado da seguinte forma:
     - `README.md`: Relatório técnico em formato Markdown.
     - `README.pdf`: Relatório técnico em formato PDF.
     - `v4-ASVS-checklist-en.xlsx`: Checklist atualizada com os requisitos ASVS.
-  - **`Fase2 Sprint2/`**: (ainda vazia).  
+  - **`Fase2 Sprint2/`**:
+    -  README_FINAL.md: Relatório técnico final em formato Markdown.
+    - README_FINAL.pdf: Relatório técnico final em formato PDF.
+    - dependency-check-report.html: Relatório de verificação de vulnerabilidades nas dependências.
+    - index.html: Página de índice ou sumário dos relatórios do sprint.
+    - v4-ASVS-checklist-en.xlsx: Checklist atualizada com os requisitos ASVS.
+    - zap_scan/: Pasta contendo os relatórios do scan de segurança automatizado com o OWASP ZAP:
+      - report_html.html: Relatório do ZAP em formato HTML.
+      - report_json.json: Relatório do ZAP em formato JSON.
+      - report_md.md: Relatório do ZAP em formato Markdown.
 - **`Imagens/`**: Contém todas as imagens utilizadas no relatório.
 - backups/: Contém scripts para backup, restauro e agendamento automático da base de dados do projeto.
   - backup-database.ps1: Script PowerShell para realizar backups automáticos da base de dados SQL Server.
