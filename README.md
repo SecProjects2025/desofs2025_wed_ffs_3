@@ -22,24 +22,24 @@ O repositório está organizado da seguinte forma:
     - `README.pdf`: Relatório técnico em formato PDF.
     - `v4-ASVS-checklist-en.xlsx`: Checklist atualizada com os requisitos ASVS.
   - **`Fase2 Sprint2/`**:
-    -  README_FINAL.md: Relatório técnico final em formato Markdown.
-    - README_FINAL.pdf: Relatório técnico final em formato PDF.
-    - dependency-check-report.html: Relatório de verificação de vulnerabilidades nas dependências.
-    - index.html: Página de índice ou sumário dos relatórios do sprint.
-    - v4-ASVS-checklist-en.xlsx: Checklist atualizada com os requisitos ASVS.
-    - zap_scan/: Pasta contendo os relatórios do scan de segurança automatizado com o OWASP ZAP:
-      - report_html.html: Relatório do ZAP em formato HTML.
-      - report_json.json: Relatório do ZAP em formato JSON.
-      - report_md.md: Relatório do ZAP em formato Markdown.
+    - `README_FINAL.md`: Relatório técnico final em formato Markdown.
+    - `README_FINAL.pdf`: Relatório técnico final em formato PDF.
+    - `dependency-check-report.html`: Relatório de verificação de vulnerabilidades nas dependências.
+    - `index.html`: Página com o sumário dos relatórios do sprint.
+    - `v4-ASVS-checklist-en.xlsx`: Checklist atualizada com os requisitos ASVS.
+    - **`zap_scan/`**: Pasta com os relatórios do scan de segurança automatizado com o OWASP ZAP:
+      - `report_html.html`: Relatório do ZAP em formato HTML.
+      - `report_json.json`: Relatório do ZAP em formato JSON.
+      - `report_md.md`: Relatório do ZAP em formato Markdown.
 - **`Imagens/`**: Contém todas as imagens utilizadas no relatório.
-- backups/: Contém scripts para backup, restauro e agendamento automático da base de dados do projeto.
-  - backup-database.ps1: Script PowerShell para realizar backups automáticos da base de dados SQL Server.
-  - restore-database.ps1: Script PowerShell para restaurar a base de dados a partir de um ficheiro de backup.
-  - schedule-backup.ps1: Script PowerShell para agendar a execução automática do backup diário da base de dados.
-- Dockerfile: Script que define como construir a imagem Docker da aplicação.
-- docker-compose.development.yml: Configuração Docker Compose para ambiente de desenvolvimento.
-- docker-compose.production.yml: Configuração Docker Compose para ambiente de produção.
-- docker-compose.staging.yml: Configuração Docker Compose para ambiente de staging (pré-produção).
+- **`backups/`**: Contém scripts para backup, restauro e agendamento automático da base de dados do projeto.
+  - `backup-database.ps1`: Script PowerShell para realizar backups automáticos da base de dados SQL Server.
+  - `restore-database.ps1`: Script PowerShell para restaurar a base de dados a partir de um ficheiro de backup.
+  - `schedule-backup.ps1`: Script PowerShell para agendar a execução automática do backup diário da base de dados.
+- `Dockerfile`: Script que define como construir a imagem Docker da aplicação.
+- `docker-compose.development.yml`: Configuração Docker Compose para ambiente de desenvolvimento.
+- `docker-compose.production.yml`: Configuração Docker Compose para ambiente de produção.
+- `docker-compose.staging.yml`: Configuração Docker Compose para ambiente de staging (pré-produção).
 - **`README.md`**: Este arquivo, que contém a estrutura do repositório e o passo a passo para configurar o backend.
 
 ---
