@@ -22,7 +22,11 @@ O repositório está organizado da seguinte forma:
     - `README.pdf`: Relatório técnico em formato PDF.
     - `v4-ASVS-checklist-en.xlsx`: Checklist atualizada com os requisitos ASVS.
   - **`Fase2 Sprint2/`**: (ainda vazia).  
-- **`Imagens/`**: Contém todas as imagens utilizadas no relatório.  
+- **`Imagens/`**: Contém todas as imagens utilizadas no relatório.
+- Dockerfile: Script que define como construir a imagem Docker da aplicação.
+- docker-compose.development.yml: Configuração Docker Compose para ambiente de desenvolvimento.
+- docker-compose.production.yml: Configuração Docker Compose para ambiente de produção.
+- docker-compose.staging.yml: Configuração Docker Compose para ambiente de staging (pré-produção).
 - **`README.md`**: Este arquivo, que contém a estrutura do repositório e o passo a passo para configurar o backend.
 
 ---
