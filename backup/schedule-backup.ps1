@@ -1,6 +1,6 @@
 # Script para agendar backups do banco de dados
 # Autor: Equipa AMAP
-# Data: 2024
+# Data: 2025
 
 # Obter o diretório atual do script
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path

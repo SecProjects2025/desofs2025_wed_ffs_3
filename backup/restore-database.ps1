@@ -1,6 +1,6 @@
 # Script para restauro automático do banco de dados SQL Server
 # Autor: Equipa AMAP
-# Data: 2024
+# Data: 2025
 
 param(
     [Parameter(Mandatory = $true)]

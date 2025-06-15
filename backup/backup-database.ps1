@@ -1,6 +1,6 @@
 # Script para backup automático do banco de dados SQL Server
 # Autor: Equipa AMAP
-# Data: 2024
+# Data: 2025
 
 # Configurações
 $serverName = "DESKTOP-37QTCQN\SQLEXPRESS"  # Servidor SQL Express
