@@ -5432,8 +5432,77 @@ Para assegurar a eficácia contínua da análise estática de código:
 
 ### Análise de Composição de Software (SCA)
 
-*   Descrever as ferramentas de SCA (ex: Snyk, OWASP Dependency-Check) e o seu papel na gestão de vulnerabilidades em dependências.
+A Análise de Composição de Software (SCA) é um processo automatizado que visa identificar e gerir componentes de código aberto e bibliotecas de terceiros utilizados no projeto. A utilização destes componentes pode introduzir vulnerabilidades conhecidas e riscos legais associados a licenças.
 
+O objetivo da SCA no pipeline CI/CD é:
+
+- Gerar um inventário dos componentes de terceiros (Software Bill of Materials - SBOM);
+- Detetar vulnerabilidades de segurança conhecidas (CVEs);
+- Apoiar a gestão de riscos de licenciamento.
+
+Para este efeito, foram integradas duas ferramentas no pipeline: **OWASP Dependency Check** e **Snyk**.
+
+#### Automação no Pipeline CI/CD
+
+A análise de composição é automatizada através do ficheiro `.github/workflows/main.yml`, garantindo que cada alteração ao código verifica também as dependências utilizadas.
+
+#### OWASP Dependency Check
+
+O OWASP Dependency Check é uma ferramenta de código aberto que identifica vulnerabilidades conhecidas em dependências. Apesar de eficaz, está sujeita a falsos positivos/negativos.
+
+No pipeline, esta ferramenta:
+- Analisa as dependências do projeto .NET;
+- Gera um relatório em HTML com os resultados;
+- Publica esse relatório como artefacto no GitHub Actions.
+
+#### Evolução e melhoria após atualização das dependências
+
+A análise SCA foi executada antes e depois da atualização das dependências, permitindo medir o impacto das melhorias:
+
+- **Antes da atualização:**
+  - 894 dependências analisadas (568 únicas)
+  - 14 bibliotecas vulneráveis
+  - 201 vulnerabilidades encontradas
+
+- **Depois da atualização:**
+  - 901 dependências analisadas (446 únicas)
+  - 10 bibliotecas vulneráveis
+  - 105 vulnerabilidades encontradas
+
+Esta redução significativa demonstra o impacto positivo da atualização e gestão ativa das dependências.
+
+#### Como foram feitas as correções dos problemas detetados
+
+Após a análise inicial, foi feito o seguinte processo para corrigir as vulnerabilidades detetadas:
+
+1. **Identificação das dependências vulneráveis:**  
+   Foram analisados os relatórios do Dependency Check e do Snyk para identificar exatamente quais bibliotecas e versões apresentavam vulnerabilidades.
+
+2. **Pesquisa das versões mais recentes:**  
+   Para cada dependência vulnerável, foi pesquisada a versão mais recente e estável disponível no [NuGet](https://www.nuget.org/) ou no repositório oficial correspondente.
+
+3. **Atualização das dependências:**  
+   As dependências foram atualizadas manualmente nos ficheiros `.csproj` de cada projeto, utilizando comandos como:
+   ```sh
+   dotnet add package <NomeDoPacote> --version <VersaoMaisRecente>
+   ```
+   Exemplo:
+   ```sh
+   dotnet add package SQLitePCLRaw.bundle_e_sqlite3 --version 2.1.11
+   ```
+
+4. **Limpeza e rebuild do projeto:**  
+   Foram removidas as pastas `bin` e `obj` e executados os comandos `dotnet clean`, `dotnet restore` e `dotnet build` para garantir que todas as dependências antigas fossem eliminadas e substituídas pelas novas versões.
+
+5. **Nova execução do pipeline:**  
+   Após as atualizações, o pipeline CI/CD foi executado novamente para gerar um novo relatório SCA e garantir que as vulnerabilidades tinham sido efetivamente mitigadas.
+
+6. **Validação dos resultados:**  
+   Os relatórios finais mostraram uma redução significativa no número de dependências vulneráveis e vulnerabilidades encontradas, comprovando a eficácia do processo.
+
+> **Nota:** Algumas vulnerabilidades podem persistir devido à ausência de versões corrigidas por parte dos fornecedores das bibliotecas. Nestes casos, a equipa monitoriza e avalia o risco, aplicando medidas de mitigação sempre que possível.
+
+O relatório detalhado, disponível como artefacto no pipeline, inclui os CVEs detetados e recomendações de mitigação. A equipa mantém um processo contínuo de revisão e atualização, garantindo que o risco associado a componentes de terceiros é minimizado e documentado.
 ### Análise Dinâmica de Aplicações (DAST)
 
 A análise dinâmica foi feita com o OWASP ZAP, integrado na pipeline CI/CD e executado automaticamente a cada commit. A ferramenta analisou a aplicação em tempo real, simulando ataques externos e identificando vulnerabilidades reais.
