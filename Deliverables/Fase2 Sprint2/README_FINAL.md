@@ -5437,7 +5437,9 @@ A Análise de Composição de Software (SCA) é um processo automatizado que vis
 O objetivo da SCA no pipeline CI/CD é:
 
 - Gerar um inventário dos componentes de terceiros (Software Bill of Materials - SBOM);
+
 - Detetar vulnerabilidades de segurança conhecidas (CVEs);
+
 - Apoiar a gestão de riscos de licenciamento.
 
 Para este efeito, foram integradas duas ferramentas no pipeline: **OWASP Dependency Check** e **Snyk**.
@@ -5451,8 +5453,11 @@ A análise de composição é automatizada através do ficheiro `.github/workflo
 O OWASP Dependency Check é uma ferramenta de código aberto que identifica vulnerabilidades conhecidas em dependências. Apesar de eficaz, está sujeita a falsos positivos/negativos.
 
 No pipeline, esta ferramenta:
+
 - Analisa as dependências do projeto .NET;
+
 - Gera um relatório em HTML com os resultados;
+
 - Publica esse relatório como artefacto no GitHub Actions.
 
 #### Evolução e melhoria após atualização das dependências
@@ -5460,49 +5465,146 @@ No pipeline, esta ferramenta:
 A análise SCA foi executada antes e depois da atualização das dependências, permitindo medir o impacto das melhorias:
 
 - **Antes da atualização:**
+
   - 894 dependências analisadas (568 únicas)
+
   - 14 bibliotecas vulneráveis
+
   - 201 vulnerabilidades encontradas
 
 - **Depois da atualização:**
+
   - 901 dependências analisadas (446 únicas)
+
   - 10 bibliotecas vulneráveis
+
   - 105 vulnerabilidades encontradas
 
 Esta redução significativa demonstra o impacto positivo da atualização e gestão ativa das dependências.
+
+#### Vulnerabilidades Atuais
+
+Após a atualização, as seguintes bibliotecas ainda apresentam vulnerabilidades:
+
+1. Bibliotecas Críticas:
+
+   - Azure.Core.dll (2 CVEs)
+
+   - System.ClientModel.dll (2 CVEs)
+
+   - e_sqlite3.dll (24 CVEs) - presente em múltiplas localizações
+
+2. Bibliotecas de Alta Severidade:
+
+   - Azure.Identity.dll (2 CVEs)
+
+   - Google.Authenticator.dll (1 CVE)
+
+   - GoogleAuthenticator 3.2.0 (1 CVE)
+
+   - Serilog.Sinks.Async.dll (1 CVE)
+
+#### Snyk
+
+O Snyk é uma plataforma de segurança orientada para desenvolvedores, que permite detetar e corrigir vulnerabilidades em código, dependências, contentores e infraestrutura como código. No nosso pipeline, foi utilizado o Snyk CLI para realizar a análise das dependências.
+
+A integração com o Snyk envolveu os seguintes passos:
+
+- **Instalação do Snyk CLI**
+
+Foi utilizada uma *GitHub Action* oficial do Snyk para configurar automaticamente o ambiente com o Snyk CLI.
+
+```c#
+  \- name: Install Snyk CLI
+
+ uses: snyk/actions/setup@master # Action para configurar o Snyk CLI
+```
+
+- **Monitorização de Vulnerabilidades**
+
+Um comando foi executado para enviar um *snapshot* das dependências do projeto para a plataforma Snyk, permitindo a monitorização contínua e a receção de alertas sobre novas vulnerabilidades.
+
+```c#
+\- name: Monitor Security Vulnerabilities (Snyk CLI)
+
+ working-directory: AMAP/ # Executa o comando no diretório do projeto AMAP
+
+ env:
+
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} # Utiliza um segredo do GitHub para autenticação com Snyk
+
+ run: snyk monitor --all-projects # Monitora todas as sub-projetos encontrados no diretório
+```
+
+- **Teste de Segurança**
+
+Através deste comando, foi feita uma varredura de segurança que termina o passo do pipeline caso sejam detetadas vulnerabilidades com severidade alta ou crítica, funcionando assim como uma espécie de *quality gate* de segurança.
+
+```c#
+\- name: Run Security Scan (Snyk CLI)
+
+ working-directory: AMAP/ # Executa o comando no diretório do projeto AMAP
+
+ env:
+
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} # Utiliza um segredo do GitHub para autenticação com Snyk
+
+ run: snyk test --severity-threshold=high --all-projects # Testa todas as sub-projetos e falha se encontrar vulnerabilidades de severidade alta ou superior
+```
+
+- **Resultados do Snyk**
+
+Os resultados detalhados dos comandos snyk monitor e snyk test são enviados para a plataforma Snyk. No entanto, devido ao limite de testes de código aberto atingido na conta utilizada, a plataforma apresenta apenas as dependências detetadas (118 no total), mas não exibe as vulnerabilidades conhecidas associadas (0 listadas).
+
+A visualização completa das vulnerabilidades exige a atualização da conta Snyk.
+
+Links úteis:
+
+- Convite para a organização: [Aceitar convite](https://app.snyk.io/invite/link/accept?invite=f36e349a-03a1-4869-a311-e7dbb32af557)
+- Projetos no Snyk: [Ver projetos](https://app.snyk.io/org/diogoc0307/projects)
 
 #### Como foram feitas as correções dos problemas detetados
 
 Após a análise inicial, foi feito o seguinte processo para corrigir as vulnerabilidades detetadas:
 
-1. **Identificação das dependências vulneráveis:**  
-   Foram analisados os relatórios do Dependency Check e do Snyk para identificar exatamente quais bibliotecas e versões apresentavam vulnerabilidades.
+1. **Identificação das dependências vulneráveis:**
 
-2. **Pesquisa das versões mais recentes:**  
-   Para cada dependência vulnerável, foi pesquisada a versão mais recente e estável disponível no [NuGet](https://www.nuget.org/) ou no repositório oficial correspondente.
+Foram analisados os relatórios do Dependency Check e do Snyk para identificar exatamente quais bibliotecas e versões apresentavam vulnerabilidades.
 
-3. **Atualização das dependências:**  
-   As dependências foram atualizadas manualmente nos ficheiros `.csproj` de cada projeto, utilizando comandos como:
-   ```sh
-   dotnet add package <NomeDoPacote> --version <VersaoMaisRecente>
-   ```
-   Exemplo:
-   ```sh
-   dotnet add package SQLitePCLRaw.bundle_e_sqlite3 --version 2.1.11
-   ```
+2. **Pesquisa das versões mais recentes:**
 
-4. **Limpeza e rebuild do projeto:**  
-   Foram removidas as pastas `bin` e `obj` e executados os comandos `dotnet clean`, `dotnet restore` e `dotnet build` para garantir que todas as dependências antigas fossem eliminadas e substituídas pelas novas versões.
+Para cada dependência vulnerável, foi pesquisada a versão mais recente e estável disponível no NuGet ou no repositório oficial correspondente.
 
-5. **Nova execução do pipeline:**  
-   Após as atualizações, o pipeline CI/CD foi executado novamente para gerar um novo relatório SCA e garantir que as vulnerabilidades tinham sido efetivamente mitigadas.
+3. **Atualização das dependências:**
 
-6. **Validação dos resultados:**  
-   Os relatórios finais mostraram uma redução significativa no número de dependências vulneráveis e vulnerabilidades encontradas, comprovando a eficácia do processo.
+As dependências foram atualizadas manualmente nos ficheiros .`csproj` de cada projeto, utilizando comandos como:
 
-> **Nota:** Algumas vulnerabilidades podem persistir devido à ausência de versões corrigidas por parte dos fornecedores das bibliotecas. Nestes casos, a equipa monitoriza e avalia o risco, aplicando medidas de mitigação sempre que possível.
+```sh
+  dotnet add package <NomeDoPacote> --version <VersaoMaisRecente>
+```
+
+Exemplo:
+
+```sh
+dotnet add package SQLitePCLRaw.bundle_e_sqlite3 --version 2.1.11
+```
+
+4. **Limpeza e rebuild do projeto:**
+
+Foram removidas as pastas `bin` e `obj` e executados os comandos `dotnet clean`, `dotnet restore` e `dotnet build` para garantir que todas as dependências antigas fossem eliminadas e substituídas pelas novas versões.
+
+5. **Nova execução do pipeline:**
+
+Após as atualizações, o pipeline CI/CD foi executado novamente para gerar um novo relatório SCA e garantir que as vulnerabilidades tinham sido efetivamente mitigadas.
+
+6. **Validação dos resultados:**
+
+Os relatórios finais mostraram uma redução significativa no número de dependências vulneráveis e vulnerabilidades encontradas, comprovando a eficácia do processo.
+
+\> Nota: Algumas vulnerabilidades podem persistir devido à ausência de versões corrigidas por parte dos fornecedores das bibliotecas. Nestes casos, a equipa monitoriza e avalia o risco, aplicando medidas de mitigação sempre que possível.
 
 O relatório detalhado, disponível como artefacto no pipeline, inclui os CVEs detetados e recomendações de mitigação. A equipa mantém um processo contínuo de revisão e atualização, garantindo que o risco associado a componentes de terceiros é minimizado e documentado.
+
 ### Análise Dinâmica de Aplicações (DAST)
 
 A análise dinâmica foi feita com o OWASP ZAP, integrado na pipeline CI/CD e executado automaticamente a cada commit. A ferramenta analisou a aplicação em tempo real, simulando ataques externos e identificando vulnerabilidades reais.
@@ -6160,6 +6262,74 @@ Monitorizar a saúde, desempenho e utilização do sistema backend e dos utiliza
 3. Define a condição (ex: se a utilização de CPU > 80% durante 5 minutos).
 4. Configura canais de notificação (email, Slack, etc.).
 5. Guarda o alerta.
+
+---
+
+## Validação de Configurações e Verificação de Artefactos
+
+Ao longo deste sprint, foram implementadas várias medidas para garantir que a aplicação mantém um nível elevado de segurança e rastreabilidade, desde a configuração até aos artefactos gerados.
+
+### Validação de Configurações
+
+Foram aplicadas boas práticas de segurança na configuração do ambiente, nomeadamente:
+
+- **Hardening** do framework **.NET**;
+- Configuração segura do **ASP.NET Core Identity**;
+- Políticas de **CORS** restritivas para limitar o acesso apenas a origens confiáveis;
+- Definição de **cookies seguros** em ambiente de produção;
+- Ativação obrigatória do **HTTPS**.
+
+Além disso, foi feita uma gestão segura das configurações sensíveis:
+
+- Utilização de **GitHub Secrets** para armazenamento de credenciais;
+- Separação clara entre configurações de **desenvolvimento** e **produção**;
+- Validação automática das configurações críticas diretamente na pipeline.
+
+### Verificação Automatizada
+
+Para reforçar a segurança, foram integradas ferramentas de verificação automática:
+
+- **SonarCloud** para validação de configurações de segurança e deteção de más práticas;
+- **Snyk** para verificação de políticas de segurança e dependências vulneráveis;
+- **OWASP Dependency Check** para análise detalhada de bibliotecas e pacotes utilizados.
+- **OWASP ZAP** para testes de segurança automatizados e análise de vulnerabilidades web.
+
+### Verificação de Artefactos
+
+A verificação dos artefactos gerados também foi tida em conta:
+
+- Geração de **relatórios de cobertura de código**;
+- Produção de relatórios de análise de segurança com **SonarCloud**, **Snyk**, **OWASP Dependency Check** e **OWASP ZAP**;
+- Registo e preservação dos **logs de build e deploy**.
+
+**Cadeia de Custódia:**
+
+Para garantir a integridade e rastreabilidade do processo, foram implementados:
+
+- Registo automático de todas as etapas da pipeline via **GitHub Actions**;
+- **Logs detalhados** de cada fase do ciclo de build e deploy;
+- Rastreabilidade total de alterações através dos **commits**.
+
+**Análise de Artefactos de Build:**
+
+- Verificação das **imagens Docker** geradas;
+- Validação dos **pacotes NuGet** utilizados no projeto;
+- Análise de dependências e potenciais vulnerabilidades.
+- Relatórios de segurança do OWASP ZAP.
+
+**Artefactos Gerados e Disponibilizados:**
+
+Os seguintes artefactos são gerados e disponibilizados após cada execução da pipeline:
+
+- Relatórios de cobertura de código em formato **HTML**;
+- Relatórios de segurança consolidados;
+- Logs completos de execução da pipeline;
+- **Imagens Docker** assinadas e versionadas.
+- Relatórios de vulnerabilidades web do OWASP ZAP.
+
+Estas práticas já se encontram integradas na nossa pipeline CI/CD e contribuem de forma significativa para a segurança, transparência e confiança no processo de entrega contínua.
+
+---
 
 ---
 
@@ -7219,6 +7389,8 @@ if (productOffer.SubscriptionPeriod?.EndDate < DateTime.Now)
 - Investigar prontamente qualquer comportamento suspeito;
 - Garantir cópias de segurança regulares dos registos.
 
+---
+
 # Avaliação do ASVS
 
 ## Categorias
@@ -7390,6 +7562,7 @@ No geral, o sistema **AMAP** apresenta uma base sólida, segura e sustentável. 
 18. TechTarget. (s.d.). *Data Flow Diagram (DFD)*. Disponível em: [https://www.techtarget.com/searchdatamanagement/definition/data-flow-diagram-DFD](https://www.techtarget.com/searchdatamanagement/definition/data-flow-diagram-DFD)
 19. OWASP Foundation. (s.d.). *Abuse Case Cheat Sheet*. Disponível em: [https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html)
 20. Documentos de apoio disponibilizados no Moodle da unidade curricular **Desenvolvimento de Software Seguro** (ISEP, 2024/2025).
-21. [Documentação prometheus-net](https://github.com/prometheus-net/prometheus-net)
-- [Introdução ao Prometheus](https://prometheus.io/docs/introduction/overview/)
-- [Introdução ao Grafana](https://grafana.com/docs/grafana/latest/getting-started/)
+21. Prometheus. (s.d.). *Documentação prometheus-net*. Disponível em: [https://github.com/prometheus-net/prometheus-net](https://github.com/prometheus-net/prometheus-net)
+5. Prometheus. (s.d.). *Introdução ao Prometheus*. Disponível em: [https://prometheus.io/docs/introduction/overview/](https://prometheus.io/docs/introduction/overview/)
+
+6. Grafana Labs. (s.d.). *Introdução ao Grafana*. Disponível em: [https://grafana.com/docs/grafana/latest/getting-started/](https://grafana.com/docs/grafana/latest/getting-started/)
