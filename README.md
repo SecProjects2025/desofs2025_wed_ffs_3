@@ -23,6 +23,10 @@ O repositório está organizado da seguinte forma:
     - `v4-ASVS-checklist-en.xlsx`: Checklist atualizada com os requisitos ASVS.
   - **`Fase2 Sprint2/`**: (ainda vazia).  
 - **`Imagens/`**: Contém todas as imagens utilizadas no relatório.
+- backups/: Contém scripts para backup, restauro e agendamento automático da base de dados do projeto.
+  - backup-database.ps1: Script PowerShell para realizar backups automáticos da base de dados SQL Server.
+  - restore-database.ps1: Script PowerShell para restaurar a base de dados a partir de um ficheiro de backup.
+  - schedule-backup.ps1: Script PowerShell para agendar a execução automática do backup diário da base de dados.
 - Dockerfile: Script que define como construir a imagem Docker da aplicação.
 - docker-compose.development.yml: Configuração Docker Compose para ambiente de desenvolvimento.
 - docker-compose.production.yml: Configuração Docker Compose para ambiente de produção.
