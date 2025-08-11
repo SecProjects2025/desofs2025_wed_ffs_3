@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Core" Version="1.46.2" />
-    <PackageReference Include="Azure.Identity" Version="1.14.0" />
+    <PackageReference Include="Azure.Identity" Version="1.14.2" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
